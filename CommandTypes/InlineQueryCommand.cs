@@ -8,7 +8,7 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using FluentCommands.Menu;
 
-namespace FluentCommands.Commands
+namespace FluentCommands.CommandTypes
 {
     internal delegate Task InlineQueryCommandDelegate(TelegramBotClient c, InlineQueryEventArgs e);
     internal delegate Task<MenuItem> InlineQueryCommandMenuDelegate(TelegramBotClient c, InlineQueryEventArgs e);

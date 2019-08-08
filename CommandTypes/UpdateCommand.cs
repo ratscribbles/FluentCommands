@@ -8,7 +8,7 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using FluentCommands.Menu;
 
-namespace FluentCommands.Commands
+namespace FluentCommands.CommandTypes
 {
     internal delegate Task UpdateCommandDelegate(TelegramBotClient c, UpdateEventArgs e);
     internal delegate Task<MenuItem> UpdateCommandMenuDelegate(TelegramBotClient c, UpdateEventArgs e);

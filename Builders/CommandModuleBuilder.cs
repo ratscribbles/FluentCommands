@@ -6,6 +6,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.BaseBuilderOfModule;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types.Enums;
+using FluentCommands.CommandTypes;
 
 namespace FluentCommands.Builders
 {

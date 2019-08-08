@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection;
 using FluentCommands.Builders;
-using FluentCommands.Commands;
+using FluentCommands.CommandTypes;
 using FluentCommands.Interfaces;
 using FluentCommands.Attributes;
 using FluentCommands.Exceptions;

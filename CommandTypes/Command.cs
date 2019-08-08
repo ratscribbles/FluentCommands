@@ -9,7 +9,7 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace FluentCommands
+namespace FluentCommands.CommandTypes
 {
     internal enum KeyboardType { None, Inline, Reply }
     internal class Command

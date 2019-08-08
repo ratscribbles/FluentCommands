@@ -4,6 +4,7 @@ using System.Text;
 using System.Linq;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.BaseBuilders;
+using FluentCommands.CommandTypes;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 

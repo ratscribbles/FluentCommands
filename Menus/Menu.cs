@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using FluentCommands.Interfaces;
 
 namespace FluentCommands.Menus
 {
     /// <summary>
     /// Finalized <see cref="Menus.MenuItem"/> ready to send to Telegram.
     /// </summary>
-    public class Menu
+    public class Menu : IFluentInterface
     {
         internal MenuItem MenuItem { get; private set; }
 

@@ -463,7 +463,7 @@ namespace FluentCommands
         }
         #endregion
 
-        private static async Task SendMenu<TModule>(MenuItem m, IReplyMarkup replyMarkup, TelegramBotClient client, MessageEventArgs e) where TModule : class
+        private static async Task SendMenu<TModule>(Menu menu, IReplyMarkup replyMarkup, TelegramBotClient client, MessageEventArgs e) where TModule : class
         {
             //? should this method be public? aimed at transforming MenuItems into replacements for the weird client methods
             //? additionally, please fix the signature of this method
@@ -476,6 +476,7 @@ namespace FluentCommands
             //? note, all of these things are purely for MenuItem objects. what happens within the methods that arent the returned MenuItem from the Command method are not of any concern.
             //? if the user wants to do weird shit, they can. ONLY be concerned about the RETURNED MENUITEM phase of the message sending process.
 
+            var m = menu.MenuItem;
 
             //: Check if editable
             await client.SendAnimationAsync(m.SendToThis, m.Source, m.Duration, m.Width, m.Height, m.Thumbnail, m.Caption, m.ParseMode, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);

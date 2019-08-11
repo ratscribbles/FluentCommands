@@ -11,7 +11,7 @@ using FluentCommands.Menus;
 namespace FluentCommands.CommandTypes
 {
     internal delegate Task InlineQueryCommandDelegate(TelegramBotClient c, InlineQueryEventArgs e);
-    internal delegate Task<MenuItem> InlineQueryCommandMenuDelegate(TelegramBotClient c, InlineQueryEventArgs e);
+    internal delegate Task<Menu> InlineQueryCommandMenuDelegate(TelegramBotClient c, InlineQueryEventArgs e);
     internal class InlineQueryCommand : Command
     {
         internal InlineQueryCommandDelegate Invoke { get; private set; }
@@ -19,7 +19,7 @@ namespace FluentCommands.CommandTypes
 
         internal InlineQueryCommand(CommandBase commandBase, MethodInfo method) : base(commandBase)
         {
-            if(method.ReturnType == typeof(Task<MenuItem>))
+            if(method.ReturnType == typeof(Task<Menu>))
             {
                 InvokeWithMenuItem = (InlineQueryCommandMenuDelegate)Delegate.CreateDelegate(typeof(InlineQueryCommandMenuDelegate), null, method);
             }

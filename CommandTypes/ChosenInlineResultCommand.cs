@@ -11,7 +11,7 @@ using FluentCommands.Menus;
 namespace FluentCommands.CommandTypes
 {
     internal delegate Task ChosenInlineResultCommandDelegate(TelegramBotClient c, ChosenInlineResultEventArgs e);
-    internal delegate Task<MenuItem> ChosenInlineResultCommandMenuDelegate(TelegramBotClient c, ChosenInlineResultEventArgs e);
+    internal delegate Task<Menu> ChosenInlineResultCommandMenuDelegate(TelegramBotClient c, ChosenInlineResultEventArgs e);
     internal class ChosenInlineResultCommand : Command
     {
         internal ChosenInlineResultCommandDelegate Invoke { get; private set; }
@@ -19,7 +19,7 @@ namespace FluentCommands.CommandTypes
 
         internal ChosenInlineResultCommand(CommandBase commandBase, MethodInfo method) : base(commandBase)
         {
-            if(method.ReturnType == typeof(Task<MenuItem>))
+            if(method.ReturnType == typeof(Task<Menu>))
             {
                 InvokeWithMenuItem = (ChosenInlineResultCommandMenuDelegate)Delegate.CreateDelegate(typeof(ChosenInlineResultCommandMenuDelegate), null, method);
             }

@@ -11,7 +11,7 @@ using FluentCommands.Menus;
 namespace FluentCommands.CommandTypes
 {
     internal delegate Task MessageCommandDelegate(TelegramBotClient c, MessageEventArgs e);
-    internal delegate Task<MenuItem> MessageCommandMenuDelegate(TelegramBotClient c, MessageEventArgs e);
+    internal delegate Task<Menu> MessageCommandMenuDelegate(TelegramBotClient c, MessageEventArgs e);
     internal class MessageCommand : Command
     {
         internal MessageCommandDelegate Invoke { get; private set; }
@@ -19,7 +19,7 @@ namespace FluentCommands.CommandTypes
 
         internal MessageCommand(CommandBase commandBase, MethodInfo method) : base(commandBase)
         {
-            if(method.ReturnType == typeof(Task<MenuItem>))
+            if(method.ReturnType == typeof(Task<Menu>))
             {
                 InvokeWithMenuItem = (MessageCommandMenuDelegate)Delegate.CreateDelegate(typeof(MessageCommandMenuDelegate), null, method);
             }

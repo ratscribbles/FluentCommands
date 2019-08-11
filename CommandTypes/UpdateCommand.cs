@@ -11,7 +11,7 @@ using FluentCommands.Menus;
 namespace FluentCommands.CommandTypes
 {
     internal delegate Task UpdateCommandDelegate(TelegramBotClient c, UpdateEventArgs e);
-    internal delegate Task<MenuItem> UpdateCommandMenuDelegate(TelegramBotClient c, UpdateEventArgs e);
+    internal delegate Task<Menu> UpdateCommandMenuDelegate(TelegramBotClient c, UpdateEventArgs e);
     internal class UpdateCommand : Command
     {
         internal UpdateCommandDelegate Invoke { get; private set; }
@@ -19,7 +19,7 @@ namespace FluentCommands.CommandTypes
 
         internal UpdateCommand(CommandBase commandBase, MethodInfo method) : base(commandBase)
         {
-            if(method.ReturnType == typeof(Task<MenuItem>))
+            if(method.ReturnType == typeof(Task<Menu>))
             {
                 InvokeWithMenuItem = (UpdateCommandMenuDelegate)Delegate.CreateDelegate(typeof(UpdateCommandMenuDelegate), null, method);
             }

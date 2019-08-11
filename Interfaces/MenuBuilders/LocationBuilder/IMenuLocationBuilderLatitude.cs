@@ -10,7 +10,7 @@ namespace FluentCommands.Interfaces.MenuBuilders.LocationBuilder
         /// Required. Longitude of the location.
         /// </summary>
         /// <param name="longitude"></param>
-        /// <returns>Returns this <see cref="Menu.MenuItem"/> to continue fluently building its parameters.</returns>
+        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
         IMenuLocationOptionalBuilder Longitude(float longitude);
     }
 }

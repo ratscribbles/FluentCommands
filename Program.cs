@@ -6,7 +6,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Args;
 using System.Threading.Tasks;
-using FluentCommands.Menu;
+using FluentCommands.Menus;
 
 namespace FluentCommands
 {
@@ -34,17 +34,24 @@ namespace FluentCommands
 
         static async void Bot_OnMessage(object sender, MessageEventArgs e)
         {
-            await Client.SendTextMessageAsync(e.Message.Chat.Id, "bujabbers", replyMarkup: new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("lmfao") }));
-            var keyboard = new ReplyKeyboardMarkup(new KeyboardButton[] { new KeyboardButton("wow"), new KeyboardButton("big pog") });
-            keyboard.OneTimeKeyboard = true;
-            var msg = await Client.SendTextMessageAsync(e.Message.Chat.Id, "testing...", replyMarkup: keyboard);
-            await Client.EditMessageReplyMarkupAsync(msg.Chat.Id, msg.MessageId, InlineKeyboardMarkup.Empty());
-            await CommandService.Evaluate<CommandList>(Client, e);
+            MenuItem.As().Text().TextSource("").Done();
+            if(e.Message.Text == "joj")
+            {
+                await Client.SendTextMessageAsync(e.Message.Chat.Id, "BIG TEST");
+                await Client.SendTextMessageAsync(e.Message.Chat.Id, "—", replyMarkup: new InlineKeyboardMarkup(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData("Lmao"), InlineKeyboardButton.WithCallbackData("Lmao") }));
+            }
+
+            //await Client.SendTextMessageAsync(e.Message.Chat.Id, "bujabbers", replyMarkup: new InlineKeyboardMarkup(new[] { InlineKeyboardButton.WithCallbackData("lmfao") }));
+            //var keyboard = new ReplyKeyboardMarkup(new KeyboardButton[] { new KeyboardButton("wow"), new KeyboardButton("big pog") });
+            //keyboard.OneTimeKeyboard = true;
+            //var msg = await Client.SendTextMessageAsync(e.Message.Chat.Id, "testing...", replyMarkup: keyboard);
+            //await Client.EditMessageReplyMarkupAsync(msg.Chat.Id, msg.MessageId, InlineKeyboardMarkup.Empty());
+            //await CommandService.Evaluate<CommandList>(Client, e);
         }
 
         static async void Bot_OnUpdate(object sender, UpdateEventArgs e)
         {
-            await Client.AnswerCallbackQueryAsync(e.Update.CallbackQuery.Id, "LMFAO testing");
+            // await Client.AnswerCallbackQueryAsync(e.Update.CallbackQuery.Id, "LMFAO testing");
 
             //await Client.DeleteMessageAsync(e.Update.Message.Chat.Id, e.Update.Message.MessageId);
 

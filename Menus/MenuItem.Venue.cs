@@ -7,7 +7,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.VenueBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuVenueBuilder, IMenuVenueBuilderLatitude, IMenuVenueBuilderLongitude, IMenuVenueBuilderTitle, IMenuVenueOptionalBuilder,
         IMenuVenueCancellationToken, IMenuVenueDisableNotification, IMenuVenueFourSquareId, IMenuVenueFourSquareType

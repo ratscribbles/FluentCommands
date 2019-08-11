@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.PollBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuPollBuilder, IMenuPollBuilderQuestion, IMenuPollOptionalBuilder,
         IMenuPollCancellationToken, IMenuPollDisableNotification

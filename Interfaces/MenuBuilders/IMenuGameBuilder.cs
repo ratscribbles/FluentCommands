@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using FluentCommands.Menu;
+using FluentCommands.Menus;
 using FluentCommands.Interfaces.MenuBuilders.GameBuilder;
 
 namespace FluentCommands.Interfaces.MenuBuilders

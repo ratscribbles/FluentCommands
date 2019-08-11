@@ -9,7 +9,7 @@ using System.Threading;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Payments;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     internal enum MenuType
     {
@@ -20,6 +20,7 @@ namespace FluentCommands.Menu
         Game,
         Invoice,
         MediaGroup,
+        None,
         Photo,
         Poll,
         Sticker,
@@ -81,8 +82,8 @@ namespace FluentCommands.Menu
         internal int Width { get; private set; } = default;
 
         //// MenuItem Exclusive Properties ////
-        internal long SendToThis { get; set; } // Caution!! Internal setter for the SendMenu() method.
-        internal MenuType MenuType { get; private set; }
+        internal long SendToThis { get; set; } = default; // Caution!! Internal setter for the SendMenu() method.
+        internal MenuType MenuType { get; private set; } = MenuType.None;
         internal ChatAction? ChatAction { get; private set; } = null;
 
         /// <summary>
@@ -91,8 +92,10 @@ namespace FluentCommands.Menu
         private MenuItem() { }
 
         //// Fluent Builders ////
+
+        internal static Menu Empty() => new Menu(new MenuItem());
         public static IMenuBuilder WithChatAction(ChatAction chatAction) { var m = new MenuItem { ChatAction = chatAction }; return m; }
-        public static IMenuBuilder As() { return new MenuItem(); }
+        public static IMenuBuilder As() => new MenuItem();
         public IMenuAnimationBuilder Animation() { MenuType = MenuType.Animation; return this; }
         public IMenuAudioBuilder Audio() { MenuType = MenuType.Audio; return this; }
         public IMenuContactBuilder Contact() { MenuType = MenuType.Contact; return this; }
@@ -108,6 +111,6 @@ namespace FluentCommands.Menu
         public IMenuVideoBuilder Video() { MenuType = MenuType.Video; return this; }
         public IMenuVideoNoteBuilder VideoNote() { MenuType = MenuType.VideoNote; return this; }
         public IMenuVoiceBuilder Voice() { MenuType = MenuType.Voice; return this; }
-        public MenuItem Done() => this;
+        public Menu Done() => new Menu(this);
     }
 }

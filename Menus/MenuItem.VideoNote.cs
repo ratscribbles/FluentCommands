@@ -9,7 +9,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuVideoNoteBuilder, IMenuVideoNoteOptionalBuilder,
         IMenuVideoNoteCancellationToken, IMenuVideoNoteDisableNotification, IMenuVideoNoteDuration, IMenuVideoNoteLength, IMenuVideoNoteReplyToMessage

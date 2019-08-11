@@ -8,7 +8,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.ContactBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuContactBuilder, IMenuContactBuilderPhoneNumber, IMenuContactOptionalBuilder,
         IMenuContactCancellationToken, IMenuContactDisableNotification, IMenuContactLastName, IMenuContactReplyToMessage, IMenuContactThumbnail

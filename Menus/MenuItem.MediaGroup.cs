@@ -7,7 +7,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.MediaGroupBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuMediaGroupBuilder, IMenuMediaGroupOptionalBuilder, IMenuMediaGroupDisableNotification
     {

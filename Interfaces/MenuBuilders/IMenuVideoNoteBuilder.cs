@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Telegram.Bot.Types.InputFiles;
-using FluentCommands.Menu;
+using FluentCommands.Menus;
 using FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder;
 
 namespace FluentCommands.Interfaces.MenuBuilders

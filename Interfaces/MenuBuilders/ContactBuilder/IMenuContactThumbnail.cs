@@ -10,7 +10,7 @@ namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
         /// Optional. Additional data about the contact in the form of a vCard, 0-2048 bytes.
         /// </summary>
         /// <param name="vCard"></param>
-        /// <returns>Returns this <see cref="Menu.MenuItem"/> to continue fluently building its parameters.</returns>
+        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
         IMenuItem VCard(string vCard);
     }
 }

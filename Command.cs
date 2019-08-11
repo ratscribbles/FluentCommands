@@ -3,19 +3,22 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
+using FluentCommands.Attributes;
 using FluentCommands.Builders;
+using FluentCommands.CommandTypes;
 using Telegram.Bot.Types;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace FluentCommands.CommandTypes
+namespace FluentCommands
 {
     internal enum KeyboardType { None, Inline, Reply }
     internal class Command
     {
         internal Type Module { get; private set; }
         internal string Name { get; private set; }
+        internal Permissions Permissions { get; set; } = Permissions.None;
         internal string[] Aliases { get; private set; } = Array.Empty<string>();
         internal string Description { get; private set; } = "";
         internal ParseMode ParseMode { get; private set; } = ParseMode.Default;

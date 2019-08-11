@@ -8,7 +8,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.TextBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuTextBuilder, IMenuTextOptionalBuilder,
         IMenuTextCancellationToken, IMenuTextDisableNotification, IMenuTextDisableWebPagePreview, IMenuTextParseMode

@@ -135,25 +135,21 @@ namespace FluentCommands.Builders
             Button = button;
         }
 
-        //! Operators !//
-
-
-
         /// <summary>
-        /// Explicitly converts a <see cref="CommandBaseBuilder{TModule}"/> into a <see cref="CommandBase"/>, to be formed into a <see cref="Command"/>.
+        /// Converts a <see cref="CommandBaseBuilder{TModule}"/> into a <see cref="CommandBase"/>, to be formed into a <see cref="Command"/>.
         /// </summary>
-        /// <param name="b">The <see cref="CommandBaseBuilder{TModule}"/> to be converted into a <see cref="CommandBase"/>.</param>
-        public static explicit operator CommandBase(CommandBaseBuilder<TModule> b)
+        /// <returns>Returns the converted <see cref="CommandBase"/>.</returns>
+        internal CommandBase ConvertToBase()
         {
             return new CommandBase
             {
-                Aliases = b.Aliases,
-                Button = b.Button,
-                Description = b.Description,
-                KeyboardInfo = b.KeyboardInfo,
-                Module = b.Module,
-                Name = b.Name,
-                ParseMode = b.ParseMode
+                Aliases = this.Aliases,
+                Button = this.Button,
+                Description = this.Description,
+                KeyboardInfo = this.KeyboardInfo,
+                Module = this.Module,
+                Name = this.Name,
+                ParseMode = this.ParseMode
             };
         }
     }

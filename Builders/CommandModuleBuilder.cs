@@ -155,7 +155,7 @@ namespace FluentCommands.Builders
 
             foreach (var item in BaseBuilderDictionary)
             {
-                var thisBase = (CommandBase)item.Value;
+                var thisBase = item.Value.ConvertToBase();
                 CommandService.RawCommands[thisBase.Module].Add(thisBase);
             }
         }

@@ -9,7 +9,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.StickerBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuStickerBuilder, IMenuStickerOptionalBuilder,
         IMenuStickerCancellationToken, IMenuStickerDisableNotification

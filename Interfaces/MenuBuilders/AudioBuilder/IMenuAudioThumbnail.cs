@@ -10,7 +10,7 @@ namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
         /// Optional. Track name.
         /// </summary>
         /// <param name="title"></param>
-        /// <returns>Returns this <see cref="Menu.MenuItem"/> to continue fluently building its parameters.</returns>
+        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
         IMenuItem Title(string title);
     }
 }

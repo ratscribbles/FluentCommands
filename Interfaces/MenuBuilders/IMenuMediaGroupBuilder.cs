@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
-using FluentCommands.Menu;
+using FluentCommands.Menus;
 using FluentCommands.Interfaces.MenuBuilders.MediaGroupBuilder;
 
 namespace FluentCommands.Interfaces.MenuBuilders

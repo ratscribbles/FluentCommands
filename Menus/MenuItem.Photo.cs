@@ -9,7 +9,7 @@ using Telegram.Bot.Types.InputFiles;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.PhotoBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuPhotoBuilder, IMenuPhotoOptionalBuilder,
         IMenuPhotoCancellationToken, IMenuPhotoCaption, IMenuPhotoDisableNotification, IMenuPhotoParseMode

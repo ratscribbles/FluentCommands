@@ -8,7 +8,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuInvoiceBuilder, IMenuInvoiceOptionalBuilder,
         IMenuInvoiceBuilderCurrency, IMenuInvoiceBuilderDescription, IMenuInvoiceBuilderPayload, IMenuInvoiceBuilderProviderToken, IMenuInvoiceBuilderStartParameter, IMenuInvoiceBuilderTitle,

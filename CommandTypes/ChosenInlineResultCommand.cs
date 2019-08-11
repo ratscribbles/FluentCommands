@@ -6,7 +6,7 @@ using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
-using FluentCommands.Menu;
+using FluentCommands.Menus;
 
 namespace FluentCommands.CommandTypes
 {

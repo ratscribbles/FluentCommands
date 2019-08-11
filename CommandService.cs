@@ -10,11 +10,11 @@ using FluentCommands.CommandTypes;
 using FluentCommands.Interfaces;
 using FluentCommands.Attributes;
 using FluentCommands.Exceptions;
+using FluentCommands.Menus;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using Telegram.Bot;
-using FluentCommands.Menu;
 using Telegram.Bot.Types.InputFiles;
 
 namespace FluentCommands
@@ -28,6 +28,7 @@ namespace FluentCommands
         //! ENFORCE that ALL commands that have buttons have callbacks that reference that command and that command only.
 
         private static CommandServiceConfig _globalConfig;
+        private static bool _lastMessageIsMenu;
         private static readonly Dictionary<Type, Dictionary<string, Command>> _commands = new Dictionary<Type, Dictionary<string, Command>>();
         private static readonly Dictionary<Type, CommandModuleConfig> _moduleConfigs = new Dictionary<Type, CommandModuleConfig>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageBotCache = new Dictionary<int, Dictionary<long, Message>>();
@@ -37,6 +38,12 @@ namespace FluentCommands
         internal static readonly Dictionary<Type, List<CommandBase>> RawCommands = new Dictionary<Type, List<CommandBase>>();
         internal static readonly List<Type> Modules = new List<Type>();
 
+        /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>
+        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
+        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="CommandModuleBuilder{TModule}"/>.</param>
         public static void Module<TModule>(Action<ICommandModuleBuilder<TModule>> buildAction) where TModule : class
         {
             var module = new CommandModuleBuilder<TModule>();
@@ -48,22 +55,29 @@ namespace FluentCommands
 
             foreach (var item in module.BaseBuilderDictionary)
             {
-                var thisBase = (CommandBase)item.Value;
+                var thisBase = item.Value.ConvertToBase();
                 RawCommands[thisBase.Module].Add(thisBase);
             }
         }
 
+        /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>
+        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
+        /// <returns>Returns this <see cref="CommandModuleBuilder{TModule}"/> to continue the fluent building process.</returns>
         public static ICommandModuleBuilder<TModule> Module<TModule>() where TModule : class
         {
             return new CommandModuleBuilder<TModule>();
         }
 
-        public static void Start(CommandServiceConfig cfg)
+        public static void Start(CommandServiceConfig cfg = default)
         {
             // Force-Exits the method if it has been called already.
             if (_commandsArePopulated) return;
 
             // Global configuration as provided by the user.
+            if (cfg == default) cfg = new CommandServiceConfig();
             _globalConfig = cfg;
 
             //// Module Builders ////
@@ -369,6 +383,11 @@ namespace FluentCommands
 
         }
 
+        public static async Task Evaluate<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
+        {
+            if (e.CallbackQuery.Message.MessageId != 0) _lastMessageIsMenu = false;
+        }
+
         /// <summary>
         /// Checks a string to see if it successfully clears the conditions for a <see cref="Command"/> name.
         /// <para>Throws if it doesn't.</para>
@@ -660,7 +679,7 @@ namespace FluentCommands
         }
 
         /// <summary>
-        /// This class should not be instantiated or inherited.
+        /// This class cannot be instantiated or inherited.
         /// </summary>
         private CommandService() { }
     }

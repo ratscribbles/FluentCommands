@@ -7,7 +7,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.LocationBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuLocationBuilder, IMenuLocationBuilderLatitude, IMenuLocationOptionalBuilder,
         IMenuLocationCancellationToken, IMenuLocationDisableNotification, IMenuLocationLivePeriod

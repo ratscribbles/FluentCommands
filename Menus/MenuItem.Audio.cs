@@ -10,7 +10,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.AudioBuilder;
 
-namespace FluentCommands.Menu
+namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuAudioBuilder, IMenuAudioOptionalBuilder,
         IMenuAudioCancellationToken, IMenuAudioCaption, IMenuAudioDisableNotification, IMenuAudioDuration, IMenuAudioParseMode, IMenuAudioPerformer, IMenuAudioThumbnail

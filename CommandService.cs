@@ -19,6 +19,7 @@ using Telegram.Bot.Types.InputFiles;
 
 namespace FluentCommands
 {
+    //: Create methods that share internal cache services with outside dbs (EF core and such)
 
     /// <summary>
     /// The class responsible for handling the assembly and processing of <see cref="Command"/> objects.

@@ -32,9 +32,9 @@ namespace FluentCommands
         /// <param name="newPrefix"></param>
         public void ChangePrefix(string newPrefix)
         {
-            if (string.IsNullOrWhiteSpace(newPrefix)) throw new InvalidConfigSettingsException("Command module prefix was null or empty.");
+            if (string.IsNullOrWhiteSpace(newPrefix)) throw new InvalidConfigSettingsException("Command module prefix was null, empty, or only whitespace characters.");
             if (newPrefix.Length > 255) throw new InvalidConfigSettingsException("Command module prefixes may only be a maximum of 255 characters.");
-            if (Regex.IsMatch(newPrefix, @"(?>[\s])", RegexOptions.None, new TimeSpan(5000))) throw new InvalidConfigSettingsException("Command module prefixes may not contain whitespace characters.");
+            if (FluentRegex.CheckForWhiteSpaces.IsMatch(newPrefix)) throw new InvalidConfigSettingsException("Command module prefixes may not contain whitespace characters.");
 
             Prefix = newPrefix;
         }
@@ -43,6 +43,6 @@ namespace FluentCommands
         /// Explicitly changes the Default Error Message for this module.
         /// </summary>
         /// <param name="menuItem"></param>
-        public void ChangeDefaultErrorMessage(MenuItem menuItem) => DefaultErrorMessage = menuItem;
+        //public void ChangeDefaultErrorMessage(MenuItem menuItem) => DefaultErrorMessage = menuItem;
     }
 }

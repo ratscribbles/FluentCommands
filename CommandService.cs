@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using FluentCommands.Builders;
 using FluentCommands.CommandTypes;
@@ -24,7 +25,7 @@ namespace FluentCommands
     /// <summary>
     /// The class responsible for handling the assembly and processing of <see cref="Command"/> objects.
     /// </summary>
-    public sealed class CommandService : IFluentInterface
+    public static class CommandService
     {
         //! ENFORCE that ALL commands that have buttons have callbacks that reference that command and that command only.
 
@@ -50,7 +51,7 @@ namespace FluentCommands
             var module = new CommandModuleBuilder<TModule>();
 
             buildAction(module);
-
+            -
             if (!Modules.Contains(typeof(TModule))) Modules.Add(typeof(TModule));
             if (!RawCommands.ContainsKey(typeof(TModule))) RawCommands.TryAdd(typeof(TModule), new List<CommandBase>());
 
@@ -72,7 +73,25 @@ namespace FluentCommands
             return new CommandModuleBuilder<TModule>();
         }
 
-        public static void Start(CommandServiceConfig cfg = default)
+        /// <summary>
+        /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/>.
+        /// </summary>
+        public static void Start() => Init();
+
+        public static void Start(CommandServiceConfig cfg) => Init(cfg);
+
+        public static void Start(Action<CommandServiceConfig> buildAction)
+        {
+            CommandServiceConfig cfg = new CommandServiceConfig();
+            buildAction(cfg);
+            Init(cfg);
+        }
+
+        /// <summary>
+        /// This is the logic necessary to initialize the CommandService.
+        /// </summary>
+        /// <param name="cfg"></param>
+        private static void Init(CommandServiceConfig cfg = default)
         {
             // Force-Exits the method if it has been called already.
             if (_commandsArePopulated) return;
@@ -302,7 +321,7 @@ namespace FluentCommands
         }
 
         /// <summary>
-        /// EEEEEEEEEEEEEEEEEEE
+        /// Evaluates the user's message to check and execute a command if a command was issued.
         /// </summary>
         /// <typeparam name="TModule"></typeparam>
         /// <param name="client"></param>
@@ -325,29 +344,30 @@ namespace FluentCommands
                 if (!_messageBotCache[botId].ContainsKey(messageChatId)) _messageBotCache[botId].TryAdd(messageChatId, new Message());
                 if (!_messageUserCache[botId].ContainsKey(messageChatId)) _messageUserCache[botId].TryAdd(messageChatId, new Message());
 
-                // last message received by bot (will be user)
+                //! last message received by bot (will be user)
 
 
-                var rawInput = e.Message.Text;
-                var thisConfig = _moduleConfigs[typeof(TModule)];
-                var thisModulePrefix = thisConfig.Prefix;
+                var rawInput = e.Message.Text ?? throw new ArgumentNullException();
+                var thisConfig = _moduleConfigs[typeof(TModule)]; //: Add a null check here
+                var prefix = thisConfig.Prefix ?? throw new ArgumentNullException();
                 try
                 {
-                    string prefix = Regex.Escape(thisModulePrefix); // Add escapes to any Regex-conflicting characters
-                    string commandRegexCheck = $@"^(?>{prefix})(?>[\S]+)(?>.+)";
-                    string commandRegexCapture = $@"^(?>{prefix})([\S]+)(?>.+)";
-
-                    if (!Regex.IsMatch(rawInput, commandRegexCheck, thisConfig.CommandNameRegexOptions, new TimeSpan(5000))) return;
-                    else
+                    if (rawInput.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                     {
-                        // This message *should* be a user attempting to interact with the bot; add it to the cache.
-                        if (!e.Message.From.IsBot) _messageUserCache[botId][messageChatId] = e.Message;
+                        string input = rawInput.Remove(rawInput.IndexOf(prefix, StringComparison.OrdinalIgnoreCase), rawInput.Length);
+                        var commandMatch = FluentRegex.CheckCommand.Match(input);
 
-                        var commandMatch = Regex.Match(rawInput, commandRegexCapture, thisConfig.CommandNameRegexOptions);
-                        var thisCommandName = commandMatch.Groups[1].Value;
-                        var thisCommand = _commands[typeof(TModule)][thisCommandName];
+                        if (!commandMatch.Success) return;
+                        else
+                        {
+                            // This message *should* be a user attempting to interact with the bot; add it to the cache.
+                            if (!e.Message.From.IsBot) _messageUserCache[botId][messageChatId] = e.Message;
 
-                        await ProcessCommand(thisCommand);
+                            var thisCommandName = commandMatch.Groups[1].Value;
+                            var thisCommand = _commands[typeof(TModule)][thisCommandName];
+
+                            await ProcessCommand(thisCommand);
+                        }
                     }
                 }
                 catch (ArgumentNullException) { return; } // Catch, default error message?, Log it, re-throw.
@@ -406,7 +426,7 @@ namespace FluentCommands
                 else
                 {
                     if (aliasName.Length > 255) throw new CommandOnBuildingException($"Command \"{name}\": Alias \"{aliasName}\"  Command names may only be a maximum of 255 characters.");
-                    if (Regex.IsMatch(name, @"(?>[\s]+)")) throw new CommandOnBuildingException($"Command \"{name}\": Command names cannot contain whitespace characters.");
+                    if (FluentRegex.CheckForWhiteSpaces.IsMatch(name)) throw new CommandOnBuildingException($"Command \"{name}\": Command names cannot contain whitespace characters.");
                 }
             }
             else
@@ -415,7 +435,7 @@ namespace FluentCommands
                 if (name.Length > 255) throw new CommandOnBuildingException($"Command \"{name}\": Command names may only be a maximum of 255 characters.");
                 try
                 {
-                    if (Regex.IsMatch(name, @"(?>[\s]+)", RegexOptions.None, new TimeSpan(5000))) throw new CommandOnBuildingException($"Command \"{name}\": Command names cannot contain whitespace characters.");
+                    if (FluentRegex.CheckForWhiteSpaces.IsMatch(name)) throw new CommandOnBuildingException($"Command \"{name}\": Command names cannot contain whitespace characters.");
                 }
                 catch (RegexMatchTimeoutException e)
                 {
@@ -679,10 +699,5 @@ namespace FluentCommands
                 }
             }
         }
-
-        /// <summary>
-        /// This class cannot be instantiated or inherited.
-        /// </summary>
-        private CommandService() { }
     }
 }

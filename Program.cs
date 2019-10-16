@@ -19,7 +19,7 @@ namespace FluentCommands
         {
             Console.Clear();
 
-            CommandService.Start(new CommandServiceConfig());
+            CommandService.Start();
 
             Client.OnUpdate += Bot_OnUpdate;
             Client.OnMessage += Bot_OnMessage;

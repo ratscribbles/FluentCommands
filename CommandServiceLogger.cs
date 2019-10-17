@@ -6,5 +6,6 @@ namespace TestingCommandsBot
 {
     internal class CommandServiceLogger
     {
+        //: To implement...
     }
 }

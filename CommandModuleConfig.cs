@@ -15,6 +15,8 @@ namespace FluentCommands
     }
     public class CommandModuleConfig
     {
+        //? Consider moving away from an internal state handler and forcing the user to handle it on their own.
+        //! Would conseqently force users to create their own solutions everytime (which would usually be about the same)
         public bool UseInternalKeyboardStateHandler { get; private set; } = true;
         public bool UseDefaultErrorMessage { get; private set; } = true;
         public Menu DefaultErrorMessage { get; private set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();

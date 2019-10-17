@@ -17,6 +17,9 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using Telegram.Bot;
 using Telegram.Bot.Types.InputFiles;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
 namespace FluentCommands
 {
@@ -51,12 +54,13 @@ namespace FluentCommands
             var module = new CommandModuleBuilder<TModule>();
 
             buildAction(module);
-            -
+            
             if (!Modules.Contains(typeof(TModule))) Modules.Add(typeof(TModule));
             if (!RawCommands.ContainsKey(typeof(TModule))) RawCommands.TryAdd(typeof(TModule), new List<CommandBase>());
 
             foreach (var item in module.BaseBuilderDictionary)
             {
+                CheckCommandNameValidity(item.Key);
                 var thisBase = item.Value.ConvertToBase();
                 RawCommands[thisBase.Module].Add(thisBase);
             }
@@ -78,8 +82,15 @@ namespace FluentCommands
         /// </summary>
         public static void Start() => Init();
 
+        /// <summary>
+        /// Initializes the <see cref="CommandService"/>.
+        /// </summary>
         public static void Start(CommandServiceConfig cfg) => Init(cfg);
 
+        //: Create code examples for this documentation
+        /// <summary>
+        /// Initializes the <see cref="CommandService"/>.
+        /// </summary>
         public static void Start(Action<CommandServiceConfig> buildAction)
         {
             CommandServiceConfig cfg = new CommandServiceConfig();
@@ -91,38 +102,18 @@ namespace FluentCommands
         /// This is the logic necessary to initialize the CommandService.
         /// </summary>
         /// <param name="cfg"></param>
-        private static void Init(CommandServiceConfig cfg = default)
+        internal static void Init(CommandServiceConfig cfg = default)
         {
-            // Force-Exits the method if it has been called already.
+            // Force-Exits the method if it has successfully completed before.
             if (_commandsArePopulated) return;
 
             // Global configuration as provided by the user.
             if (cfg == default) cfg = new CommandServiceConfig();
             _globalConfig = cfg;
 
-            //// Module Builders ////
-            ///
-            // Collects *every* method labeled as ModuleBuilder...
-            var allOnBuildingMethods = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.IsClass)
-                .SelectMany(type => type.GetMethods())
-                .Where(method => method.GetCustomAttributes(typeof(ModuleBuilderAttribute), false).Length > 0)
-                .ToList();
+            Init_1_ModuleAssembler();
 
-            //... And invokes each one. Hopefully the user filled them properly.
-            foreach(var method in allOnBuildingMethods)
-            {
-                try { method.Invoke(new object(), null); }
-                catch
-                {
-                    throw new CommandOnBuildingException($"ModuleBuilder method: \"{method.ToString()}\" in class: \"{method.DeclaringType}\" had an invalid signature. Please make sure all ModuleBuilder methods are static, void, and have no parameters.");
-                }
-            }
-
-            //// Command Builder Process //// 
-            ///
-            // Collects *every* method labeled as a Command.
+            // With modules assembled, can collect *every* method labeled as a Command:
             var allCommandMethods = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(type => type.IsClass && Modules.Contains(type))
@@ -130,194 +121,225 @@ namespace FluentCommands
                 .Where(method => method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
                 .ToList();
 
-            //! Keyboard assmbly required!!! replace the button references where available
-            //? check for if the button exists, and then check the name and module for reference, and then replace the keyboard.
-            //? requires a check of each commandbase's keyboard sadly
+            Init_2_KeyboardAssembler();
+            Init_3_CommandAssembler();
 
-            //: todo: need to make sure to override the callback for commandbuilder command buttons, and to lmfao my bff jill (perform checks for inline/reply buttons)
-            foreach(var key in RawCommands.Keys.ToList())
-            {
-                var basesToUpdate = RawCommands[key];
-
-                foreach(var @base in basesToUpdate)
-                {
-                    if (@base.KeyboardInfo != null)
-                    {
-                        if (@base.KeyboardInfo.Inline != null) @base.KeyboardInfo.Inline = UpdateKeyboardRows<InlineKeyboardBuilder, InlineKeyboardButton>(@base.KeyboardInfo.Inline.Rows) as InlineKeyboardBuilder;
-                        if (@base.KeyboardInfo.Reply != null) @base.KeyboardInfo.Reply = UpdateKeyboardRows<ReplyKeyboardBuilder, KeyboardButton>(@base.KeyboardInfo.Reply.Rows) as ReplyKeyboardBuilder;
-                    }
-                    else continue;
-
-                    IKeyboardBuilder<TBuilder, TButton> UpdateKeyboardRows<TBuilder, TButton>(List<TButton[]> list)
-                        where TBuilder : IKeyboardBuilder<TBuilder, TButton>
-                        where TButton : IKeyboardButton
-                    {
-                        IKeyboardBuilder<TBuilder, TButton> updatedKeyboardBuilder;
-
-                        if (typeof(TButton) == typeof(InlineKeyboardButton)) updatedKeyboardBuilder = new InlineKeyboardBuilder(key) as IKeyboardBuilder<TBuilder, TButton>;
-                        else if (typeof(TButton) == typeof(KeyboardButton)) updatedKeyboardBuilder = new ReplyKeyboardBuilder(key) as IKeyboardBuilder<TBuilder, TButton>;
-                        else throw new CommandOnBuildingException("Unknown error occurred while assembling command keyboards."); // ABSOLUTELY should NEVER happen.
-
-                        foreach (var row in list)
-                        {
-                            var updatedKeyboardButtons = new List<TButton>();
-
-                            foreach(var button in row)
-                            {
-                                if (button != null
-                                 && button.Text != null
-                                 && button.Text.Contains("COMMANDBASEBUILDERREFERENCE")
-                                 && (Regex.IsMatch(button.Text, "COMMANDBASEBUILDERREFERENCE::(.{1,32767})::(.{1,255})")))
-                                {
-                                    var match = Regex.Match(button.Text, "COMMANDBASEBUILDERREFERENCE::(.{1,32767})::(.{1,255})");
-                                    string thisModuleTextReference = match.Groups[1].Value;
-                                    string thisCommandNameReference = match.Groups[2].Value;
-
-                                    var thisReferencedModule = key.Assembly.GetType(thisModuleTextReference);
-
-                                    var thisReferencedButton = RawCommands[thisReferencedModule].Where(commandBase => commandBase.Name == thisCommandNameReference).FirstOrDefault().Button;
-                                    
-                                    //! change the callback data of the button here.
-                                    //? check if the button is an inline button, then change the callback.
-                                    // if(thisReferencedButton)
-                                    if (thisReferencedButton == null) throw new CommandOnBuildingException($"Command \"{@base.Name}\" references command \"{thisCommandNameReference}\" as a Keyboard Button, but \"{thisCommandNameReference}\" doesn't have a Button assigned to it. (Please check the builder to make sure it exists, or remove the reference to \"{thisCommandNameReference}\" in the keyboard builder.)");
-                                    else { updatedKeyboardButtons.Add((TButton)thisReferencedButton); continue; }
-                                }
-                                else { updatedKeyboardButtons.Add(button); continue; }
-                            }
-                            updatedKeyboardBuilder.AddRow(updatedKeyboardButtons.ToArray());
-                        }
-                        return updatedKeyboardBuilder;
-                    }
-                }
-                RawCommands[key] = basesToUpdate;
-            }
-
-            //// Command assembly ////
-            foreach (var method in allCommandMethods)
-            {
-                var thisModule = method.DeclaringType;
-                var methodCommandAttributeName = method.GetCustomAttribute<CommandAttribute>().Name;
-
-                if(!_commands.ContainsKey(thisModule)) _commands[thisModule] = new Dictionary<string, Command>();
-
-                var commandBases = RawCommands[thisModule].Where(x => x.Name == methodCommandAttributeName).ToList();
-
-                if (commandBases.Count() > 1) throw new DuplicateCommandException($"There was more than one command detected in module: {thisModule.Name}, with the command name: \"{methodCommandAttributeName}\"");
-                else if (commandBases.Count() == 0) { TryAddCommand(new CommandBase(methodCommandAttributeName)); }
-                else if (commandBases.Count() == 1) { TryAddCommand(commandBases[0]); }
-
-                // Local function; attempts to add the Command to the dictionary. Throws on failure.
-                void TryAddCommand(CommandBase commandBase)
-                {
-                    foreach (var alias in commandBase.Aliases) CheckCommandNameValidity(commandBase.Name, true, alias);
-
-                    // Checks the incoming method for signature validity; throws if not valid.
-                    if (!method.IsStatic
-                      && (method.ReturnType == typeof(Task) || method.ReturnType == typeof(Task<Message>))
-                      && method.GetParameters().Length == 2
-                      && (_telegramEventArgs.Contains(method.GetParameters()[1].ParameterType)))
-                    {
-                        // Filters based on method's EventArgs parameter type; adds the Command type that matches.
-                        switch (method.GetParameters()[1].ParameterType)
-                        {
-                            case Type t when t == typeof(CallbackQueryEventArgs):
-                                AddCallbackQueryCommand();
-                                break;
-                            case Type t when t == typeof(ChosenInlineResultEventArgs):
-                                AddChosenInlineResultCommand();
-                                break;
-                            case Type t when t == typeof(InlineQueryEventArgs):
-                                AddInlineQueryCommand();
-                                break;
-                            case Type t when t == typeof(MessageEventArgs):
-                                AddMessageCommand();
-                                break;
-                            case Type t when t == typeof(UpdateEventArgs):
-                                AddUpdateCommand();
-                                break;
-                        }
-
-                        // Local functions for each command type.
-                        void AddCallbackQueryCommand()
-                        {
-                            try
-                            {
-                                var newCommand = new CallbackQueryCommand(commandBase, method);
-                                _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                AddAliases(newCommand, commandBase.Aliases);
-                            }
-                            catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                            catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                            catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                            catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                        }
-                        void AddChosenInlineResultCommand()
-                        {
-                            try
-                            {
-                                var newCommand = new ChosenInlineResultCommand(commandBase, method);
-                                _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                AddAliases(newCommand, commandBase.Aliases);
-                            }
-                            catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                            catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                            catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                            catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                        }
-                        void AddInlineQueryCommand()
-                        {
-                            try
-                            {
-                                var newCommand = new InlineQueryCommand(commandBase, method);
-                                _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                AddAliases(newCommand, commandBase.Aliases);
-                            }
-                            catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                            catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                            catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                            catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                        }
-                        void AddMessageCommand()
-                        {
-                            try
-                            {
-                                var newCommand = new MessageCommand(commandBase, method);
-                                _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                AddAliases(newCommand, commandBase.Aliases);
-                            }
-                            catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                            catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                            catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                            catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                        }
-                        void AddUpdateCommand()
-                        {
-                            try
-                            {
-                                var newCommand = new UpdateCommand(commandBase, method);
-                                _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                AddAliases(newCommand, commandBase.Aliases);
-                            }
-                            catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                            catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                            catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                            catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                        }
-
-                        // Adds aliases for the command being added to the dictionary.
-                        void AddAliases(Command commandToReference, string[] aliases)
-                        {
-                            foreach(string alias in aliases)
-                            {
-                                _commands[thisModule][alias] = commandToReference;
-                            }
-                        }
-                    }
-                    else throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method had invalid signature.");
-                }
-            }
             _commandsArePopulated = true;
+
+            void Init_1_ModuleAssembler()
+            {
+                //// Module Builders ////
+                ///
+                // Collects *every* method labeled as ModuleBuilder...
+                var allOnBuildingMethods = AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .Where(type => type.IsClass)
+                    .SelectMany(type => type.GetMethods())
+                    .Where(method => method.GetCustomAttributes(typeof(ModuleBuilderAttribute), false).Length > 0)
+                    .ToList();
+
+                //... And invokes each one. Hopefully the user filled them properly.
+                foreach (var method in allOnBuildingMethods)
+                {
+                    try { method.Invoke(new object(), null); }
+                    catch
+                    {
+                        throw new CommandOnBuildingException($"ModuleBuilder method: \"{method.ToString()}\" in class: \"{method.DeclaringType}\" had an invalid signature. Please make sure all ModuleBuilder methods are static, void, and have no parameters.");
+                    }
+                }
+            }
+            void Init_2_KeyboardAssembler()
+            {
+                //! Keyboard assmbly required!!! replace the button references where available
+                //? check for if the button exists, and then check the name and module for reference, and then replace the keyboard.
+                //? requires a check of each commandbase's keyboard sadly
+
+                //: todo: need to make sure to override the callback for commandbuilder command buttons, and to lmfao my bff jill (perform checks for inline/reply buttons)
+                foreach (var key in RawCommands.Keys.ToList())
+                {
+                    var basesToUpdate = RawCommands[key];
+
+                    foreach (var @base in basesToUpdate)
+                    {
+                        if (@base.KeyboardInfo != null)
+                        {
+                            if (@base.KeyboardInfo.Inline != null) @base.KeyboardInfo.Inline = UpdateKeyboardRows<InlineKeyboardBuilder, InlineKeyboardButton>(@base.KeyboardInfo.Inline.Rows) as InlineKeyboardBuilder;
+                            if (@base.KeyboardInfo.Reply != null) @base.KeyboardInfo.Reply = UpdateKeyboardRows<ReplyKeyboardBuilder, KeyboardButton>(@base.KeyboardInfo.Reply.Rows) as ReplyKeyboardBuilder;
+                        }
+                        else continue;
+
+                        IKeyboardBuilder<TBuilder, TButton> UpdateKeyboardRows<TBuilder, TButton>(List<TButton[]> list)
+                            where TBuilder : IKeyboardBuilder<TBuilder, TButton>
+                            where TButton : IKeyboardButton
+                        {
+                            IKeyboardBuilder<TBuilder, TButton> updatedKeyboardBuilder;
+
+                            if (typeof(TButton) == typeof(InlineKeyboardButton)) updatedKeyboardBuilder = new InlineKeyboardBuilder(key) as IKeyboardBuilder<TBuilder, TButton>;
+                            else if (typeof(TButton) == typeof(KeyboardButton)) updatedKeyboardBuilder = new ReplyKeyboardBuilder(key) as IKeyboardBuilder<TBuilder, TButton>;
+                            else throw new CommandOnBuildingException("Unknown error occurred while assembling command keyboards."); // ABSOLUTELY should NEVER happen.
+
+                            foreach (var row in list)
+                            {
+                                var updatedKeyboardButtons = new List<TButton>();
+
+                                foreach (var button in row)
+                                {
+                                    if (button != null
+                                     && button.Text != null
+                                     && button.Text.Contains("COMMANDBASEBUILDERREFERENCE")
+                                     && (Regex.IsMatch(button.Text, "COMMANDBASEBUILDERREFERENCE::(.{1,32767})::(.{1,255})")))
+                                    {
+                                        var match = Regex.Match(button.Text, "COMMANDBASEBUILDERREFERENCE::(.{1,32767})::(.{1,255})");
+                                        string thisModuleTextReference = match.Groups[1].Value;
+                                        string thisCommandNameReference = match.Groups[2].Value;
+
+                                        var thisReferencedModule = key.Assembly.GetType(thisModuleTextReference);
+
+                                        var thisReferencedButton = RawCommands[thisReferencedModule].Where(commandBase => commandBase.Name == thisCommandNameReference).FirstOrDefault().Button;
+
+                                        //! change the callback data of the button here.
+                                        //? check if the button is an inline button, then change the callback.
+                                        // if(thisReferencedButton)
+                                        if (thisReferencedButton == null) throw new CommandOnBuildingException($"Command \"{@base.Name}\" references command \"{thisCommandNameReference}\" as a Keyboard Button, but \"{thisCommandNameReference}\" doesn't have a Button assigned to it. (Please check the builder to make sure it exists, or remove the reference to \"{thisCommandNameReference}\" in the keyboard builder.)");
+                                        else { updatedKeyboardButtons.Add((TButton)thisReferencedButton); continue; }
+                                    }
+                                    else { updatedKeyboardButtons.Add(button); continue; }
+                                }
+                                updatedKeyboardBuilder.AddRow(updatedKeyboardButtons.ToArray());
+                            }
+                            return updatedKeyboardBuilder;
+                        }
+                    }
+                    RawCommands[key] = basesToUpdate;
+                }
+            }
+            void Init_3_CommandAssembler()
+            {
+                foreach (var method in allCommandMethods)
+                {
+                    var thisModule = method.DeclaringType;
+                    var methodCommandAttributeName = method.GetCustomAttribute<CommandAttribute>().Name;
+
+                    if (!_commands.ContainsKey(thisModule)) _commands[thisModule] = new Dictionary<string, Command>();
+
+                    var commandBases = RawCommands[thisModule].Where(x => x.Name == methodCommandAttributeName).ToList();
+
+                    if (commandBases.Count() > 1) throw new DuplicateCommandException($"There was more than one command detected in module: {thisModule.Name}, with the command name: \"{methodCommandAttributeName}\"");
+                    else if (commandBases.Count() == 0) { TryAddCommand(new CommandBase(methodCommandAttributeName)); }
+                    else if (commandBases.Count() == 1) { TryAddCommand(commandBases[0]); }
+
+                    // Local function; attempts to add the Command to the dictionary. Throws on failure.
+                    void TryAddCommand(CommandBase commandBase)
+                    {
+                        foreach (var alias in commandBase.Aliases) CheckCommandNameValidity(commandBase.Name, true, alias);
+
+                        // Checks the incoming method for signature validity; throws if not valid.
+                        if (!method.IsStatic
+                          && (method.ReturnType == typeof(Task) || method.ReturnType == typeof(Task<Message>))
+                          && method.GetParameters().Length == 2
+                          && (_telegramEventArgs.Contains(method.GetParameters()[1].ParameterType)))
+                        {
+                            // Filters based on method's EventArgs parameter type; adds the Command type that matches.
+                            switch (method.GetParameters()[1].ParameterType)
+                            {
+                                case Type t when t == typeof(CallbackQueryEventArgs):
+                                    AddCallbackQueryCommand();
+                                    break;
+                                case Type t when t == typeof(ChosenInlineResultEventArgs):
+                                    AddChosenInlineResultCommand();
+                                    break;
+                                case Type t when t == typeof(InlineQueryEventArgs):
+                                    AddInlineQueryCommand();
+                                    break;
+                                case Type t when t == typeof(MessageEventArgs):
+                                    AddMessageCommand();
+                                    break;
+                                case Type t when t == typeof(UpdateEventArgs):
+                                    AddUpdateCommand();
+                                    break;
+                            }
+
+                            // Local functions for each command type.
+                            void AddCallbackQueryCommand()
+                            {
+                                try
+                                {
+                                    var newCommand = new CallbackQueryCommand(commandBase, method);
+                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
+                                    AddAliases(newCommand, commandBase.Aliases);
+                                }
+                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
+                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
+                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
+                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
+                            }
+                            void AddChosenInlineResultCommand()
+                            {
+                                try
+                                {
+                                    var newCommand = new ChosenInlineResultCommand(commandBase, method);
+                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
+                                    AddAliases(newCommand, commandBase.Aliases);
+                                }
+                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
+                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
+                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
+                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
+                            }
+                            void AddInlineQueryCommand()
+                            {
+                                try
+                                {
+                                    var newCommand = new InlineQueryCommand(commandBase, method);
+                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
+                                    AddAliases(newCommand, commandBase.Aliases);
+                                }
+                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
+                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
+                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
+                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
+                            }
+                            void AddMessageCommand()
+                            {
+                                try
+                                {
+                                    var newCommand = new MessageCommand(commandBase, method);
+                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
+                                    AddAliases(newCommand, commandBase.Aliases);
+                                }
+                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
+                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
+                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
+                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
+                            }
+                            void AddUpdateCommand()
+                            {
+                                try
+                                {
+                                    var newCommand = new UpdateCommand(commandBase, method);
+                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
+                                    AddAliases(newCommand, commandBase.Aliases);
+                                }
+                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
+                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
+                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
+                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
+                            }
+
+                            // Adds aliases for the command being added to the dictionary.
+                            void AddAliases(Command commandToReference, string[] aliases)
+                            {
+                                foreach (string alias in aliases)
+                                {
+                                    _commands[thisModule][alias] = commandToReference;
+                                }
+                            }
+                        }
+                        else throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method had invalid signature.");
+                    }
+                }
+
+            }
         }
 
         /// <summary>
@@ -378,6 +400,10 @@ namespace FluentCommands
             catch (ArgumentNullException ex) { return; } // Catch, Log it, re-throw.
             catch (Exception ex) { return; } // Catch, Log it, re-throw.
 
+            Command EvaluateCommand()
+            {
+                return null; //: Refactoring...
+            }
             async Task ProcessCommand(Command c)
             {
                 if(c is MessageCommand)
@@ -399,9 +425,6 @@ namespace FluentCommands
                     //}
                 }
             }
-
-
-
         }
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
@@ -414,32 +437,50 @@ namespace FluentCommands
         /// <para>Throws if it doesn't.</para>
         /// </summary>
         /// <exception cref="CommandOnBuildingException"></exception>
-        internal static void CheckCommandNameValidity(string name, bool isAlias = false, string aliasName = null)
+        /// <exception cref="InvalidCommandNameException"></exception>
+        internal static void CheckCommandNameValidity(string commandName, bool isAlias = false, string aliasName = null)
         {
             if (isAlias)
             {
                 if (string.IsNullOrWhiteSpace(aliasName))
                 {
-                    if (string.IsNullOrWhiteSpace(name)) throw new CommandOnBuildingException($"Command name AND alias was null or empty.");
-                    else throw new CommandOnBuildingException($"Command \"{name}\": Command had alias that was null or empty.");
+                    if (string.IsNullOrWhiteSpace(commandName)) throw new InvalidCommandNameException($"Command name AND alias was null, empty, or whitespace.");
+                }
+                else CheckName(aliasName, isAlias);
+            }
+            else CheckName(commandName);
+
+            void CheckName(string name, bool alias = false)
+            {
+                string nullOrWhitespace;
+                string tooLong;
+                string containsWhitespaceCharacters;
+                string regexTimeout;
+
+                if (alias)
+                {
+                    nullOrWhitespace = $"Command \"{commandName}\": Command had alias that was null, empty, or whitespace.";
+                    tooLong = $"Command \"{commandName}\": Alias \"{name}\" was too long — Command names and aliases may only be a maximum of 255 characters.";
+                    containsWhitespaceCharacters = $"Command \"{commandName}\": Alias \"{name}\" — Command names and aliases cannot contain whitespace characters.";
+                    regexTimeout = $"Command \"{commandName}\": Alias \"{name}\" caused a Regex Timeout while checking if the command's name was valid: ";
                 }
                 else
                 {
-                    if (aliasName.Length > 255) throw new CommandOnBuildingException($"Command \"{name}\": Alias \"{aliasName}\"  Command names may only be a maximum of 255 characters.");
-                    if (FluentRegex.CheckForWhiteSpaces.IsMatch(name)) throw new CommandOnBuildingException($"Command \"{name}\": Command names cannot contain whitespace characters.");
+                    nullOrWhitespace = $"Command name was null, empty, or whitespace.";
+                    tooLong = $"Command \"{name}\": Command names may only be a maximum of 255 characters.";
+                    containsWhitespaceCharacters = $"Command \"{name}\": Command names cannot contain whitespace characters.";
+                    regexTimeout = $"Command \"{name}\": caused a Regex Timeout while checking if the command's name was valid: ";
                 }
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(name)) throw new CommandOnBuildingException($"Command name was null or empty.");
-                if (name.Length > 255) throw new CommandOnBuildingException($"Command \"{name}\": Command names may only be a maximum of 255 characters.");
+
+                if (string.IsNullOrWhiteSpace(name)) throw new InvalidCommandNameException(nullOrWhitespace);
+                if (name.Length > 255) throw new InvalidCommandNameException(tooLong);
                 try
                 {
-                    if (FluentRegex.CheckForWhiteSpaces.IsMatch(name)) throw new CommandOnBuildingException($"Command \"{name}\": Command names cannot contain whitespace characters.");
+                    if (FluentRegex.CheckForWhiteSpaces.IsMatch(name)) throw new InvalidCommandNameException(containsWhitespaceCharacters);
                 }
                 catch (RegexMatchTimeoutException e)
                 {
-                    throw new CommandOnBuildingException($"Command \"{name}\": caused a Regex Timeout while checking if the command's name was valid: ", e);
+                    throw new CommandOnBuildingException(regexTimeout, e);
                 }
             }
         }
@@ -487,15 +528,15 @@ namespace FluentCommands
         private static async Task SendMenu<TModule>(Menu menu, IReplyMarkup replyMarkup, TelegramBotClient client, MessageEventArgs e) where TModule : class
         {
             //? should this method be public? aimed at transforming MenuItems into replacements for the weird client methods
-            //? additionally, please fix the signature of this method
-            //? possibly duplicate this method to happen with menu items on their own, and rename this one to be "send menu internal handler" or somethign
+            //: additionally, please fix the signature of this method
+            //? possibly duplicate this method to happen with menu items on their own, and rename this one to be "send menu internal handler" or something
 
             //! "SEND TO THIS" property should only accept an int or long and no enum
             //! the aim should be to only provide a SPECIFIC Id to send the menuitem to
             //! otherwise the default should ALWAYS be the chat id
 
             //? note, all of these things are purely for MenuItem objects. what happens within the methods that arent the returned MenuItem from the Command method are not of any concern.
-            //? if the user wants to do weird shit, they can. ONLY be concerned about the RETURNED MENUITEM phase of the message sending process.
+            //? if the user wants to do weird junk, they can. ONLY be concerned about the RETURNED MENUITEM phase of the message sending process.
 
             var m = menu.MenuItem;
 
@@ -514,7 +555,7 @@ namespace FluentCommands
                     //await EditLastMessage();
                     //!!! FOR REPLYKEYBOARDS, YOU _CANNOT_ EDIT THE REPLYMARKUP. 
                     //! THE OPTION COULD BE TO EDIT THE INLINEMARKUP OF THE PREVIOUS MESSAGE TO BE EMPTY, AND THEN SEND THE NEW MESSAGE
-                    //! ALTERNATIVELY, THERECOULD BE NO EDIT, BUT THAT SEEMS KKINDA BAD
+                    //! ALTERNATIVELY, THERE COULD BE NO EDIT, BUT THAT SEEMS KINDA BAD
                     break;
                 case MenuMode.EditOrDeleteLastMessage:
                     await EditOrDeleteLastMessage();

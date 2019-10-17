@@ -11,7 +11,6 @@ namespace FluentCommands
     internal struct FluentRegex
     {
         private static TimeSpan _timeOut = new TimeSpan(5000);
-
         internal static Regex CheckForWhiteSpaces = new Regex(@"(?>[\s]+)", RegexOptions.Compiled, _timeOut);
         internal static Regex CheckCommand = new Regex(@"([\S]+)(?> (.+))?", RegexOptions.Compiled, _timeOut);
     }

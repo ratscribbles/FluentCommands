@@ -112,5 +112,6 @@ namespace FluentCommands.Menus
         public IMenuVideoNoteBuilder VideoNote() { MenuType = MenuType.VideoNote; return this; }
         public IMenuVoiceBuilder Voice() { MenuType = MenuType.Voice; return this; }
         public Menu Done() => new Menu(this);
+        public Menu DoneAndSendTo(long idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
     }
 }

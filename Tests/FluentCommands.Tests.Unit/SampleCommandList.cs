@@ -10,20 +10,20 @@ using FluentCommands.Menus;
 
 namespace FluentCommands
 {
-    public class CommandList
+    public class SampleCommandList
     {
         [Command("bap")]
         [Permissions(Permissions.Administrator | Permissions.CanSendMediaMessages)]
         public async Task Beyonce(TelegramBotClient client, UpdateEventArgs e)
         {
-            await Console.Out.WriteLineAsync("PEE");
-            await client.SendTextMessageAsync(e.Update.Message.From.Id, "BUJABBERS");
+            await Console.Out.WriteLineAsync("testing...");
+            await client.SendTextMessageAsync(e.Update.Message.From.Id, "woah!!!");
         }
 
-        [Command("suxs")]
+        [Command("boop")]
         public async Task Googagaogaoagoao(TelegramBotClient client, MessageEventArgs e)
         {
-            await Console.Out.WriteLineAsync("PEE");
+            await Console.Out.WriteLineAsync("messagetest");
         }
     }
 }

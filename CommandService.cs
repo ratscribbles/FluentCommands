@@ -46,11 +46,14 @@ namespace FluentCommands
         /// <summary>
         /// Builds a <see cref="Command"/> module.
         /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>
+        /// </summary>  
         /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
         /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="CommandModuleBuilder{TModule}"/>.</param>
         public static void Module<TModule>(Action<ICommandModuleBuilder<TModule>> buildAction) where TModule : class
         {
+            //? This method could stay generic for the purposes of quick bots that only need a small model in the main 
+            //? method of the program class, and the actual command implementations in a separate class
+
             var module = new CommandModuleBuilder<TModule>();
 
             buildAction(module);
@@ -61,7 +64,7 @@ namespace FluentCommands
             foreach (var item in module.BaseBuilderDictionary)
             {
                 CheckCommandNameValidity(item.Key);
-                var thisBase = item.Value.ConvertToBase();
+                var thisBase = item.Value.ConvertToBase();  
                 RawCommands[thisBase.Module].Add(thisBase);
             }
         }

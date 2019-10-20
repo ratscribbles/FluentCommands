@@ -17,10 +17,6 @@ namespace FluentCommands.Builders
         /// </summary>
         internal List<KeyboardButton[]> Rows { get; private set; } = new List<KeyboardButton[]>();
         /// <summary>
-        /// Gets the <see cref="Type"/> of this module.
-        /// </summary>
-        internal Type Module { get; private set; }
-        /// <summary>
         /// Gets the boolean that will be assigned to <see cref="ReplyKeyboardMarkup.OneTimeKeyboard"/>.
         /// </summary>
         internal bool OneTimeKeyboard { get; private set; } = false;
@@ -36,8 +32,7 @@ namespace FluentCommands.Builders
         /// <summary>
         /// Instantiates a new <see cref="ReplyKeyboardBuilder"/>. Typically serves as <see cref="KeyboardBuilder.Reply"/>.
         /// </summary>
-        /// <param name="t">The <see cref="Type"/> of this module.</param>
-        internal ReplyKeyboardBuilder(Type t) => Module = t;
+        internal ReplyKeyboardBuilder() { }
 
         /// <summary>
         /// Adds a row of <see cref="KeyboardButton"/>[] to <see cref="Rows"/>.

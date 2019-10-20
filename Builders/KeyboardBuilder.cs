@@ -21,10 +21,6 @@ namespace FluentCommands.Builders
         /// The <see cref="ReplyKeyboardBuilder"/> containing information to create an <see cref="ReplyKeyboardMarkup"/> for a <see cref="Command"/> object.
         /// </summary>
         internal ReplyKeyboardBuilder Reply { get; set; } = null;
-        /// <summary>
-        /// Gets the <see cref="Type"/> of this module.
-        /// </summary>
-        internal Type Module { get; private set; }
 
         /// <summary>
         /// Indexer that creates a reference to a <see cref="Command"/> object's <see cref="IKeyboardButton"/>.
@@ -35,15 +31,14 @@ namespace FluentCommands.Builders
         {
             get
             {
-                return new KeyboardButtonReference(commandName, Module);
+                return new KeyboardButtonReference(commandName);
             }
         }
 
         /// <summary>
         /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder, TButton}"/> for this <see cref="Command"/>.
         /// </summary>
-        /// <param name="t">The <see cref="Type"/> of this module.</param>
-        internal KeyboardBuilder(Type t) => Module = t;
+        internal KeyboardBuilder() { }
 
         /// <summary>
         /// Adds a row to the contained <see cref="InlineKeyboardBuilder"/>, and fluently paths to the <see cref="InlineKeyboardBuilder"/>.
@@ -52,7 +47,7 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="InlineKeyboardBuilder"/>.</returns>
         public InlineKeyboardBuilder AddRow(params InlineKeyboardButton[] buttons)
         {
-            Inline = new InlineKeyboardBuilder(Module);
+            Inline = new InlineKeyboardBuilder();
             Inline.AddRow(buttons);
             return Inline;
         }
@@ -64,7 +59,7 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ReplyKeyboardBuilder"/>.</returns>
         public ReplyKeyboardBuilder AddRow(params KeyboardButton[] buttons)
         {
-            Reply = new ReplyKeyboardBuilder(Module);
+            Reply = new ReplyKeyboardBuilder();
             Reply.AddRow(buttons);
             return Reply;
         }

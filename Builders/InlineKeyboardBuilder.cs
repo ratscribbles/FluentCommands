@@ -18,16 +18,11 @@ namespace FluentCommands.Builders
         /// Gets the <see cref="InlineKeyboardButton"/> rows to be used to create an <see cref="InlineKeyboardMarkup"/>.
         /// </summary>
         internal List<InlineKeyboardButton[]> Rows { get; private set; } = new List<InlineKeyboardButton[]>();
-        /// <summary>
-        /// Gets the <see cref="Type"/> of this module.
-        /// </summary>
-        internal Type Module { get; private set; }
 
         /// <summary>
         /// Instantiates a new <see cref="InlineKeyboardBuilder"/>. Typically serves as <see cref="KeyboardBuilder.Inline"/>.
         /// </summary>
-        /// <param name="t">The <see cref="Type"/> of this module.</param>
-        internal InlineKeyboardBuilder(Type t) => Module = t;
+        internal InlineKeyboardBuilder() { }
 
         /// <summary>
         /// Adds a row of <see cref="InlineKeyboardButton"/>[] to <see cref="Rows"/>.

@@ -34,39 +34,43 @@ namespace FluentCommands
 
         private static CommandServiceConfig _globalConfig;
         private static bool _lastMessageIsMenu;
+        private static bool _commandsArePopulated = false;
         private static readonly Dictionary<Type, Dictionary<string, Command>> _commands = new Dictionary<Type, Dictionary<string, Command>>();
         private static readonly Dictionary<Type, CommandModuleConfig> _moduleConfigs = new Dictionary<Type, CommandModuleConfig>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageBotCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Type[] _telegramEventArgs = { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
-        private static bool _commandsArePopulated = false;
+        internal static readonly Dictionary<Type, ModuleBuilder> Modules = new Dictionary<Type, ModuleBuilder>();
         internal static readonly Dictionary<Type, List<CommandBase>> RawCommands = new Dictionary<Type, List<CommandBase>>();
-        internal static readonly List<Type> Modules = new List<Type>();
 
         /// <summary>
         /// Builds a <see cref="Command"/> module.
         /// <para>Provided type is the class that contains the commands being built.</para>
         /// </summary>  
-        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
-        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="CommandModuleBuilder{TModule}"/>.</param>
-        public static void Module<TModule>(Action<ICommandModuleBuilder<TModule>> buildAction) where TModule : class
+        /// <typeparam name="TModule">The class that contains the commands the <see cref="ModuleBuilder"/> is being built for.</typeparam>
+        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="ModuleBuilder"/>.</param>
+        public static void Module<TModule>(Action<IModuleBuilder> buildAction) where TModule : class
         {
             //? This method could stay generic for the purposes of quick bots that only need a small model in the main 
             //? method of the program class, and the actual command implementations in a separate class
 
-            var module = new CommandModuleBuilder<TModule>();
+            var moduleType = typeof(TModule);
+            var module = new ModuleBuilder(moduleType);
 
             buildAction(module);
-            
-            if (!Modules.Contains(typeof(TModule))) Modules.Add(typeof(TModule));
-            if (!RawCommands.ContainsKey(typeof(TModule))) RawCommands.TryAdd(typeof(TModule), new List<CommandBase>());
 
-            foreach (var item in module.BaseBuilderDictionary)
-            {
-                CheckCommandNameValidity(item.Key);
-                var thisBase = item.Value.ConvertToBase();  
-                RawCommands[thisBase.Module].Add(thisBase);
-            }
+            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
+            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+
+            //! Handle this in the init() method
+            // if (!RawCommands.ContainsKey(typeof(TModule))) RawCommands.TryAdd(typeof(TModule), new List<CommandBase>());
+
+            //foreach (var item in module.BaseBuilderDictionary)
+            //{
+            //    CheckCommandNameValidity(item.Key);
+            //    var thisBase = item.Value.ConvertToBase();  
+            //    RawCommands[thisBase.Module].Add(thisBase);
+            //}
         }
 
         /// <summary>
@@ -74,10 +78,14 @@ namespace FluentCommands
         /// <para>Provided type is the class that contains the commands being built.</para>
         /// </summary>
         /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
-        /// <returns>Returns this <see cref="CommandModuleBuilder{TModule}"/> to continue the fluent building process.</returns>
-        public static ICommandModuleBuilder<TModule> Module<TModule>() where TModule : class
+        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
+        public static IModuleBuilder Module<TModule>() where TModule : class
         {
-            return new CommandModuleBuilder<TModule>();
+            var moduleType = typeof(TModule);
+            var module = new ModuleBuilder(moduleType);
+            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
+            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            return Modules[moduleType];
         }
 
         /// <summary>
@@ -105,7 +113,7 @@ namespace FluentCommands
         /// This is the logic necessary to initialize the CommandService.
         /// </summary>
         /// <param name="cfg"></param>
-        internal static void Init(CommandServiceConfig cfg = default)
+        private static void Init(CommandServiceConfig cfg = default)
         {
             // Force-Exits the method if it has successfully completed before.
             if (_commandsArePopulated) return;
@@ -114,16 +122,9 @@ namespace FluentCommands
             if (cfg == default) cfg = new CommandServiceConfig();
             _globalConfig = cfg;
 
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
             Init_1_ModuleAssembler();
-
-            // With modules assembled, can collect *every* method labeled as a Command:
-            var allCommandMethods = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.IsClass && Modules.Contains(type))
-                .SelectMany(type => type.GetMethods())
-                .Where(method => method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
-                .ToList();
-
             Init_2_KeyboardAssembler();
             Init_3_CommandAssembler();
 
@@ -131,25 +132,74 @@ namespace FluentCommands
 
             void Init_1_ModuleAssembler()
             {
-                //// Module Builders ////
-                ///
-                // Collects *every* method labeled as ModuleBuilder...
-                var allOnBuildingMethods = AppDomain.CurrentDomain.GetAssemblies()
+                // Collects *every* ModuleBuilder command context (all classes that derive from CommandContext)
+                var allCommandContexts = assemblies
                     .SelectMany(assembly => assembly.GetTypes())
-                    .Where(type => type.IsClass)
-                    .SelectMany(type => type.GetMethods())
-                    .Where(method => method.GetCustomAttributes(typeof(ModuleBuilderAttribute), false).Length > 0)
+                    .Where(type => type.BaseType != null && type.BaseType.IsAbstract && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(CommandContext<>))
                     .ToList();
 
-                //... And invokes each one. Hopefully the user filled them properly.
-                foreach (var method in allOnBuildingMethods)
+                if (allCommandContexts == null) throw new CommandOnBuildingException();
+
+                string unexpected = "An unexpected error occurred while building command modules: ";
+
+                foreach (var context in allCommandContexts)
                 {
-                    try { method.Invoke(new object(), null); }
-                    catch
-                    {
-                        throw new CommandOnBuildingException($"ModuleBuilder method: \"{method.ToString()}\" in class: \"{method.DeclaringType}\" had an invalid signature. Please make sure all ModuleBuilder methods are static, void, and have no parameters.");
-                    }
+                    var moduleBuilder = new ModuleBuilder();
+
+                    object moduleContext;
+                    try { moduleContext = Activator.CreateInstance(context) ?? throw new CommandOnBuildingException(); }
+                    catch (MissingMethodException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (MemberAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (System.Runtime.InteropServices.InvalidComObjectException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (System.Runtime.InteropServices.COMException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TypeLoadException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    PropertyInfo property;
+                    try { property = context.GetProperty("CommandClass", BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new CommandOnBuildingException(); }
+                    catch (AmbiguousMatchException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    MethodInfo method;
+                    try { method = context.GetMethod("OnBuilding", BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new CommandOnBuildingException(); }
+                    catch (AmbiguousMatchException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    Type commandClass;
+                    try { commandClass = (Type)property.GetValue(moduleContext, null) ?? throw new CommandOnBuildingException(); }
+                    catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetParameterCountException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    try { method.Invoke(moduleContext, new object[] { moduleBuilder }); }
+                    catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetParameterCountException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    if (commandClass == null) throw new CommandOnBuildingException();
+                    if (Modules.ContainsKey(commandClass)) throw new CommandOnBuildingException();
+                    Modules.Add(commandClass, moduleBuilder);
                 }
+
+                //... And invokes each one. Hopefully the user filled them properly.
+                //foreach (var method in allOnBuildingMethods)
+                //{
+                //    try { method.Invoke(new object(), null); }
+                //    catch
+                //    {
+                //        throw new CommandOnBuildingException($"ModuleBuilder method: \"{method.ToString()}\" in class: \"{method.DeclaringType}\" had an invalid signature. Please make sure all ModuleBuilder methods are static, void, and have no parameters.");
+                //    }
+                //}
             }
             void Init_2_KeyboardAssembler()
             {
@@ -177,8 +227,8 @@ namespace FluentCommands
                         {
                             IKeyboardBuilder<TBuilder, TButton> updatedKeyboardBuilder;
 
-                            if (typeof(TButton) == typeof(InlineKeyboardButton)) updatedKeyboardBuilder = new InlineKeyboardBuilder(key) as IKeyboardBuilder<TBuilder, TButton>;
-                            else if (typeof(TButton) == typeof(KeyboardButton)) updatedKeyboardBuilder = new ReplyKeyboardBuilder(key) as IKeyboardBuilder<TBuilder, TButton>;
+                            if (typeof(TButton) == typeof(InlineKeyboardButton)) updatedKeyboardBuilder = new InlineKeyboardBuilder() as IKeyboardBuilder<TBuilder, TButton>;
+                            else if (typeof(TButton) == typeof(KeyboardButton)) updatedKeyboardBuilder = new ReplyKeyboardBuilder() as IKeyboardBuilder<TBuilder, TButton>;
                             else throw new CommandOnBuildingException("Unknown error occurred while assembling command keyboards."); // ABSOLUTELY should NEVER happen.
 
                             foreach (var row in list)
@@ -218,6 +268,14 @@ namespace FluentCommands
             }
             void Init_3_CommandAssembler()
             {
+                // With modules assembled, can collect *every* method labeled as a Command:
+                var allCommandMethods = assemblies
+                    .SelectMany(assembly => assembly.GetTypes())
+                    .Where(type => type.IsClass && Modules.ContainsKey(type))
+                    .SelectMany(type => type.GetMethods())
+                    .Where(method => method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
+                    .ToList();
+
                 foreach (var method in allCommandMethods)
                 {
                     var thisModule = method.DeclaringType;

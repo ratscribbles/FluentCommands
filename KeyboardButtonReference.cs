@@ -9,13 +9,8 @@ namespace FluentCommands
     public class KeyboardButtonReference : IFluentInterface
     {
         private string Name { get; set; }
-        private Type Module { get; set; }
 
-        internal KeyboardButtonReference(string commandName, Type type)
-        {
-            Name = commandName;
-            Module = type;
-        }
+        internal KeyboardButtonReference(string commandName) => Name = commandName;
 
         /// <summary>
         /// Implicitly converts this <see cref="KeyboardButtonReference"/> into an <see cref="InlineKeyboardButton"/> to ease keyboard building.
@@ -27,7 +22,7 @@ namespace FluentCommands
             // This is done so that keyboards can reference commands even while they're being built; this is a reference that will be filled in later.
             var thisButton = new InlineKeyboardButton
             {
-                Text = $"COMMANDBASEBUILDERREFERENCE::{b.Module}::{b.Name}"
+                Text = $"COMMANDBASEBUILDERREFERENCE::{b.Name}::"
             };
             return thisButton;
         }
@@ -41,7 +36,7 @@ namespace FluentCommands
             // This is done so that keyboards can reference commands even while they're being built; this is a reference that will be filled in later.
             var thisButton = new KeyboardButton
             {
-                Text = $"COMMANDBASEBUILDERREFERENCE::{b.Module}::{b.Name}"
+                Text = $"COMMANDBASEBUILDERREFERENCE::{b.Name}::"
             };
             return thisButton;
         }

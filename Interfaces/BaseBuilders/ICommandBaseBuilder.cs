@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using FluentCommands.Builders;
 using FluentCommands.Interfaces.BaseBuilders;
+using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Interfaces
@@ -25,11 +26,10 @@ namespace FluentCommands.Interfaces
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandDescriptionBuilder"/>, prompting the user for a <see cref="Telegram.Bot.Types.Enums.ParseMode"/>.</returns>
         ICommandDescriptionBuilder HasHelpDescription(string description);
         /// <summary>
-        /// Constructs a <see cref="KeyboardBuilder"/> for this <see cref="ICommandBaseBuilder"/>.
+        /// Constructs an <see cref="IKeyboardBuilder"/> for this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
-        /// <param name="buildAction">Delegate that constructs a <see cref="KeyboardBuilder"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseKeyboard HasKeyboard(Action<KeyboardBuilder> buildAction);
+        IKeyboardBuilder HasKeyboard();
         /// <summary>
         /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="ICommandBaseBuilder"/>.
         /// </summary>

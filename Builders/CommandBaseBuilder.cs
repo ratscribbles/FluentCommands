@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using FluentCommands.Exceptions;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.BaseBuilders;
+using FluentCommands.Interfaces.KeyboardBuilders;
 using FluentCommands.CommandTypes;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -14,7 +16,7 @@ namespace FluentCommands.Builders
     /// Builder responsible for creating <see cref="CommandBase"/> objects, that will be used to create full <see cref="Command"/> objects for the <see cref="CommandService"/>.
     /// </summary>
     public sealed partial class CommandBaseBuilder : ICommandBaseBuilder,
-        ICommandBaseAliases, ICommandDescriptionBuilder, ICommandBaseKeyboard, ICommandBaseDescription,
+        ICommandBaseAliases, ICommandDescriptionBuilder, ICommandBaseKeyboard, ICommandBaseDescription, IKeyboardBuilder,
         IFluentInterface
     {
         /// <summary>
@@ -81,13 +83,28 @@ namespace FluentCommands.Builders
         /// <summary>
         /// Constructs a <see cref="KeyboardBuilder"/> for this <see cref="CommandBaseBuilder"/>.
         /// </summary>
-        /// <param name="buildAction">Delegate that constructs a <see cref="KeyboardBuilder"/> for this future <see cref="Command"/>.</param>
+        /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="IKeyboardBuilder"/>, removing this option from the fluent builder.</returns>
+        public IKeyboardBuilder HasKeyboard() => this;
+        /// <summary>
+        /// Builds a new <see cref="InlineKeyboardMarkup"/> for this <see cref="CommandBaseBuilder"/>.
+        /// </summary>
+        /// <param name="buildAction">The build action delegate for this <see cref="KeyboardBuilder"/>>.</param>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseKeyboard HasKeyboard(Action<KeyboardBuilder> buildAction)
+        public ICommandBaseKeyboard Inline(Action<IInlineKeyboardBuilder> buildAction)
         {
-            var keyboard = new KeyboardBuilder();
-            buildAction(keyboard);
-            KeyboardInfo = keyboard;
+            KeyboardInfo = new KeyboardBuilder();
+            buildAction(KeyboardInfo);
+            return this;
+        }
+        /// <summary>
+        /// Builds a new <see cref="ReplyKeyboardMarkup"/> for this <see cref="CommandBaseBuilder"/>.
+        /// </summary>
+        /// <param name="buildAction">The build action delegate for this <see cref="KeyboardBuilder"/>.</param>
+        /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
+        public ICommandBaseKeyboard Reply(Action<IReplyKeyboardBuilder> buildAction)
+        {
+            KeyboardInfo = new KeyboardBuilder();
+            buildAction(KeyboardInfo);
             return this;
         }
         /// <summary>
@@ -117,7 +134,7 @@ namespace FluentCommands.Builders
             {
                 storage.AddRow(row.ToArray());
             }
-            storage.Reply.BuildWithSettings(markup.OneTimeKeyboard, markup.ResizeKeyboard, markup.Selective);
+            storage.BuildWithSettings(markup.OneTimeKeyboard, markup.ResizeKeyboard, markup.Selective);
             KeyboardInfo = storage;
             return this;
         }

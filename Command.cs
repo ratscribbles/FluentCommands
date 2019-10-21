@@ -38,14 +38,14 @@ namespace FluentCommands
 
             if(commandBase.KeyboardInfo != null)
             {
-                if (commandBase.KeyboardInfo.Inline != null)
+                if (commandBase.KeyboardInfo.InlineKeyboard != null)
                 {
-                    InlineKeyboard = new InlineKeyboardMarkup(commandBase.KeyboardInfo.Inline.Rows);
+                    InlineKeyboard = new InlineKeyboardMarkup(commandBase.KeyboardInfo.InlineKeyboard.Rows);
                     KeyboardType = KeyboardType.Inline;
                 }
-                if (commandBase.KeyboardInfo.Reply != null)
+                if (commandBase.KeyboardInfo.ReplyKeyboard != null)
                 {
-                    ReplyKeyboard = new ReplyKeyboardMarkup(commandBase.KeyboardInfo.Reply.Rows);
+                    ReplyKeyboard = new ReplyKeyboardMarkup(commandBase.KeyboardInfo.ReplyKeyboard.Rows);
                     KeyboardType = KeyboardType.Reply;
                 }
             }

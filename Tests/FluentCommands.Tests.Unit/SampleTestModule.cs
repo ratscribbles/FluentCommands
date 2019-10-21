@@ -15,6 +15,8 @@ namespace FluentCommands
         {
             //: Redo documentation to describe what each step is actually adding to the objects
             //: consider removing the ambiguity with concrete implementations (requires editing hte interfaces; it shouldnt be too big a deal)
+            moduleBuilder.Command("").HasAliases("").HasKeyboard("")
+
 
             moduleBuilder["start"]
                 .HasAliases("one", "two", "three")
@@ -31,15 +33,27 @@ namespace FluentCommands
                 .HasKeyboard().Inline(k =>
                 {
                     k.AddRow(
-                        new InlineKeyboardButton { Text = "lmfao", CallbackData = "callback" }, 
-                        k["key"].InModule<SampleTestModule>(), 
-                        k["key"], 
+                        new InlineKeyboardButton { Text = "lmfao", CallbackData = "callback" },
+                        k["key"].InModule<SampleTestModule>(),
+                        k["key"],
                         k["key"].InModule(typeof(SampleTestModule)));
-                    k.
-                    //: Refactor to handle ambiguous buttons in row; roslyn to check if incompatible buttons
                 });
             moduleBuilder["solo"]
                 .HasKeyboardButton(new InlineKeyboardButton { Text = "solobuttontest", CallbackData = "callbacc" });
+            moduleBuilder["testingFluentSyntax"]
+                .HasAliases("euahdsoidhsaoihasoidsaoidaisod")
+                .HasHelpDescription("i need help lmao")
+                .WithParseMode(ParseMode.Default)
+                .HasKeyboard().Reply(k =>
+                {
+                    //: Roslyn analyze when user inputs the wrong button type for this method; suggest they either swap methods or check their buttons
+
+                    //? k.AddRow(InlineKeyboardButton.WithCallbackData(""));
+                    k.AddRow();
+                    k.AddRow();
+                    k.AddRow();
+                })
+                .HasKeyboardButton(InlineKeyboardButton.WithCallbackData("AHHHHHHHH"));
         }
     }
 }

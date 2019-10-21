@@ -206,8 +206,8 @@ namespace FluentCommands
                         if (commandBase.KeyboardInfo == null) continue;
                         else
                         {
-                            if (commandBase.KeyboardInfo.Inline != null) commandBase.KeyboardInfo.Inline = UpdateKeyboardRows<InlineKeyboardBuilder, InlineKeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.Inline.Rows) as InlineKeyboardBuilder;
-                            if (commandBase.KeyboardInfo.Reply != null) commandBase.KeyboardInfo.Reply = UpdateKeyboardRows<ReplyKeyboardBuilder, KeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.Reply.Rows) as ReplyKeyboardBuilder;
+                            if (commandBase.KeyboardInfo.InlineKeyboard != null) commandBase.KeyboardInfo.InlineKeyboard = UpdateKeyboardRows<InlineKeyboardBuilder, InlineKeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.InlineKeyboard.Rows) as InlineKeyboardBuilder;
+                            if (commandBase.KeyboardInfo.ReplyKeyboard != null) commandBase.KeyboardInfo.ReplyKeyboard = UpdateKeyboardRows<ReplyKeyboardBuilder, KeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.ReplyKeyboard.Rows) as ReplyKeyboardBuilder;
 
                             Modules[commandClass][commandName] = commandBase;
                         }

@@ -15,6 +15,7 @@
     <None Remove=".gitattributes" />
     <None Remove=".gitignore" />
     <None Remove="Interfaces\ve-DCCD.tmp" />
+    <None Remove="token.txt" />
   </ItemGroup>
 
   <ItemGroup>

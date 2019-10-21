@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using FluentCommands.Attributes;
+using FluentCommands.Builders;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.Enums;
@@ -9,33 +9,37 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands
 {
-    public class SampleTestModule
+    public class SampleTestModule : CommandContext<SampleCommandList>
     {
-        [ModuleBuilder]
-        public static void OnBuilding()
+        protected override void OnBuilding(ModuleBuilder moduleBuilder)
         {
-            CommandService.Module<SampleCommandList>(c =>
-            {
-                c["start"]
-                    .HasAliases("one", "two", "three")
-                    .HasHelpDescription("help!!")
-                    .WithParseMode(ParseMode.Default);
-                c["big test"]
-                    .HasAliases("wow")
-                    .HasKeyboardButton(new KeyboardButton());
-                c["help"]
-                    .HasHelpDescription("h")
-                    .WithParseMode(ParseMode.Default);
-                c["keyboardtest"]
-                    .HasAliases("keyboop")
-                    .HasKeyboard(k =>
-                    {
-                        k.AddRow(new InlineKeyboardButton { Text = "lmfao", CallbackData = "callback" }, k["key"]);
-                        //: Refactor to handle ambiguous buttons in row; roslyn to check if incompatible buttons
-                    });
-                c["solo"]
-                    .HasKeyboardButton(new InlineKeyboardButton { Text = "solobuttontest", CallbackData = "callbacc" });
-            });
+            //: Redo documentation to describe what each step is actually adding to the objects
+            //: consider removing the ambiguity with concrete implementations (requires editing hte interfaces; it shouldnt be too big a deal)
+
+            moduleBuilder["start"]
+                .HasAliases("one", "two", "three")
+                .HasHelpDescription("help!!")
+                .WithParseMode(ParseMode.Default);
+            moduleBuilder["big test"]
+                .HasAliases("wow")
+                .HasKeyboardButton(new KeyboardButton());
+            moduleBuilder["help"]
+                .HasHelpDescription("h")
+                .WithParseMode(ParseMode.Default);
+            moduleBuilder["keyboardtest"]
+                .HasAliases("keyboop")
+                .HasKeyboard().Inline(k =>
+                {
+                    k.AddRow(
+                        new InlineKeyboardButton { Text = "lmfao", CallbackData = "callback" }, 
+                        k["key"].InModule<SampleTestModule>(), 
+                        k["key"], 
+                        k["key"].InModule(typeof(SampleTestModule)));
+                    k.
+                    //: Refactor to handle ambiguous buttons in row; roslyn to check if incompatible buttons
+                });
+            moduleBuilder["solo"]
+                .HasKeyboardButton(new InlineKeyboardButton { Text = "solobuttontest", CallbackData = "callbacc" });
         }
     }
 }

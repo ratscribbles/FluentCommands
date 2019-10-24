@@ -17,16 +17,12 @@ namespace FluentCommands.Interfaces.BaseBuilderOfModule
         /// </summary>
         /// <param name="button">The button to be added to this command.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleCompletion"/>, signalling the end of this command's construction.</returns>
-        ICommandBaseOfModuleCompletion HasKeyboardButton(IKeyboardButton button);
+        ICommandBaseOfModuleCompletion KeyboardButtonReference(IKeyboardButton button);
         /// <summary>
         /// Marks this command as complete, prompting you to build another command.
         /// <para>(If you meant to end the command building process, call <see cref="Done"/> instead!)</para>
         /// </summary>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="IModuleBuilder"/> to begin the command building process again.</returns>
         IModuleBuilder Next();
-        /// <summary>
-        /// Marks the entire module as complete so that <see cref="FluentCommands.Command"/> objects can be created.
-        /// </summary>
-        void Done();
     }
 }

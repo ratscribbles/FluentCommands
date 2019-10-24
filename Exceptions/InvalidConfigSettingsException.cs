@@ -6,7 +6,7 @@ using System.Text;
 namespace FluentCommands.Exceptions
 {
     /// <summary>
-    /// Thrown when certain conditions are invalid within <see cref="CommandServiceConfig"/> or <see cref="CommandModuleConfig"/> objects.
+    /// Thrown when certain conditions are invalid within <see cref="CommandServiceConfig"/> or <see cref="ModuleBuilderConfig"/> objects.
     /// </summary>
     [Serializable]
     public class InvalidConfigSettingsException : Exception, ISerializable

@@ -16,6 +16,8 @@ namespace FluentCommands.Builders
     /// </summary>
     public sealed class KeyboardBuilder : IInlineKeyboardBuilder, IReplyKeyboardBuilder, IFluentInterface
     {
+        private bool _rowsUpdated = false;
+
         /// <summary>
         /// Gets the <see cref="InlineKeyboardButton"/> rows to be used to create an <see cref="InlineKeyboardMarkup"/>.
         /// </summary>
@@ -105,6 +107,22 @@ namespace FluentCommands.Builders
             OneTimeKeyboard = oneTimeKeyboard;
             ResizeKeyboard = resizeKeyboard;
             Selective = selective;
+        }
+
+        /// <summary>
+        /// Sets inline rows. Explicit method meant to be called ONLY ONCE when updating keyboard rows.
+        /// </summary>
+        internal void UpdateInline(List<InlineKeyboardButton[]> rows)
+        {
+            if (!_rowsUpdated) { InlineRows = rows; _rowsUpdated = true; }
+        }
+
+        /// <summary>
+        /// Sets reply rows. Explicit method meant to be called ONLY ONCE when updating keyboard rows.
+        /// </summary>
+        internal void UpdateReply(List<KeyboardButton[]> rows)
+        {
+            if (!_rowsUpdated) { ReplyRows = rows; _rowsUpdated = true; }
         }
     }
 }

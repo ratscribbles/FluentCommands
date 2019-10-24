@@ -26,19 +26,19 @@ namespace FluentCommands.Builders
         /// <summary>
         /// Gets the Aliases (other names) for this <see cref="Command"/>.
         /// </summary>
-        internal string[] Aliases { get; private set; } = Array.Empty<string>();
+        internal string[] InAliases { get; private set; } = Array.Empty<string>();
         /// <summary>
         /// Gets the Description for this <see cref="Command"/>.
         /// </summary>
-        internal string Description { get; private set; } = "There is no description for this command.";
+        internal string InDescription { get; private set; } = "There is no description for this command.";
         /// <summary>
         /// Gets the <see cref="Telegram.Bot.Types.Enums.ParseMode"/> for this <see cref="Command"/>. Used for the <see cref="Command.Description"/>).
         /// </summary>
-        internal ParseMode ParseMode { get; private set; } = ParseMode.Default;
+        internal ParseMode InParseMode { get; private set; } = ParseMode.Default;
         /// <summary>
         /// Gets the <see cref="IKeyboardButton"/> for this <see cref="Command"/>. Used to call this command via Keyboard Markups, such as <see cref="InlineKeyboardMarkup"/> and <see cref="ReplyKeyboardMarkup"/>).
         /// </summary>
-        internal IKeyboardButton Button { get; private set; } = null;
+        internal IKeyboardButton InButton { get; private set; } = null;
         /// <summary>
         /// Gets the <see cref="KeyboardBuilder"/> for this <see cref="Command"/>
         /// </summary>
@@ -51,13 +51,13 @@ namespace FluentCommands.Builders
         internal CommandBaseBuilder(string name) => Name = name;
 
         /// <summary>
-        /// Adds aliases (alternate names) to this <see cref="CommandBaseBuilder"/>.
+        /// Adds aliases (alternate names) to this <see cref="CommandBaseBuilder"/>. Duplicates are ignored.
         /// </summary>
         /// <param name="aliases">The alternate names for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseAliases"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseAliases HasAliases(params string[] aliases)
+        public ICommandBaseAliases Aliases(params string[] aliases)
         {
-            Aliases = aliases;
+            InAliases = aliases.Distinct().ToArray();
             return this;
         }
         /// <summary>
@@ -65,9 +65,9 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="description">The description of this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandDescriptionBuilder"/>, prompting the user for a <see cref="Telegram.Bot.Types.Enums.ParseMode"/>.</returns>
-        public ICommandDescriptionBuilder HasHelpDescription(string description)
+        public ICommandDescriptionBuilder HelpDescription(string description)
         {
-            Description = description;
+            InDescription = description;
             return this;
         }
         /// <summary>
@@ -75,16 +75,16 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="parseMode">The <see cref="Telegram.Bot.Types.Enums.ParseMode"/> for the description of this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseDescription"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseDescription WithParseMode(ParseMode parseMode)
+        public ICommandBaseDescription UsingParseMode(ParseMode parseMode)
         {
-            ParseMode = parseMode;
+            InParseMode = parseMode;
             return this;
         }
         /// <summary>
         /// Constructs a <see cref="KeyboardBuilder"/> for this <see cref="CommandBaseBuilder"/>.
         /// </summary>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="IKeyboardBuilder"/>, removing this option from the fluent builder.</returns>
-        public IKeyboardBuilder HasKeyboard() => this;
+        public IKeyboardBuilder Keyboard() => this;
         /// <summary>
         /// Builds a new <see cref="InlineKeyboardMarkup"/> for this <see cref="CommandBaseBuilder"/>.
         /// </summary>
@@ -112,7 +112,7 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseKeyboard HasKeyboard(InlineKeyboardMarkup markup)
+        public ICommandBaseKeyboard Keyboard(InlineKeyboardMarkup markup)
         {
             var storage = new KeyboardBuilder();
             foreach (var row in markup.InlineKeyboard)
@@ -127,7 +127,7 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseKeyboard HasKeyboard(ReplyKeyboardMarkup markup)
+        public ICommandBaseKeyboard Keyboard(ReplyKeyboardMarkup markup)
         {
             var storage = new KeyboardBuilder();
             foreach (var row in markup.Keyboard)
@@ -142,9 +142,9 @@ namespace FluentCommands.Builders
         /// Adds an <see cref="IKeyboardButton"/> to this <see cref="CommandBaseBuilder"/>. Ends fluent building for this object (this is the final option availalble).
         /// </summary>
         /// <param name="button">The <see cref="IKeyboardButton"/> for this future <see cref="Command"/>.</param>
-        public void HasKeyboardButton(IKeyboardButton button)
+        public void KeyboardButtonReference(IKeyboardButton button)
         {
-            Button = button;
+            InButton = button;
         }
 
         /// <summary>
@@ -155,12 +155,12 @@ namespace FluentCommands.Builders
         {
             return new CommandBase
             {
-                Aliases = this.Aliases,
-                Button = this.Button,
-                Description = this.Description,
+                Aliases = this.InAliases,
+                Button = this.InButton,
+                Description = this.InDescription,
                 KeyboardInfo = this.KeyboardInfo,
                 Name = this.Name,
-                ParseMode = this.ParseMode
+                ParseMode = this.InParseMode
             };
         }
     }

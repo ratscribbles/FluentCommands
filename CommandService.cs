@@ -36,57 +36,10 @@ namespace FluentCommands
         private static bool _lastMessageIsMenu;
         private static bool _commandsArePopulated = false;
         private static readonly Dictionary<Type, Dictionary<string, Command>> _commands = new Dictionary<Type, Dictionary<string, Command>>();
-        private static readonly Dictionary<Type, CommandModuleConfig> _moduleConfigs = new Dictionary<Type, CommandModuleConfig>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageBotCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Type[] _telegramEventArgs = { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         internal static readonly Dictionary<Type, ModuleBuilder> Modules = new Dictionary<Type, ModuleBuilder>();
-        internal static readonly Dictionary<Type, List<CommandBase>> RawCommands = new Dictionary<Type, List<CommandBase>>();
-
-        /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>  
-        /// <typeparam name="TModule">The class that contains the commands the <see cref="ModuleBuilder"/> is being built for.</typeparam>
-        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="ModuleBuilder"/>.</param>
-        public static void Module<TModule>(Action<IModuleBuilder> buildAction) where TModule : class
-        {
-            //? This method could stay generic for the purposes of quick bots that only need a small model in the main 
-            //? method of the program class, and the actual command implementations in a separate class
-
-            var moduleType = typeof(TModule);
-            var module = new ModuleBuilder(moduleType);
-
-            buildAction(module);
-
-            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-
-            //! Handle this in the init() method
-            // if (!RawCommands.ContainsKey(typeof(TModule))) RawCommands.TryAdd(typeof(TModule), new List<CommandBase>());
-
-            //foreach (var item in module.BaseBuilderDictionary)
-            //{
-            //    CheckCommandNameValidity(item.Key);
-            //    var thisBase = item.Value.ConvertToBase();  
-            //    RawCommands[thisBase.Module].Add(thisBase);
-            //}
-        }
-
-        /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>
-        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
-        public static IModuleBuilder Module<TModule>() where TModule : class
-        {
-            var moduleType = typeof(TModule);
-            var module = new ModuleBuilder(moduleType);
-            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-            return Modules[moduleType];
-        }
 
         /// <summary>
         /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/>.
@@ -110,19 +63,74 @@ namespace FluentCommands
         }
 
         /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>  
+        /// <typeparam name="TModule">The class that contains the commands the <see cref="ModuleBuilder"/> is being built for.</typeparam>
+        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="ModuleBuilder"/>.</param>
+        public static void Module<TModule>(Action<IModuleBuilder> buildAction) where TModule : class
+        {
+            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
+            //? method of the program class, and the actual command implementations in a separate class
+
+            var moduleType = typeof(TModule);
+            var module = new ModuleBuilder(moduleType);
+
+            buildAction(module);
+
+            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
+            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+        }
+
+        /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>
+        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
+        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
+        public static IModuleBuilder Module<TModule>() where TModule : class
+        {
+            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
+            //? method of the program class, and the actual command implementations in a separate class
+
+            var moduleType = typeof(TModule);
+            var module = new ModuleBuilder(moduleType);
+            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
+            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            return Modules[moduleType];
+        }
+
+        /// <summary>
         /// This is the logic necessary to initialize the CommandService.
         /// </summary>
         /// <param name="cfg"></param>
         private static void Init(CommandServiceConfig cfg = default)
         {
             // Force-Exits the method if it has successfully completed before.
-            if (_commandsArePopulated) return;
+            if (_commandsArePopulated) return; //! Possibly log that it was started more than once
 
             // Global configuration as provided by the user.
             if (cfg == default) cfg = new CommandServiceConfig();
             _globalConfig = cfg;
 
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            List<Type> assemblyTypes = new List<Type>();
+
+            foreach(var assembly in assemblies)
+            {
+                List<Type> internalTypes;
+
+                try
+                {
+                    internalTypes = assembly.GetTypes().ToList();
+                }
+                catch(ReflectionTypeLoadException e)
+                {
+                    internalTypes = e.Types.Where(type => type != null).ToList();
+                }
+
+                assemblyTypes.AddRange(internalTypes);
+            }
 
             Init_1_ModuleAssembler();
             Init_2_KeyboardAssembler();
@@ -133,14 +141,13 @@ namespace FluentCommands
             void Init_1_ModuleAssembler()
             {
                 // Collects *every* ModuleBuilder command context (all classes that derive from CommandContext)
-                var allCommandContexts = assemblies
-                    .SelectMany(assembly => assembly.GetTypes())
-                    .Where(type => type.BaseType != null && type.BaseType.IsAbstract && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(CommandContext<>))
+                var allCommandContexts = assemblyTypes
+                    .Where(type => type.BaseType != null && type.BaseType.IsAbstract && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>))
                     .ToList();
 
-                if (allCommandContexts == null) throw new CommandOnBuildingException();
+                string unexpected = "An unexpected error occurred while building command module: ";
 
-                string unexpected = "An unexpected error occurred while building command modules: ";
+                if (allCommandContexts == null) throw new CommandOnBuildingException(unexpected + "Collection of command contexts was null. Please submit a bug report and/or contact the creator of this library if this issue persists.");
 
                 foreach (var context in allCommandContexts)
                 {
@@ -164,8 +171,12 @@ namespace FluentCommands
                     catch (AmbiguousMatchException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
-                    MethodInfo method;
-                    try { method = context.GetMethod("OnBuilding", BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new CommandOnBuildingException(); }
+                    MethodInfo method_OnBuilding;
+                    try { method_OnBuilding = context.GetMethod("OnBuilding", BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new CommandOnBuildingException(); }
+                    catch (AmbiguousMatchException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    MethodInfo method_OnConfiguring;
+                    try { method_OnConfiguring = context.GetMethod("OnConfiguring", BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new CommandOnBuildingException(); }
                     catch (AmbiguousMatchException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
@@ -177,7 +188,16 @@ namespace FluentCommands
                     catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
-                    try { method.Invoke(moduleContext, new object[] { moduleBuilder }); }
+                    try
+                    {
+                        ModuleBuilderConfig moduleConfig = new ModuleBuilderConfig();
+
+                        method_OnBuilding.Invoke(moduleContext, new object[] { moduleBuilder });
+                        method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfig });
+
+                        if(moduleConfig == null) moduleConfig = new ModuleBuilderConfig();
+                        moduleBuilder.SetConfig(moduleConfig);
+                    }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -186,6 +206,11 @@ namespace FluentCommands
                     catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
+                    foreach(var commandName in moduleBuilder.ModuleCommandBases.Keys)
+                    {
+                        CheckCommandNameValidity(commandName);
+                    }
+
                     if (commandClass == null) throw new CommandOnBuildingException();
                     if (Modules.ContainsKey(commandClass)) throw new CommandOnBuildingException();
                     Modules.Add(commandClass, moduleBuilder);
@@ -193,12 +218,12 @@ namespace FluentCommands
             }
             void Init_2_KeyboardAssembler()
             {
-                foreach(var kvp in Modules)
+                foreach(var kvp in Modules.ToList())
                 {
                     var commandClass = kvp.Key;
                     var module = kvp.Value;
 
-                    foreach(var moduleKvp in module.ModuleCommandBases)
+                    foreach(var moduleKvp in module.ModuleCommandBases.ToList())
                     {
                         var commandName = moduleKvp.Key;
                         var commandBase = moduleKvp.Value;
@@ -206,8 +231,8 @@ namespace FluentCommands
                         if (commandBase.KeyboardInfo == null) continue;
                         else
                         {
-                            if (commandBase.KeyboardInfo.InlineKeyboard != null) commandBase.KeyboardInfo.InlineKeyboard = UpdateKeyboardRows<InlineKeyboardBuilder, InlineKeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.InlineKeyboard.Rows) as InlineKeyboardBuilder;
-                            if (commandBase.KeyboardInfo.ReplyKeyboard != null) commandBase.KeyboardInfo.ReplyKeyboard = UpdateKeyboardRows<ReplyKeyboardBuilder, KeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.ReplyKeyboard.Rows) as ReplyKeyboardBuilder;
+                            if (commandBase.KeyboardInfo.InlineRows.Any()) commandBase.KeyboardInfo.UpdateInline(UpdateKeyboardRows<InlineKeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.InlineRows));
+                            if (commandBase.KeyboardInfo.ReplyRows.Any()) commandBase.KeyboardInfo.UpdateReply(UpdateKeyboardRows<KeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.ReplyRows));
 
                             Modules[commandClass][commandName] = commandBase;
                         }
@@ -215,15 +240,10 @@ namespace FluentCommands
                 }
 
                 // Updates keyboard rows by iterating through each row and checking each button for an implicitly-converted KeybaordButtonReference.
-                IKeyboardBuilder<TBuilder, TButton> UpdateKeyboardRows<TBuilder, TButton>(Type parentModule, string parentCommandName, List<TButton[]> rows)
-                    where TBuilder : IKeyboardBuilder<TBuilder, TButton>
+                List<TButton[]> UpdateKeyboardRows<TButton>(Type parentModule, string parentCommandName, List<TButton[]> rows)
                     where TButton : IKeyboardButton
                 {
-                    IKeyboardBuilder<TBuilder, TButton> updatedKeyboardBuilder;
-
-                    if (typeof(TButton) == typeof(InlineKeyboardButton)) updatedKeyboardBuilder = new InlineKeyboardBuilder() as IKeyboardBuilder<TBuilder, TButton>;
-                    else if (typeof(TButton) == typeof(KeyboardButton)) updatedKeyboardBuilder = new ReplyKeyboardBuilder() as IKeyboardBuilder<TBuilder, TButton>;
-                    else throw new CommandOnBuildingException("Unknown error occurred while assembling command keyboards."); // ABSOLUTELY should NEVER happen.
+                    List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
 
                     foreach (var row in rows)
                     {
@@ -255,8 +275,7 @@ namespace FluentCommands
                                     {
                                         string moduleTextReference = match.Groups[2].Value ?? throw new CommandOnBuildingException("An unknown error occurred while building command keyboards (module text reference was null).");
 
-                                        var referencedModule = assemblies
-                                           .SelectMany(assembly => assembly.GetTypes())
+                                        var referencedModule = assemblyTypes
                                            .Where(type => type.Name == moduleTextReference)
                                            .FirstOrDefault();
 
@@ -265,20 +284,20 @@ namespace FluentCommands
                                         if (!(referencedModule.BaseType != null
                                             && referencedModule.BaseType.IsAbstract
                                             && referencedModule.BaseType.IsGenericType
-                                            && referencedModule.BaseType.GetGenericTypeDefinition() == typeof(CommandContext<>)))
+                                            && referencedModule.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>)))
                                             throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a module that doesn't appear to be a valid command context: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
                                         if (!Modules[referencedModule].ModuleCommandBases.ContainsKey(commandNameReference))
                                             throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a command that doesn't exist in linked module: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
-                                        referencedButton = Modules[referencedModule].ModuleCommandBases[commandNameReference]?.Button;
+                                        referencedButton = Modules[referencedModule].ModuleCommandBases[commandNameReference]?.InButton;
                                     }
                                     else
                                     {
                                         if (!Modules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
                                             throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a command that doesn't exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
-                                        referencedButton = Modules[parentModule].ModuleCommandBases[commandNameReference]?.Button;
+                                        referencedButton = Modules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
                                     }
 
                                     if (referencedButton == null || (referencedButton != null && typeof(TButton) != referencedButton.GetType()))
@@ -311,7 +330,7 @@ namespace FluentCommands
                             else updatedKeyboardButtons.Add(button);
                         }
 
-                        updatedKeyboardBuilder.AddRow(updatedKeyboardButtons.ToArray());
+                        updatedKeyboardBuilder.Add(updatedKeyboardButtons.ToArray());
                     }
 
                     return updatedKeyboardBuilder;
@@ -320,8 +339,7 @@ namespace FluentCommands
             void Init_3_CommandAssembler()
             {
                 // With modules assembled, can collect *every* method labeled as a Command:
-                var allCommandMethods = assemblies
-                    .SelectMany(assembly => assembly.GetTypes())
+                var allCommandMethods = assemblyTypes
                     .Where(type => type.IsClass && Modules.ContainsKey(type))
                     .SelectMany(type => type.GetMethods())
                     .Where(method => method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
@@ -334,11 +352,10 @@ namespace FluentCommands
 
                     if (!_commands.ContainsKey(thisModule)) _commands[thisModule] = new Dictionary<string, Command>();
 
-                    var commandBases = RawCommands[thisModule].Where(x => x.Name == methodCommandAttributeName).ToList();
+                    var thisCommandBase = Modules[thisModule].ModuleCommandBases?[methodCommandAttributeName];
 
-                    if (commandBases.Count() > 1) throw new DuplicateCommandException($"There was more than one command detected in module: {thisModule.Name}, with the command name: \"{methodCommandAttributeName}\"");
-                    else if (commandBases.Count() == 0) { TryAddCommand(new CommandBase(methodCommandAttributeName)); }
-                    else if (commandBases.Count() == 1) { TryAddCommand(commandBases[0]); }
+                    if (thisCommandBase == null) TryAddCommand(new CommandBase(methodCommandAttributeName));
+                    else TryAddCommand(thisCommandBase.ConvertToBase());
 
                     // Local function; attempts to add the Command to the dictionary. Throws on failure.
                     void TryAddCommand(CommandBase commandBase)
@@ -450,9 +467,11 @@ namespace FluentCommands
                         else throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method had invalid signature.");
                     }
                 }
-
             }
         }
+
+        public static async Task Evaluate(Type module, TelegramBotClient client, MessageEventArgs e) =>
+            await Evaluate<module>(client, e);
 
         /// <summary>
         /// Evaluates the user's message to check and execute a command if a command was issued.
@@ -482,7 +501,7 @@ namespace FluentCommands
 
 
                 var rawInput = e.Message.Text ?? throw new ArgumentNullException();
-                var thisConfig = _moduleConfigs[typeof(TModule)]; //: Add a null check here
+                var thisConfig = Modules[typeof(TModule)].Config;
                 var prefix = thisConfig.Prefix ?? throw new ArgumentNullException();
                 try
                 {
@@ -556,7 +575,7 @@ namespace FluentCommands
             {
                 if (string.IsNullOrWhiteSpace(aliasName))
                 {
-                    if (string.IsNullOrWhiteSpace(commandName)) throw new InvalidCommandNameException($"Command name AND alias was null, empty, or whitespace.");
+                    if (string.IsNullOrWhiteSpace(commandName)) throw new InvalidCommandNameException($"Command name AND alias were both null, empty, or whitespace.");
                 }
                 else CheckName(aliasName, isAlias);
             }
@@ -569,22 +588,29 @@ namespace FluentCommands
                 string containsWhitespaceCharacters;
                 string containsNonAlphanumericCharacters;
                 string regexTimeout;
+                string tempCommandName;
+                string tempName;
+
+                if (string.IsNullOrWhiteSpace(commandName)) tempCommandName = "NULL";
+                else tempCommandName = commandName;
+                if (string.IsNullOrWhiteSpace(name)) tempName = "NULL";
+                else tempName = name;
 
                 if (alias)
                 {
-                    nullOrWhitespace = $"Command \"{commandName}\": Command had alias that was null, empty, or whitespace.";
-                    tooLong = $"Command \"{commandName}\": Alias \"{name}\" was too long — Command names and aliases may only be a maximum of 255 characters.";
-                    containsWhitespaceCharacters = $"Command \"{commandName}\": Alias \"{name}\" — Command names and aliases cannot contain whitespace characters.";
-                    containsNonAlphanumericCharacters = $"Command \"{commandName}\": Alias \"{name}\" — Command names and aliases cannot contain non-alphanumeric characters.";
-                    regexTimeout = $"Command \"{commandName}\": Alias \"{name}\" caused a Regex Timeout while checking if the command's name was valid: ";
+                    nullOrWhitespace = $"Command \"{tempCommandName}\": Command had alias that was null, empty, or whitespace.";
+                    tooLong = $"Command \"{tempCommandName}\": Alias \"{tempName}\" was too long — Command names and aliases may only be a maximum of 255 characters.";
+                    containsWhitespaceCharacters = $"Command \"{tempCommandName}\": Alias \"{tempName}\" — Command names and aliases cannot contain whitespace characters.";
+                    containsNonAlphanumericCharacters = $"Command \"{tempCommandName}\": Alias \"{tempName}\" — Command names and aliases cannot contain non-alphanumeric characters.";
+                    regexTimeout = $"Command \"{tempCommandName}\": Alias \"{tempName}\" caused a Regex Timeout while checking if the command's name was valid: ";
                 }
                 else
                 {
                     nullOrWhitespace = $"Command name was null, empty, or whitespace.";
-                    tooLong = $"Command \"{name}\": Command names may only be a maximum of 255 characters.";
-                    containsWhitespaceCharacters = $"Command \"{name}\": Command names cannot contain whitespace characters.";
-                    containsNonAlphanumericCharacters = $"Command \"{name}\": — Command names and aliases cannot contain non-alphanumeric characters.";
-                    regexTimeout = $"Command \"{name}\": caused a Regex Timeout while checking if the command's name was valid: ";
+                    tooLong = $"Command \"{tempName}\": Command names may only be a maximum of 255 characters.";
+                    containsWhitespaceCharacters = $"Command \"{tempName}\": Command names cannot contain whitespace characters.";
+                    containsNonAlphanumericCharacters = $"Command \"{tempName}\": — Command names and aliases cannot contain non-alphanumeric characters.";
+                    regexTimeout = $"Command \"{tempName}\": caused a Regex Timeout while checking if the command's name was valid: ";
                 }
 
                 if (string.IsNullOrWhiteSpace(name)) throw new InvalidCommandNameException(nullOrWhitespace);
@@ -659,7 +685,7 @@ namespace FluentCommands
             //: Check if editable
             await client.SendAnimationAsync(m.SendToThis, m.Source, m.Duration, m.Width, m.Height, m.Thumbnail, m.Caption, m.ParseMode, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
 
-            var config = _moduleConfigs[typeof(TModule)];
+            var config = Modules[typeof(TModule)].Config;
             if (m.SendToThis == default) m.SendToThis = (long)e?.Message?.Chat?.Id;
 
             switch (config.MenuMode)

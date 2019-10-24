@@ -18,34 +18,34 @@ namespace FluentCommands.Interfaces
         /// </summary>
         /// <param name="aliases">The alternate names for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseAliases"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseAliases HasAliases(params string[] aliases);
+        ICommandBaseAliases Aliases(params string[] aliases);
         /// <summary>
         /// Adds a description to this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <param name="description">The description of this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandDescriptionBuilder"/>, prompting the user for a <see cref="Telegram.Bot.Types.Enums.ParseMode"/>.</returns>
-        ICommandDescriptionBuilder HasHelpDescription(string description);
+        ICommandDescriptionBuilder HelpDescription(string description);
         /// <summary>
         /// Constructs an <see cref="IKeyboardBuilder"/> for this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        IKeyboardBuilder HasKeyboard();
+        IKeyboardBuilder Keyboard();
         /// <summary>
         /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseKeyboard HasKeyboard(InlineKeyboardMarkup markup);
+        ICommandBaseKeyboard Keyboard(InlineKeyboardMarkup markup);
         /// <summary>
         /// Adds a <see cref="ReplyKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseKeyboard HasKeyboard(ReplyKeyboardMarkup markup);
+        ICommandBaseKeyboard Keyboard(ReplyKeyboardMarkup markup);
         /// <summary>
         /// Adds an <see cref="IKeyboardButton"/> to this <see cref="ICommandBaseBuilder"/>. Ends fluent building for this object (this is the final option availalble).
         /// </summary>
         /// <param name="button">The <see cref="IKeyboardButton"/> for this future <see cref="Command"/>.</param>
-        void HasKeyboardButton(IKeyboardButton button);
+        void KeyboardButtonReference(IKeyboardButton button);
     }
 }

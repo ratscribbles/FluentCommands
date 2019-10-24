@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using FluentCommands.Attributes;
 using FluentCommands.Builders;
 using FluentCommands.CommandTypes;
@@ -38,14 +39,14 @@ namespace FluentCommands
 
             if(commandBase.KeyboardInfo != null)
             {
-                if (commandBase.KeyboardInfo.InlineKeyboard != null)
+                if (commandBase.KeyboardInfo.InlineRows.Any())
                 {
-                    InlineKeyboard = new InlineKeyboardMarkup(commandBase.KeyboardInfo.InlineKeyboard.Rows);
+                    InlineKeyboard = new InlineKeyboardMarkup(commandBase.KeyboardInfo.InlineRows);
                     KeyboardType = KeyboardType.Inline;
                 }
-                if (commandBase.KeyboardInfo.ReplyKeyboard != null)
+                if (commandBase.KeyboardInfo.ReplyRows.Any())
                 {
-                    ReplyKeyboard = new ReplyKeyboardMarkup(commandBase.KeyboardInfo.ReplyKeyboard.Rows);
+                    ReplyKeyboard = new ReplyKeyboardMarkup(commandBase.KeyboardInfo.ReplyRows);
                     KeyboardType = KeyboardType.Reply;
                 }
             }

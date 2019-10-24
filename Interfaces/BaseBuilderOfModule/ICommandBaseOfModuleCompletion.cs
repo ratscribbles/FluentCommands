@@ -17,9 +17,5 @@ namespace FluentCommands.Interfaces.BaseBuilderOfModule
         /// </summary>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="IModuleBuilder"/> to begin the command building process again.</returns>
         IModuleBuilder Next();
-        /// <summary>
-        /// Marks the entire module as complete so that <see cref="FluentCommands.Command"/> objects can be created.
-        /// </summary>
-        void Done();
     }
 }

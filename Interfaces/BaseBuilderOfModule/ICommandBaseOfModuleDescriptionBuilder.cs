@@ -15,6 +15,6 @@ namespace FluentCommands.Interfaces.BaseBuilderOfModule
         /// </summary>
         /// <param name="parseMode"></param>
         /// <returns>Returns this <see cref="Builders.ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseOfModuleDescription WithParseMode(ParseMode parseMode);
+        ICommandBaseOfModuleDescription UsingParseMode(ParseMode parseMode);
     }
 }

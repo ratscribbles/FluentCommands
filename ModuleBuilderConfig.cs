@@ -13,20 +13,20 @@ namespace FluentCommands
         EditLastMessage,
         EditOrDeleteLastMessage,
     }
-    public class CommandModuleConfig
+    public class ModuleBuilderConfig
     {
         //? Consider moving away from an internal state handler and forcing the user to handle it on their own.
         //! Would conseqently force users to create their own solutions everytime (which would usually be about the same)
-        public bool UseInternalKeyboardStateHandler { get; private set; } = true;
-        public bool UseDefaultErrorMessage { get; private set; } = true;
-        public Menu DefaultErrorMessage { get; private set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
-        public string Prefix { get; private set; } = "/";
-        public RegexOptions CommandNameRegexOptions { get; private set; } = RegexOptions.None;
-        public bool DeleteCommandAfterCall { get; private set; } = false;
-        public MenuMode MenuMode { get; private set; } = MenuMode.NoAction;
+        public bool UseInternalKeyboardStateHandler { get; set; } = true;
+        public bool UseDefaultErrorMessage { get; set; } = true;
+        public bool BruteForceKeyboardReferences { get; set; } = false;
+        public bool DeleteCommandAfterCall { get; set; } = false;
+        public string Prefix { get; set; } = "/";
+        public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
+        public MenuMode MenuMode { get; set; } = MenuMode.NoAction;
 
         /// <summary>
-        /// Explicitly changes the prefix for this module.
+        /// Changes the prefix for this command module.
         /// <para><see cref="Command"/> module prefixes cannot be null or empty, be longer than 255 characters, or contain whitespace characters of any kind.</para>
         /// </summary>
         /// <exception cref="InvalidConfigSettingsException"></exception>
@@ -40,11 +40,5 @@ namespace FluentCommands
 
             Prefix = newPrefix;
         }
-
-        /// <summary>
-        /// Explicitly changes the Default Error Message for this module.
-        /// </summary>
-        /// <param name="menuItem"></param>
-        //public void ChangeDefaultErrorMessage(MenuItem menuItem) => DefaultErrorMessage = menuItem;
     }
 }

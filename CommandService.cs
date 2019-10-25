@@ -12,6 +12,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Attributes;
 using FluentCommands.Exceptions;
 using FluentCommands.Menus;
+using FluentCommands.Helper;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
@@ -41,6 +42,7 @@ namespace FluentCommands
         private static readonly Type[] _telegramEventArgs = { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         internal static readonly Dictionary<Type, ModuleBuilder> Modules = new Dictionary<Type, ModuleBuilder>();
 
+        #region Start/Init Overloads
         /// <summary>
         /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/>.
         /// </summary>
@@ -63,44 +65,6 @@ namespace FluentCommands
         }
 
         /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>  
-        /// <typeparam name="TModule">The class that contains the commands the <see cref="ModuleBuilder"/> is being built for.</typeparam>
-        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="ModuleBuilder"/>.</param>
-        public static void Module<TModule>(Action<IModuleBuilder> buildAction) where TModule : class
-        {
-            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
-            //? method of the program class, and the actual command implementations in a separate class
-
-            var moduleType = typeof(TModule);
-            var module = new ModuleBuilder(moduleType);
-
-            buildAction(module);
-
-            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-        }
-
-        /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>
-        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
-        public static IModuleBuilder Module<TModule>() where TModule : class
-        {
-            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
-            //? method of the program class, and the actual command implementations in a separate class
-
-            var moduleType = typeof(TModule);
-            var module = new ModuleBuilder(moduleType);
-            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-            return Modules[moduleType];
-        }
-
-        /// <summary>
         /// This is the logic necessary to initialize the CommandService.
         /// </summary>
         /// <param name="cfg"></param>
@@ -116,7 +80,7 @@ namespace FluentCommands
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             List<Type> assemblyTypes = new List<Type>();
 
-            foreach(var assembly in assemblies)
+            foreach (var assembly in assemblies)
             {
                 List<Type> internalTypes;
 
@@ -124,7 +88,7 @@ namespace FluentCommands
                 {
                     internalTypes = assembly.GetTypes().ToList();
                 }
-                catch(ReflectionTypeLoadException e)
+                catch (ReflectionTypeLoadException e)
                 {
                     internalTypes = e.Types.Where(type => type != null).ToList();
                 }
@@ -195,7 +159,7 @@ namespace FluentCommands
                         method_OnBuilding.Invoke(moduleContext, new object[] { moduleBuilder });
                         method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfig });
 
-                        if(moduleConfig == null) moduleConfig = new ModuleBuilderConfig();
+                        if (moduleConfig == null) moduleConfig = new ModuleBuilderConfig();
                         moduleBuilder.SetConfig(moduleConfig);
                     }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -206,9 +170,9 @@ namespace FluentCommands
                     catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
-                    foreach(var commandName in moduleBuilder.ModuleCommandBases.Keys)
+                    foreach (var commandName in moduleBuilder.ModuleCommandBases.Keys)
                     {
-                        CheckCommandNameValidity(commandName);
+                        AuxiliaryMethods.CheckCommandNameValidity(commandName);
                     }
 
                     if (commandClass == null) throw new CommandOnBuildingException();
@@ -218,12 +182,12 @@ namespace FluentCommands
             }
             void Init_2_KeyboardAssembler()
             {
-                foreach(var kvp in Modules.ToList())
+                foreach (var kvp in Modules.ToList())
                 {
                     var commandClass = kvp.Key;
                     var module = kvp.Value;
 
-                    foreach(var moduleKvp in module.ModuleCommandBases.ToList())
+                    foreach (var moduleKvp in module.ModuleCommandBases.ToList())
                     {
                         var commandName = moduleKvp.Key;
                         var commandBase = moduleKvp.Value;
@@ -259,11 +223,11 @@ namespace FluentCommands
                                 if (!match.Success)
                                 {
                                     match = FluentRegex.CheckButtonLinkedReference.Match(button.Text);
-                                    if(!match.Success) throw new CommandOnBuildingException($"Unknown error occurred while building command keyboards: button contained reference text \"{button.Text}\"");
+                                    if (!match.Success) throw new CommandOnBuildingException($"Unknown error occurred while building command keyboards: button contained reference text \"{button.Text}\"");
                                     else UpdateButton(match, true);
                                 }
                                 else UpdateButton(match);
-                                        
+
                                 // Locates the reference being pointed to by this TButton and updates it.
                                 void UpdateButton(Match m, bool isLinked = false)
                                 {
@@ -360,7 +324,7 @@ namespace FluentCommands
                     // Local function; attempts to add the Command to the dictionary. Throws on failure.
                     void TryAddCommand(CommandBase commandBase)
                     {
-                        foreach (var alias in commandBase.Aliases) CheckCommandNameValidity(commandBase.Name, true, alias);
+                        foreach (var alias in commandBase.Aliases) AuxiliaryMethods.CheckCommandNameValidity(commandBase.Name, true, alias);
 
                         // Checks the incoming method for signature validity; throws if not valid.
                         if (!method.IsStatic
@@ -469,10 +433,62 @@ namespace FluentCommands
                 }
             }
         }
+        #endregion
 
-        public static async Task Evaluate(Type module, TelegramBotClient client, MessageEventArgs e) =>
-            await Evaluate<module>(client, e);
+        #region Module Overloads
+        /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>  
+        /// <typeparam name="TModule">The class that contains the commands the <see cref="ModuleBuilder"/> is being built for.</typeparam>
+        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="ModuleBuilder"/>.</param>
+        public static void Module<TModule>(Action<IModuleBuilder> buildAction) where TModule : class
+        {
+            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
+            //? method of the program class, and the actual command implementations in a separate class
 
+            var moduleType = typeof(TModule);
+            var module = new ModuleBuilder(moduleType);
+
+            buildAction(module);
+
+            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
+            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+        }
+
+        /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>
+        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
+        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
+        public static IModuleBuilder Module<TModule>() where TModule : class
+        {
+            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
+            //? method of the program class, and the actual command implementations in a separate class
+
+            var moduleType = typeof(TModule);
+            var module = new ModuleBuilder(moduleType);
+            if (!Modules.ContainsKey(moduleType)) Modules.Add(moduleType, module);
+            else throw new CommandOnBuildingException($"This module, {moduleType.FullName}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            return Modules[moduleType];
+        }
+
+        /// <summary>
+        /// Builds a <see cref="Command"/> module.
+        /// <para>Provided type is the class that contains the commands being built.</para>
+        /// </summary>
+        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
+        public static IModuleBuilder Module(Type module)
+        {
+            var moduleModule = new ModuleBuilder(module);
+            if (!Modules.ContainsKey(module)) Modules.Add(module, moduleModule);
+            else throw new CommandOnBuildingException($"This module, {module.FullName}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            return Modules[module];
+        }
+        #endregion
+
+        #region Evaluate/ProcessInput Overloads
         /// <summary>
         /// Evaluates the user's message to check and execute a command if a command was issued.
         /// </summary>
@@ -484,8 +500,7 @@ namespace FluentCommands
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
         /// <exception cref="Exception"></exception>
-        /// <returns></returns>
-        public static async Task Evaluate<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : class
+        public static async Task Eval_Oldlogic<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : class
         {
             try
             {
@@ -507,7 +522,7 @@ namespace FluentCommands
                 {
                     if (rawInput.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                     {
-                        string input = rawInput.Remove(rawInput.IndexOf(prefix, StringComparison.OrdinalIgnoreCase), rawInput.Length);
+                        string input = rawInput.Substring(prefix.Length);
                         var commandMatch = FluentRegex.CheckCommand.Match(input);
 
                         if (!commandMatch.Success) return;
@@ -531,10 +546,6 @@ namespace FluentCommands
             catch (ArgumentNullException ex) { return; } // Catch, Log it, re-throw.
             catch (Exception ex) { return; } // Catch, Log it, re-throw.
 
-            Command EvaluateCommand()
-            {
-                return null; //: Refactoring...
-            }
             async Task ProcessCommand(Command c)
             {
                 if(c is MessageCommand)
@@ -548,84 +559,165 @@ namespace FluentCommands
                     }
                     else if (command.Invoke != null) await command.Invoke(client, e);
                 }
-                else
-                {
-                    //switch (c)
-                    //{
-                    //    var c 
-                    //}
-                }
+                // Do nothing if it's not the right type.
             }
         }
-
-        public static async Task Evaluate<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
+        public static async Task Eval_oldLogic<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
         {
             if (e.CallbackQuery.Message.MessageId != 0) _lastMessageIsMenu = false;
         }
 
+
+        public static async Task Evaluate<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : CommandModule<TModule> =>
+            await ProcessInput(typeof(TModule), client, e);
+        public static async Task Evaluate(Type module, TelegramBotClient client, CallbackQueryEventArgs e) =>
+            await ProcessInput(module, client, e);
+
+        public static async Task Evaluate<TModule>(TelegramBotClient client, ChosenInlineResultEventArgs e) where TModule : CommandModule<TModule> =>
+            await ProcessInput(typeof(TModule), client, e);
+        public static async Task Evaluate(Type module, TelegramBotClient client, ChosenInlineResultEventArgs e) =>
+            await ProcessInput(module, client, e);
+
+        public static async Task Evaluate<TModule>(TelegramBotClient client, InlineQueryEventArgs e) where TModule : CommandModule<TModule> =>
+            await ProcessInput(typeof(TModule), client, e);
+        public static async Task Evaluate(Type module, TelegramBotClient client, InlineQueryEventArgs e) =>
+            await ProcessInput(module, client, e);
+
+        public static async Task Evaluate<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : CommandModule<TModule> =>
+            await ProcessInput(typeof(TModule), client, e);
+        public static async Task Evaluate(Type module, TelegramBotClient client, MessageEventArgs e) =>
+            await ProcessInput(module, client, e);
+
+        public static async Task Evaluate<TModule>(TelegramBotClient client, UpdateEventArgs e) where TModule : CommandModule<TModule> =>
+            await ProcessInput(typeof(TModule), client, e);
+        public static async Task Evaluate(Type module, TelegramBotClient client, UpdateEventArgs e) =>
+            await ProcessInput(module, client, e);
+
         /// <summary>
-        /// Checks a string to see if it successfully clears the conditions for a <see cref="Command"/> name.
-        /// <para>Throws if it doesn't.</para>
+        /// Processes the input for a user's given args from an Evaluate method.
         /// </summary>
-        /// <exception cref="CommandOnBuildingException"></exception>
-        /// <exception cref="InvalidCommandNameException"></exception>
-        internal static void CheckCommandNameValidity(string commandName, bool isAlias = false, string aliasName = null)
+        /// <exception cref="NullReferenceException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="RegexMatchTimeoutException"></exception>
+        /// <exception cref="Exception"></exception>
+        private static async Task ProcessInput(Type module, TelegramBotClient client, EventArgs e)
         {
-            if (isAlias)
+            //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
+
+
+
+            if (module == null) throw new NullReferenceException("The Module was null."); //? Log?
+            if (client == null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
+            if (e == null) throw new NullReferenceException("The EventArgs was null."); //? Log?
+
+            if (!Modules.ContainsKey(module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
+
+            string input = GetEventArgsRawInput(e);
+            var botId = client?.BotId ?? 0;
+            var config = Modules[module]?.Config ?? new ModuleBuilderConfig();
+            var prefix = config.Prefix;
+
+            Command command;
+
+            try
             {
-                if (string.IsNullOrWhiteSpace(aliasName))
+                if (input.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.IsNullOrWhiteSpace(commandName)) throw new InvalidCommandNameException($"Command name AND alias were both null, empty, or whitespace.");
+                    input = input.Substring(prefix.Length);
+                    var commandMatch = FluentRegex.CheckCommand.Match(input);
+
+                    if (!commandMatch.Success) return;
+                    else
+                    {
+                        var commandName = commandMatch?.Groups[1]?.Value ?? "";
+                        if (_commands.ContainsKey(module) && _commands[module].ContainsKey(commandName)) command = _commands[module][commandName];
+                        else return;
+                    }
                 }
-                else CheckName(aliasName, isAlias);
+                else return;
             }
-            else CheckName(commandName);
+            catch (ArgumentNullException) { return; } // Catch, default error message?, Log it, re-throw.
+            catch (ArgumentException) { return; } // Catch, Log it, re-throw.
+            catch (RegexMatchTimeoutException) { return; } // Catch, Log it, re-throw.
 
-            void CheckName(string name, bool alias = false)
+            await ProcessCommand(command);
+
+            //!
+            //!
+            //! YOU NEED TO PERFORM A CHECK TO SEE IF THE COMMAND TYPE AND EVENTARGS TYPE ARE THE SAME "BASE" (eg: MessageCommand matches with MessageEventArgs)
+            //? evaluate what to do in the event this fails either with a global config property or by throwing or by doing nothing. pick one
+            //!
+            //!
+
+            async Task ProcessCommand(Command cmd)
             {
-                string nullOrWhitespace;
-                string tooLong;
-                string containsWhitespaceCharacters;
-                string containsNonAlphanumericCharacters;
-                string regexTimeout;
-                string tempCommandName;
-                string tempName;
+                switch (cmd)
+                {
+                    case var _ when cmd is CallbackQueryCommand:
+                        var c = cmd as MessageCommand;
+                        var args = e as MessageEventArgs;
+                        if (c.InvokeWithMenuItem != null)
+                        {
+                            var menu = await c.InvokeWithMenuItem(client, args);
+                            //: check keyboards.
 
-                if (string.IsNullOrWhiteSpace(commandName)) tempCommandName = "NULL";
-                else tempCommandName = commandName;
-                if (string.IsNullOrWhiteSpace(name)) tempName = "NULL";
-                else tempName = name;
-
-                if (alias)
-                {
-                    nullOrWhitespace = $"Command \"{tempCommandName}\": Command had alias that was null, empty, or whitespace.";
-                    tooLong = $"Command \"{tempCommandName}\": Alias \"{tempName}\" was too long — Command names and aliases may only be a maximum of 255 characters.";
-                    containsWhitespaceCharacters = $"Command \"{tempCommandName}\": Alias \"{tempName}\" — Command names and aliases cannot contain whitespace characters.";
-                    containsNonAlphanumericCharacters = $"Command \"{tempCommandName}\": Alias \"{tempName}\" — Command names and aliases cannot contain non-alphanumeric characters.";
-                    regexTimeout = $"Command \"{tempCommandName}\": Alias \"{tempName}\" caused a Regex Timeout while checking if the command's name was valid: ";
+                            //: Figure this out. lol. may want to remove the generics for the internal implementation
+                            //: consider an extension method, or just a method added to the class itself
+                            // await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
+                        }
+                        else if (c.Invoke != null) await c.Invoke(client, args);
+                        return;
+                    case var _ when cmd is ChosenInlineResultCommand:
+                        return;
+                    case var _ when cmd is InlineQueryCommand:
+                        return;
+                    case var _ when cmd is MessageCommand:
+                        return;
+                    case var _ when cmd is UpdateCommand:
+                        return;
+                    default:
+                        return;
                 }
-                else
+            }
+            string GetEventArgsRawInput(EventArgs eventArgs)
+            {
+                switch (eventArgs)
                 {
-                    nullOrWhitespace = $"Command name was null, empty, or whitespace.";
-                    tooLong = $"Command \"{tempName}\": Command names may only be a maximum of 255 characters.";
-                    containsWhitespaceCharacters = $"Command \"{tempName}\": Command names cannot contain whitespace characters.";
-                    containsNonAlphanumericCharacters = $"Command \"{tempName}\": — Command names and aliases cannot contain non-alphanumeric characters.";
-                    regexTimeout = $"Command \"{tempName}\": caused a Regex Timeout while checking if the command's name was valid: ";
-                }
-
-                if (string.IsNullOrWhiteSpace(name)) throw new InvalidCommandNameException(nullOrWhitespace);
-                if (name.Length > 255) throw new InvalidCommandNameException(tooLong);
-                try
-                {
-                    if (FluentRegex.CheckForWhiteSpaces.IsMatch(name)) throw new InvalidCommandNameException(containsWhitespaceCharacters);
-                    if (FluentRegex.CheckNonAlphanumeric.IsMatch(name)) throw new InvalidCommandNameException(containsNonAlphanumericCharacters);
-                }
-                catch (RegexMatchTimeoutException e)
-                {
-                    throw new CommandOnBuildingException(regexTimeout, e);
+                    case var _ when eventArgs is CallbackQueryEventArgs:
+                        return ((CallbackQueryEventArgs)eventArgs).GetRawInput();
+                    case var _ when eventArgs is ChosenInlineResultEventArgs:
+                        return ((ChosenInlineResultEventArgs)eventArgs).GetRawInput();
+                    case var _ when eventArgs is InlineQueryEventArgs:
+                        return ((InlineQueryEventArgs)eventArgs).GetRawInput();
+                    case var _ when eventArgs is MessageEventArgs:
+                        return ((MessageEventArgs)eventArgs).GetRawInput();
+                    case var _ when eventArgs is UpdateEventArgs:
+                        return ((UpdateEventArgs)eventArgs).GetRawInput();
+                    default:
+                        return "";
                 }
             }
         }
+
+        private static async Task Eval_CallbackQueryCommand(Type module, TelegramBotClient client, CallbackQueryEventArgs e)
+        {
+
+        }
+
+        private static async Task Eval_ChosenInlineResultCommand() { }
+
+        private static async Task Eval_InlineQueryCommand() { }
+
+        private static async Task Eval_MessageCommand()
+        {
+
+        }
+
+        private static async Task Eval_UpdateCommand() { }
+        #endregion
+
+
 
         #region BotLastMessage Method Overloads
         /// <summary>

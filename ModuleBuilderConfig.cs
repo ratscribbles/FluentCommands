@@ -25,6 +25,8 @@ namespace FluentCommands
         public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
         public MenuMode MenuMode { get; set; } = MenuMode.NoAction;
 
+        //! Put this in the commandservice class
+
         /// <summary>
         /// Changes the prefix for this command module.
         /// <para><see cref="Command"/> module prefixes cannot be null or empty, be longer than 255 characters, or contain whitespace characters of any kind.</para>

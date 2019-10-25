@@ -16,10 +16,11 @@ namespace FluentCommands
     public class CommandServiceConfig
     {
         // There can be multiple depending on the module.
-        public bool Logging { get; }
-        public bool UseDefaultRules { get; }
-        public bool UseDefaultErrorMsg { get; }
-        public bool UseInternalStateForReplyKeyboards { get; }
+        public bool Logging { get; set; }
+        public bool UseDefaultRules { get; set; }
+        public bool UseDefaultErrorMsg { get; set; }
+        public bool UseInternalStateForReplyKeyboards { get; set; }
+        public bool CatchExceptionsInternally { get; set; }
 
         public CommandServiceConfig() { }
     }

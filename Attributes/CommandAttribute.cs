@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using FluentCommands.Helper;
 using FluentCommands.Exceptions;
 
 namespace FluentCommands.Attributes
@@ -23,7 +24,7 @@ namespace FluentCommands.Attributes
         /// <param name="name"></param>
         public CommandAttribute(string name)
         {
-            CommandService.CheckCommandNameValidity(name);
+            AuxiliaryMethods.CheckCommandNameValidity(name);
             Name = name;
         }
     }

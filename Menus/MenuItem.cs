@@ -8,6 +8,7 @@ using Telegram.Bot.Types.InputFiles;
 using System.Threading;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Payments;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Menus
 {
@@ -68,6 +69,7 @@ namespace FluentCommands.Menus
         internal string ProviderData { get; private set; } = default;
         internal string ProviderToken { get; private set; } = default;
         internal string Question { get; private set; } = default;
+        internal IReplyMarkup ReplyMarkup { get; private set; } = default;
         internal Message ReplyToMessage { get; private set; } = default;
         internal string ShortName { get; private set; } = default;
         internal InputOnlineFile Source { get; private set; } = default;
@@ -112,6 +114,7 @@ namespace FluentCommands.Menus
         public IMenuVideoNoteBuilder VideoNote() { MenuType = MenuType.VideoNote; return this; }
         public IMenuVoiceBuilder Voice() { MenuType = MenuType.Voice; return this; }
         public Menu Done() => new Menu(this);
+        public Menu DoneAndSendTo(int idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
         public Menu DoneAndSendTo(long idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
     }
 }

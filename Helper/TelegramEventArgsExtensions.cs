@@ -27,17 +27,55 @@ namespace FluentCommands.Helper
             else return "";
         }
 
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found.</summary>
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>
         internal static long GetChatId(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Message?.Chat?.Id ?? 0;
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found.</summary>
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>
+        internal static long GetChatId(this ChosenInlineResultEventArgs e) { if (!e?.ChosenInlineResult?.From?.IsBot ?? false) return e?.ChosenInlineResult?.From?.Id ?? 0; else return 0; }
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>
+        internal static long GetChatId(this InlineQueryEventArgs e) { if (!e?.InlineQuery?.From?.IsBot ?? false) return e?.InlineQuery?.From?.Id ?? 0; else return 0; }
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>
         internal static long GetChatId(this MessageEventArgs e) => e?.Message?.Chat?.Id ?? 0;
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found.</summary>
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>
         internal static long GetChatId(this UpdateEventArgs e)
         {
             var update = e?.Update;
             if (update == null) return 0;
             else if (update.CallbackQuery != null) return update.CallbackQuery?.Message?.Chat?.Id ?? 0;
+            else if (update.ChosenInlineResult != null) return update.ChosenInlineResult?.From?.Id ?? 0;
+            else if (update.InlineQuery != null) return update.InlineQuery?.From?.Id ?? 0;
             else if (update.Message != null) return update.Message?.Chat?.Id ?? 0;
+            else return 0;
+        }
+
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        internal static int GetUserId(this CallbackQueryEventArgs e) { if (!e?.CallbackQuery?.From?.IsBot ?? false) return e?.CallbackQuery?.From?.Id ?? 0; else return 0; }
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        internal static int GetUserId(this ChosenInlineResultEventArgs e) { if (!e?.ChosenInlineResult?.From?.IsBot ?? false) return e?.ChosenInlineResult?.From?.Id ?? 0; else return 0; }
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        internal static int GetUserId(this InlineQueryEventArgs e) { if (!e?.InlineQuery?.From?.IsBot ?? false) return e?.InlineQuery?.From?.Id ?? 0; else return 0; }
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        internal static int GetUserId(this MessageEventArgs e) { if (!e?.Message?.From?.IsBot ?? false) return e?.Message?.From?.Id ?? 0; else return 0; }
+        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        internal static int GetUserId(this UpdateEventArgs e)
+        {
+            var update = e?.Update;
+            if (update == null) return 0;
+            else if (update.CallbackQuery != null)
+            {
+                { if (!update.CallbackQuery?.From?.IsBot ?? false) return update.CallbackQuery?.From?.Id ?? 0; else return 0; }
+            }
+            else if (update.ChosenInlineResult != null)
+            {
+                { if (!update.ChosenInlineResult?.From?.IsBot ?? false) return update.ChosenInlineResult?.From?.Id ?? 0; else return 0; }
+            }
+            else if (update.InlineQuery != null)
+            {
+                { if (!update.InlineQuery?.From?.IsBot ?? false) return update.InlineQuery?.From?.Id ?? 0; else return 0; }
+            }
+            else if (update.Message != null)
+            {
+                { if (!update.Message?.From?.IsBot ?? false) return update.Message?.From?.Id ?? 0; else return 0; }
+            }
             else return 0;
         }
     }

@@ -21,6 +21,7 @@ namespace FluentCommands
         public bool UseDefaultErrorMsg { get; set; }
         public bool UseInternalStateForReplyKeyboards { get; set; }
         public bool CatchExceptionsInternally { get; set; }
+        public MenuMode DefaultMenuMode { get; set; } = MenuMode.NoAction;
 
         public CommandServiceConfig() { }
     }

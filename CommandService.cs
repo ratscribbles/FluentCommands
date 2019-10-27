@@ -33,14 +33,15 @@ namespace FluentCommands
     {
         //! ENFORCE that ALL commands that have buttons have callbacks that reference that command and that command only.
 
-        private static CommandServiceConfig _globalConfig;
         private static bool _lastMessageIsMenu;
         private static bool _commandsArePopulated = false;
-        private static readonly Dictionary<Type, Dictionary<string, Command>> _commands = new Dictionary<Type, Dictionary<string, Command>>();
-        private static readonly Dictionary<int, Dictionary<long, Message>> _messageBotCache = new Dictionary<int, Dictionary<long, Message>>();
-        private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Type[] _telegramEventArgs = { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
+        private static readonly Dictionary<Type, Dictionary<string, Command>> _commands = new Dictionary<Type, Dictionary<string, Command>>();
+        /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId, int is messageId.</para></summary>
+        private static readonly Dictionary<int, Dictionary<long, Dictionary<int, Message>>> _botLastMessage = new Dictionary<int, Dictionary<long, Dictionary<int, Message>>>();
+        private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         internal static readonly Dictionary<Type, ModuleBuilder> Modules = new Dictionary<Type, ModuleBuilder>();
+        internal static CommandServiceConfig GlobalConfig { get; private set; } = new CommandServiceConfig();
 
         #region Start/Init Overloads
         /// <summary>
@@ -75,7 +76,7 @@ namespace FluentCommands
 
             // Global configuration as provided by the user.
             if (cfg == default) cfg = new CommandServiceConfig();
-            _globalConfig = cfg;
+            GlobalConfig = cfg;
 
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             List<Type> assemblyTypes = new List<Type>();
@@ -505,11 +506,11 @@ namespace FluentCommands
             try
             {
                 var botId = client.BotId;
-                if (!_messageBotCache.ContainsKey(botId)) _messageBotCache.TryAdd(botId, new Dictionary<long, Message>());
+                if (!_botLastMessage.ContainsKey(botId)) _botLastMessage.TryAdd(botId, new Dictionary<long, Message>());
                 if (!_messageUserCache.ContainsKey(botId)) _messageUserCache.TryAdd(botId, new Dictionary<long, Message>());
 
                 var messageChatId = e.Message.Chat.Id;
-                if (!_messageBotCache[botId].ContainsKey(messageChatId)) _messageBotCache[botId].TryAdd(messageChatId, new Message());
+                if (!_botLastMessage[botId].ContainsKey(messageChatId)) _botLastMessage[botId].TryAdd(messageChatId, new Message());
                 if (!_messageUserCache[botId].ContainsKey(messageChatId)) _messageUserCache[botId].TryAdd(messageChatId, new Message());
 
                 //! last message received by bot (will be user)
@@ -601,7 +602,7 @@ namespace FluentCommands
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
         /// <exception cref="Exception"></exception>
-        private static async Task ProcessInput(Type module, TelegramBotClient client, EventArgs e)
+        private static async Task<bool> ProcessInput(Type module, TelegramBotClient client, EventArgs e)
         {
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
 
@@ -613,7 +614,7 @@ namespace FluentCommands
 
             if (!Modules.ContainsKey(module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
 
-            string input = GetEventArgsRawInput(e);
+            string input = AuxiliaryMethods.GetEventArgsRawInput(e);
             var botId = client?.BotId ?? 0;
             var config = Modules[module]?.Config ?? new ModuleBuilderConfig();
             var prefix = config.Prefix;
@@ -655,47 +656,54 @@ namespace FluentCommands
                 switch (cmd)
                 {
                     case var _ when cmd is CallbackQueryCommand:
-                        var c = cmd as MessageCommand;
-                        var args = e as MessageEventArgs;
-                        if (c.InvokeWithMenuItem != null)
                         {
-                            var menu = await c.InvokeWithMenuItem(client, args);
-                            //: check keyboards.
-
-                            //: Figure this out. lol. may want to remove the generics for the internal implementation
-                            //: consider an extension method, or just a method added to the class itself
-                            // await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
+                            if (!(e is CallbackQueryEventArgs)) goto default;
+                            var c = cmd as ChosenInlineResultCommand;
+                            var args = e as ChosenInlineResultEventArgs;
                         }
-                        else if (c.Invoke != null) await c.Invoke(client, args);
                         return;
                     case var _ when cmd is ChosenInlineResultCommand:
+                        {
+                            if (!(e is ChosenInlineResultEventArgs)) goto default;
+                            var c = cmd as ChosenInlineResultCommand;
+                            var args = e as ChosenInlineResultEventArgs;
+                        }
                         return;
                     case var _ when cmd is InlineQueryCommand:
+                        {
+                            if (!(e is InlineQueryEventArgs)) goto default;
+                            var c = cmd as InlineQueryCommand;
+                            var args = e as InlineQueryEventArgs;
+                        }
                         return;
                     case var _ when cmd is MessageCommand:
+                        {
+                            if (!(e is MessageEventArgs)) goto default;
+                            var c = cmd as MessageCommand;
+                            var args = e as MessageEventArgs;
+                            if (c.InvokeWithMenuItem != null)
+                            {
+                                var menu = await c.InvokeWithMenuItem(client, args);
+                                //: check keyboards.
+
+                                //: Figure this out. lol. may want to remove the generics for the internal implementation
+                                //: consider an extension method, or just a method added to the class itself
+                                // await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
+                            }
+                            else if (c.Invoke != null) await c.Invoke(client, args);
+                        }
                         return;
                     case var _ when cmd is UpdateCommand:
+                        {
+                            if (!(e is UpdateEventArgs)) goto default;
+                            var c = cmd as UpdateCommand;
+                            var args = e as UpdateEventArgs;
+
+                        }
                         return;
                     default:
+                        // Perform logging.
                         return;
-                }
-            }
-            string GetEventArgsRawInput(EventArgs eventArgs)
-            {
-                switch (eventArgs)
-                {
-                    case var _ when eventArgs is CallbackQueryEventArgs:
-                        return ((CallbackQueryEventArgs)eventArgs).GetRawInput();
-                    case var _ when eventArgs is ChosenInlineResultEventArgs:
-                        return ((ChosenInlineResultEventArgs)eventArgs).GetRawInput();
-                    case var _ when eventArgs is InlineQueryEventArgs:
-                        return ((InlineQueryEventArgs)eventArgs).GetRawInput();
-                    case var _ when eventArgs is MessageEventArgs:
-                        return ((MessageEventArgs)eventArgs).GetRawInput();
-                    case var _ when eventArgs is UpdateEventArgs:
-                        return ((UpdateEventArgs)eventArgs).GetRawInput();
-                    default:
-                        return "";
                 }
             }
         }
@@ -729,7 +737,7 @@ namespace FluentCommands
         /// <returns>Returns the last <see cref="Message"/> sent by the bot in this <see cref="Chat"/> instance.</returns>
         public static Message BotLastMessage(TelegramBotClient client, CallbackQueryEventArgs e)
         {
-            return _messageBotCache[client.BotId]?[(long)e?.CallbackQuery?.Message?.Chat?.Id];
+            return _botLastMessage[client.BotId]?[(long)e?.CallbackQuery?.Message?.Chat?.Id];
         }
 
         /// <summary>
@@ -741,7 +749,7 @@ namespace FluentCommands
         /// <returns>Returns the last <see cref="Message"/> sent by the bot in this <see cref="Chat"/> instance.</returns>
         public static Message BotLastMessage(TelegramBotClient client, MessageEventArgs e)
         {
-            return _messageBotCache[client.BotId]?[(long)e?.Message?.Chat?.Id];
+            return _botLastMessage[client.BotId]?[(long)e?.Message?.Chat?.Id];
         }
 
         /// <summary>
@@ -753,226 +761,26 @@ namespace FluentCommands
         /// <returns>Returns the last <see cref="Message"/> sent by the bot in this <see cref="Chat"/> instance.</returns>
         public static Message BotLastMessage(TelegramBotClient client, UpdateEventArgs e)
         {
-            return _messageBotCache[client.BotId]
+            return _botLastMessage[client.BotId]
                 ?[(long)(e?.Update?.CallbackQuery?.Message?.Chat?.Id
                       ?? e?.Update?.Message?.Chat?.Id)];
         }
-        #endregion
 
-        private static async Task SendMenu<TModule>(Menu menu, IReplyMarkup replyMarkup, TelegramBotClient client, MessageEventArgs e) where TModule : class
+        /// <summary>
+        /// Updates the internal cache of the bot's last messages.
+        /// <para>Clears the history of last messages if there are no messages provided.</para>
+        /// </summary>
+        internal static void UpdateBotLastMessage(TelegramBotClient client, long chatId, params Message[] messages)
         {
-            //? should this method be public? aimed at transforming MenuItems into replacements for the weird client methods
-            //: additionally, please fix the signature of this method
-            //? possibly duplicate this method to happen with menu items on their own, and rename this one to be "send menu internal handler" or something
-
-            //! "SEND TO THIS" property should only accept an int or long and no enum
-            //! the aim should be to only provide a SPECIFIC Id to send the menuitem to
-            //! otherwise the default should ALWAYS be the chat id
-
-            //? note, all of these things are purely for MenuItem objects. what happens within the methods that arent the returned MenuItem from the Command method are not of any concern.
-            //? if the user wants to do weird junk, they can. ONLY be concerned about the RETURNED MENUITEM phase of the message sending process.
-
-            var m = menu.MenuItem;
-
-            //: Check if editable
-            await client.SendAnimationAsync(m.SendToThis, m.Source, m.Duration, m.Width, m.Height, m.Thumbnail, m.Caption, m.ParseMode, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-
-            var config = Modules[typeof(TModule)].Config;
-            if (m.SendToThis == default) m.SendToThis = (long)e?.Message?.Chat?.Id;
-
-            switch (config.MenuMode)
+            if (messages.Length == 0) { _botLastMessage[client.BotId][chatId].Clear(); return; }
+            foreach(var m in messages)
             {
-                case MenuMode.NoAction:
-                    await NoAction();
-                    break;
-                case MenuMode.EditLastMessage:
-                    //await EditLastMessage();
-                    //!!! FOR REPLYKEYBOARDS, YOU _CANNOT_ EDIT THE REPLYMARKUP. 
-                    //! THE OPTION COULD BE TO EDIT THE INLINEMARKUP OF THE PREVIOUS MESSAGE TO BE EMPTY, AND THEN SEND THE NEW MESSAGE
-                    //! ALTERNATIVELY, THERE COULD BE NO EDIT, BUT THAT SEEMS KINDA BAD
-                    break;
-                case MenuMode.EditOrDeleteLastMessage:
-                    await EditOrDeleteLastMessage();
-                    break;
-            }
-
-            async Task NoAction()
-            {
-                //: need to figure out how to send reply keyboards appropriately.
-
-                //: attempt sendmsg (with replykeyboard) then deleting the message, seeing if the keyboard stays
-
-
-                Message msg;
-
-                switch (m.MenuType)
-                {
-                    case MenuType.Animation:
-                        msg = await client.SendAnimationAsync(m.SendToThis, m.Source, m.Duration, m.Width, m.Height, m.Thumbnail, m.Caption, m.ParseMode, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-                        break;
-                    case MenuType.Audio:
-                        msg = await client.SendAudioAsync(m.SendToThis, m.Source, m.Caption, m.ParseMode, m.Duration, m.Performer, m.Title, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token, m.Thumbnail);
-                        break;
-                    case MenuType.Contact:
-                        msg = await client.SendContactAsync(m.SendToThis, m.PhoneNumber, m.FirstName, m.LastName, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token, m.VCard);
-                        break;
-                    case MenuType.Document:
-                        msg = await client.SendDocumentAsync(m.SendToThis, m.Source, m.Caption, m.ParseMode, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token, m.Thumbnail);
-                        break;
-                    case MenuType.Game:
-                        //? How to send reply keyboard lmao
-                        if(replyMarkup is InlineKeyboardMarkup || replyMarkup == null) msg = await client.SendGameAsync(m.SendToThis, m.ShortName, m.DisableNotification, m.ReplyToMessage.MessageId, (InlineKeyboardMarkup)replyMarkup, m.Token);
-                        else msg = await client.SendGameAsync(m.SendToThis, m.ShortName, m.DisableNotification, m.ReplyToMessage.MessageId, cancellationToken: m.Token); //? Log this?
-                        break;
-                    case MenuType.Invoice:
-                        if (_messageUserCache[client.BotId][e.Message.Chat.Id].Chat.Type != Telegram.Bot.Types.Enums.ChatType.Private) msg = new Message(); //? throw? log it? idk
-                        else
-                        {
-                            if (replyMarkup is InlineKeyboardMarkup || replyMarkup == null)
-                                msg = await client.SendInvoiceAsync((int)m.SendToThis, m.Title, m.Description, m.Payload, m.ProviderToken, m.StartParameter, m.Currency, m.Prices, m.ProviderData, m.PhotoUrl, m.PhotoSize, m.PhotoWidth, m.PhotoHeight, m.NeedsName, m.NeedsPhoneNumber, m.NeedsEmail, m.NeedsShippingAddress, m.IsFlexibile, m.DisableNotification, m.ReplyToMessage.MessageId, (InlineKeyboardMarkup)replyMarkup);
-                            else
-                                //: Log this
-                                msg = await client.SendInvoiceAsync((int)m.SendToThis, m.Title, m.Description, m.Payload, m.ProviderToken, m.StartParameter, m.Currency, m.Prices, m.ProviderData, m.PhotoUrl, m.PhotoSize, m.PhotoWidth, m.PhotoHeight, m.NeedsName, m.NeedsPhoneNumber, m.NeedsEmail, m.NeedsShippingAddress, m.IsFlexibile, m.DisableNotification, m.ReplyToMessage.MessageId);
-                        }
-                        break;
-                    case MenuType.MediaGroup:
-                        msg = (await client.SendMediaGroupAsync(m.Media, m.SendToThis, m.DisableNotification, m.ReplyToMessage.MessageId, m.Token)).LastOrDefault();
-                        break;
-                    case MenuType.Photo:
-                        msg = await client.SendPhotoAsync(m.SendToThis, m.Source, m.Caption, m.ParseMode, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-                        break;
-                    case MenuType.Poll:
-                        msg = await client.SendPollAsync(m.SendToThis, m.Question, m.Options, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-                        break;
-                    case MenuType.Sticker:
-                        msg = await client.SendStickerAsync(m.SendToThis, m.Source, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-                        break;
-                    case MenuType.Text:
-                        msg = await client.SendTextMessageAsync(m.SendToThis, m.TextString, m.ParseMode, m.DisableWebPagePreview, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-                        break;
-                    case MenuType.Venue:
-                        msg = await client.SendVenueAsync(m.SendToThis, m.Latitude, m.Longitude, m.Title, m.Address, m.FourSquareId, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token, m.FourSquareType);
-                        break;
-                    case MenuType.Video:
-                        msg = await client.SendVideoAsync(m.SendToThis, m.Source, m.Duration, m.Width, m.Height, m.Caption, m.ParseMode, m.SupportsStreaming, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token, m.Thumbnail);
-                        break;
-                    case MenuType.VideoNote:
-                        msg = await client.SendVideoNoteAsync(m.SendToThis, m.SourceVideoNote, m.Duration, m.Length, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token, m.Thumbnail);
-                        break;
-                    case MenuType.Voice:
-                        msg = await client.SendVoiceAsync(m.SendToThis, m.Source, m.Caption, m.ParseMode, m.Duration, m.DisableNotification, m.ReplyToMessage.MessageId, replyMarkup, m.Token);
-                        break;
-                    default:
-                        msg = new Message();
-                        return;
-                }
-
-                _messageBotCache[client.BotId][e.Message.Chat.Id] = msg;
-            }
-
-            //async Task EditLastMessage()
-            //{
-            //    Message msgToEdit;
-
-            //    switch (m.MenuType)
-            //    {
-            //        case MenuType.Animation:
-            //            msgToEdit = _messageBotCache[client.BotId][e.Message.Chat.Id];
-            //            if(replyMarkup is InlineKeyboardMarkup || replyMarkup == null)
-            //            {
-            //                await client.EditMessageCaptionAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, m.Caption, (InlineKeyboardMarkup)replyMarkup);
-            //                await client.EditMessageMediaAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, new InputMediaAnimation(m.Source.Url), (InlineKeyboardMarkup)replyMarkup, m.Token);
-            //            }
-            //            else
-            //            {
-            //                //? how to send keyboard properly lmao???
-            //                await client.EditMessageMediaAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, new InputMediaAnimation(m.Source.Url), null, m.Token);
-            //                await client.EditMessageCaptionAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, m.Caption, (InlineKeyboardMarkup)replyMarkup);
-            //            }
-            //            break;
-            //        case MenuType.Audio:
-            //            await client.EditMessageMediaAsync();
-            //            await client.EditMessageCaptionAsync();
-            //            break;
-            //        case MenuType.Contact:
-            //            await NoAction();
-            //            break;
-            //        case MenuType.Document:
-            //            await client.EditMessageMediaAsync();
-            //            await client.EditMessageCaptionAsync();
-            //            break;
-            //        case MenuType.Game:
-            //            await client.EditMessageTextAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, )
-            //            break;
-            //        case MenuType.Invoice:
-            //            await NoAction();
-            //            break;
-            //        case MenuType.MediaGroup:
-            //            break;
-            //        case MenuType.Photo:
-            //            await client.EditMessageMediaAsync();
-            //            await client.EditMessageCaptionAsync();
-            //            break;
-            //        case MenuType.Poll:
-            //            await NoAction();
-            //            break;
-            //        case MenuType.Sticker:
-            //            await NoAction();
-            //            break;
-            //        case MenuType.Text:
-            //            await client.EditMessageTextAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, )
-            //            break;
-            //        case MenuType.Venue:
-            //            await NoAction();
-            //            break;
-            //        case MenuType.Video:
-            //            await client.EditMessageMediaAsync();
-            //            await client.EditMessageCaptionAsync();
-            //            break;
-            //        case MenuType.VideoNote:
-            //            await NoAction();
-            //            break;
-            //        case MenuType.Voice:
-            //            await NoAction();
-            //            break;
-            //    }
-            //}
-            async Task EditOrDeleteLastMessage()
-            {
-                switch (m.MenuType)
-                {
-                    case MenuType.Animation:
-                        break;
-                    case MenuType.Audio:
-                        break;
-                    case MenuType.Contact:
-                        break;
-                    case MenuType.Document:
-                        break;
-                    case MenuType.Game:
-                        break;
-                    case MenuType.Invoice:
-                        break;
-                    case MenuType.MediaGroup:
-                        break;
-                    case MenuType.Photo:
-                        break;
-                    case MenuType.Poll:
-                        break;
-                    case MenuType.Sticker:
-                        break;
-                    case MenuType.Text:
-                        break;
-                    case MenuType.Venue:
-                        break;
-                    case MenuType.Video:
-                        break;
-                    case MenuType.VideoNote:
-                        break;
-                    case MenuType.Voice:
-                        break;
-                }
+                _botLastMessage[client.BotId][chatId][m.MessageId] = m;
             }
         }
+
+        #endregion
+
+
     }
 }

@@ -9,6 +9,7 @@ namespace FluentCommands
 {
     public enum MenuMode
     {
+        Default = 0,
         NoAction,
         EditLastMessage,
         EditOrDeleteLastMessage,
@@ -21,9 +22,10 @@ namespace FluentCommands
         public bool UseDefaultErrorMessage { get; set; } = true;
         public bool BruteForceKeyboardReferences { get; set; } = false;
         public bool DeleteCommandAfterCall { get; set; } = false;
+        public bool LogModuleActivities { get; set; } = false;
         public string Prefix { get; set; } = "/";
         public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
-        public MenuMode MenuMode { get; set; } = MenuMode.NoAction;
+        public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
 
         //! Put this in the commandservice class
 

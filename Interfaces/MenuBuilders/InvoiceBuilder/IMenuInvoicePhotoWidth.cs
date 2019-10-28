@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder
 {
-    public interface IMenuInvoicePhotoWidth : IFluentInterface, IMenuItem
+    public interface IMenuInvoicePhotoWidth : IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. JSON-encoded data about the invoice, which will be shared with the payment provider.

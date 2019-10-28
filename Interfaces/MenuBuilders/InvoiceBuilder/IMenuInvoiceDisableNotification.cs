@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder
 {
-    public interface IMenuInvoiceDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuInvoiceDisableNotification : IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Pass <c>true</c> if the final price depends on the shipping method.

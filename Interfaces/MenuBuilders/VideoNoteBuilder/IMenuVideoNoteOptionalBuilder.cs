@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -7,7 +8,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder
 {
-    public interface IMenuVideoNoteOptionalBuilder : IFluentInterface, IMenuItem
+    public interface IMenuVideoNoteOptionalBuilder : IReplyMarkupable<IMenuVideoNoteReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.

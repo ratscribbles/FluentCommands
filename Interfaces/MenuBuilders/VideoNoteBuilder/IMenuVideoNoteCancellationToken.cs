@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -6,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder
 {
-    public interface IMenuVideoNoteCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuVideoNoteCancellationToken : IReplyMarkupable<IMenuVideoNoteReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
@@ -6,7 +7,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.PhotoBuilder
 {
-    public interface IMenuPhotoCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuPhotoCancellationToken : IReplyMarkupable<IMenuPhotoReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Photo caption (may also be used when resending photos by file_id), 0-1024 characters.

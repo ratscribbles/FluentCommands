@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationParseMode : IFluentInterface, IMenuItem
+    public interface IMenuAnimationParseMode : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VenueBuilder
 {
-    public interface IMenuVenueFourSquareType : IFluentInterface, IMenuItem
+    public interface IMenuVenueFourSquareType : IReplyMarkupable<IMenuVenueReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.

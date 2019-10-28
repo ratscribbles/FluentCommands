@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.GameBuilder
 {
-    public interface IMenuGameCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuGameCancellationToken : IReplyMarkupableForceInline<IMenuGameReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.

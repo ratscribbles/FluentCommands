@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder
 {
-    public interface IMenuInvoiceIsFlexible : IFluentInterface, IMenuItem
+    public interface IMenuInvoiceIsFlexible : IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Pass <c>true</c> if you require the user's email address to complete the order.

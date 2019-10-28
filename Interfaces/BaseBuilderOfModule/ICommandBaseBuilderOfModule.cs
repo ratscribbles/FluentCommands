@@ -27,19 +27,19 @@ namespace FluentCommands.Interfaces.BaseBuilderOfModule
         /// <summary>
         /// Constructs a <see cref="KeyboardBuilder"/> for this command, to become a Keyboard Markup for display.
         /// </summary>
-        IKeyboardBuilderOfModule Keyboard();
+        IKeyboardBuilder<ICommandBaseOfModuleKeyboard> ReplyMarkup();
         /// <summary>
         /// Adds an <see cref="InlineKeyboardBuilder"/> to this command. Will display after this command is called by a user.
         /// </summary>
         /// <param name="markup">The <see cref="InlineKeyboardMarkup"/></param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseOfModuleKeyboard Keyboard(InlineKeyboardMarkup markup);
+        ICommandBaseOfModuleKeyboard ReplyMarkup(InlineKeyboardMarkup markup);
         /// <summary>
         /// Adds a <see cref="ReplyKeyboardBuilder"/> to this command. Will display after this command is called by a user.
         /// </summary>
         /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> being added to this command.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseOfModuleKeyboard Keyboard(ReplyKeyboardMarkup markup);
+        ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardMarkup markup);
         /// <summary>
         /// Adds an <see cref="IKeyboardButton"/> to this command.
         /// <para>Other commands' Keyboards can reference this command, and its button will be displayed where referenced.</para>

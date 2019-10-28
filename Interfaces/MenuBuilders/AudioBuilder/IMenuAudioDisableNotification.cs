@@ -4,10 +4,11 @@ using System.Text;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using System.IO;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuAudioDisableNotification : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Duration of the audio in seconds.

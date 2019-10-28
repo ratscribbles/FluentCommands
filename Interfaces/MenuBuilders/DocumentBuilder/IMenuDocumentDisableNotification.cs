@@ -4,10 +4,11 @@ using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.DocumentBuilder
 {
-    public interface IMenuDocumentDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuDocumentDisableNotification : IReplyMarkupable<IMenuDocumentReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.

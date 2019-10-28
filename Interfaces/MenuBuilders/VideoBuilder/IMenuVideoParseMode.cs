@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -6,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoParseMode : IFluentInterface, IMenuItem
+    public interface IMenuVideoParseMode : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.

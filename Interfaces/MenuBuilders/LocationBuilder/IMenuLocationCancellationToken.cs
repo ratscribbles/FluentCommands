@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.LocationBuilder
 {
-    public interface IMenuLocationCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuLocationCancellationToken : IReplyMarkupable<IMenuLocationReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.

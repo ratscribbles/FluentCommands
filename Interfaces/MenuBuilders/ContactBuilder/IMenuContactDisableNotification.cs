@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuContactDisableNotification : IReplyMarkupable<IMenuContactReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Contact's last name.

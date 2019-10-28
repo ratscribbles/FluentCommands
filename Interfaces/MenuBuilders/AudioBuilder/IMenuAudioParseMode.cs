@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioParseMode : IFluentInterface, IMenuItem
+    public interface IMenuAudioParseMode : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. The performer of this file.

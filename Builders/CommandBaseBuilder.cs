@@ -15,8 +15,8 @@ namespace FluentCommands.Builders
     /// <summary>
     /// Builder responsible for creating <see cref="CommandBase"/> objects, that will be used to create full <see cref="Command"/> objects for the <see cref="CommandService"/>.
     /// </summary>
-    public sealed partial class CommandBaseBuilder : ICommandBaseBuilder,
-        ICommandBaseAliases, ICommandDescriptionBuilder, ICommandBaseKeyboard, ICommandBaseDescription, IKeyboardBuilder,
+    public sealed class CommandBaseBuilder : ICommandBaseBuilder,
+        ICommandBaseAliases, ICommandDescriptionBuilder, ICommandBaseKeyboard, ICommandBaseDescription, IReplyMarkupable<ICommandBaseKeyboard>, IKeyboardBuilder<ICommandBaseKeyboard>,
         IFluentInterface
     {
         /// <summary>
@@ -84,7 +84,62 @@ namespace FluentCommands.Builders
         /// Constructs a <see cref="KeyboardBuilder"/> for this <see cref="CommandBaseBuilder"/>.
         /// </summary>
         /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="IKeyboardBuilder"/>, removing this option from the fluent builder.</returns>
-        public IKeyboardBuilder Keyboard() => this;
+        public IKeyboardBuilder<ICommandBaseKeyboard> ReplyMarkup() => this;
+        /// <summary>
+        /// Adds a <see cref="ReplyKeyboardRemove"/> to this <see cref="Command"/>.
+        /// <para>Selective: Use this parameter if you want to show the keyboard to specific users only.</para>
+        /// </summary>
+        /// <param name="markup"></param>
+        /// <param name="selective"></param>
+        /// <returns></returns>
+        public ICommandBaseKeyboard ReplyMarkup(ForceReplyMarkup markup, bool selective = false)
+        {
+            KeyboardInfo = new KeyboardBuilder(markup, selective);
+            return this;
+        }
+        /// <summary>
+        /// Adds a <see cref="ForceReplyMarkup"/> to this <see cref="Command"/>.
+        /// <para>Selective: Use this parameter if you want to show the keyboard to specific users only.</para>
+        /// </summary>
+        /// <param name="markup"></param>
+        /// <param name="selective"></param>
+        /// <returns></returns>
+        public ICommandBaseKeyboard ReplyMarkup(ReplyKeyboardRemove markup, bool selective = false)
+        {
+            KeyboardInfo = new KeyboardBuilder(markup, selective);
+            return this;
+        }
+        /// <summary>
+        /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="CommandBaseBuilder"/>.
+        /// </summary>
+        /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
+        /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
+        public ICommandBaseKeyboard ReplyMarkup(InlineKeyboardMarkup markup)
+        {
+            var storage = new KeyboardBuilder();
+            foreach (var row in markup.InlineKeyboard)
+            {
+                storage.AddRow(row.ToArray());
+            }
+            KeyboardInfo = storage;
+            return this;
+        }
+        /// <summary>
+        /// Adds a <see cref="ReplyKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="CommandBaseBuilder"/>.
+        /// </summary>
+        /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
+        /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
+        public ICommandBaseKeyboard ReplyMarkup(ReplyKeyboardMarkup markup)
+        {
+            var storage = new KeyboardBuilder();
+            foreach (var row in markup.Keyboard)
+            {
+                storage.AddRow(row.ToArray());
+            }
+            storage.BuildWithSettings(markup.OneTimeKeyboard, markup.ResizeKeyboard, markup.Selective);
+            KeyboardInfo = storage;
+            return this;
+        }
         /// <summary>
         /// Builds a new <see cref="InlineKeyboardMarkup"/> for this <see cref="CommandBaseBuilder"/>.
         /// </summary>
@@ -108,34 +163,25 @@ namespace FluentCommands.Builders
             return this;
         }
         /// <summary>
-        /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="CommandBaseBuilder"/>.
+        /// Adds a <see cref="ReplyKeyboardRemove"/> to this <see cref="Command"/>.
+        /// <para>Selective: Use this parameter if you want to show the keyboard to specific users only.</para>
         /// </summary>
-        /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
-        /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseKeyboard Keyboard(InlineKeyboardMarkup markup)
+        /// <param name="selective"></param>
+        /// <returns></returns>
+        public ICommandBaseKeyboard Remove(bool selective = false)
         {
-            var storage = new KeyboardBuilder();
-            foreach (var row in markup.InlineKeyboard)
-            {
-                storage.AddRow(row.ToArray());
-            }
-            KeyboardInfo = storage;
+            KeyboardInfo = new KeyboardBuilder(new ReplyKeyboardRemove(), selective);
             return this;
         }
         /// <summary>
-        /// Adds a <see cref="ReplyKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="CommandBaseBuilder"/>.
+        /// Adds a <see cref="ForceReplyMarkup"/> to this <see cref="Command"/>.
+        /// <para>Selective: Use this parameter if you want to show the keyboard to specific users only.</para>
         /// </summary>
-        /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
-        /// <returns>Returns this <see cref="CommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseKeyboard Keyboard(ReplyKeyboardMarkup markup)
+        /// <param name="selective"></param>
+        /// <returns></returns>
+        public ICommandBaseKeyboard ForceReply(bool selective = false)
         {
-            var storage = new KeyboardBuilder();
-            foreach (var row in markup.Keyboard)
-            {
-                storage.AddRow(row.ToArray());
-            }
-            storage.BuildWithSettings(markup.OneTimeKeyboard, markup.ResizeKeyboard, markup.Selective);
-            KeyboardInfo = storage;
+            KeyboardInfo = new KeyboardBuilder(new ForceReplyMarkup(), selective);
             return this;
         }
         /// <summary>
@@ -146,7 +192,6 @@ namespace FluentCommands.Builders
         {
             InButton = button;
         }
-
         /// <summary>
         /// Converts a <see cref="CommandBaseBuilder"/> into a <see cref="CommandBase"/>, to be formed into a <see cref="Command"/>.
         /// </summary>
@@ -163,5 +208,7 @@ namespace FluentCommands.Builders
                 ParseMode = this.InParseMode
             };
         }
+
+
     }
 }

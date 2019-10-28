@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.LocationBuilder
 {
-    public interface IMenuLocationDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuLocationDisableNotification : IReplyMarkupable<IMenuLocationReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Period in seconds for which the location will be updated (see Live Locations, should be between 60 and 86400.)

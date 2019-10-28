@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -6,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.PollBuilder
 {
-    public interface IMenuPollOptionalBuilder : IFluentInterface, IMenuItem
+    public interface IMenuPollOptionalBuilder : IReplyMarkupable<IMenuPollReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.

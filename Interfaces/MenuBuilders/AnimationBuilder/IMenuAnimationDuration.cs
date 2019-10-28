@@ -4,10 +4,11 @@ using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationDuration : IFluentInterface, IMenuItem
+    public interface IMenuAnimationDuration : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Animation height.

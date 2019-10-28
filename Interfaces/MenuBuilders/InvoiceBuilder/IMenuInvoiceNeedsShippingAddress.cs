@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder
 {
-    public interface IMenuInvoiceNeedsShippingAddress : IFluentInterface, IMenuItem
+    public interface IMenuInvoiceNeedsShippingAddress : IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Photo height.

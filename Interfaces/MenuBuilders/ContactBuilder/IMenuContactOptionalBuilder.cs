@@ -4,10 +4,11 @@ using System.Text;
 using System.Threading;
 using System.IO;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactOptionalBuilder : IFluentInterface, IMenuItem
+    public interface IMenuContactOptionalBuilder : IReplyMarkupable<IMenuContactReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.

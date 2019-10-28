@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -6,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder
 {
-    public interface IMenuVideoNoteDuration : IFluentInterface, IMenuItem
+    public interface IMenuVideoNoteDuration : IReplyMarkupable<IMenuVideoNoteReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Video width and height, i.e. diameter of the video message.

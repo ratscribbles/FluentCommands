@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -7,7 +8,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoCaption : IFluentInterface, IMenuItem
+    public interface IMenuVideoCaption : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.

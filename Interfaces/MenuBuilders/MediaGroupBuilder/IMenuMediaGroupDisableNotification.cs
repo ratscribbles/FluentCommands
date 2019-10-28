@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.MediaGroupBuilder
 {
-    public interface IMenuMediaGroupDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuMediaGroupDisableNotification : IReplyMarkupable<IMenuMediaGroupReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.

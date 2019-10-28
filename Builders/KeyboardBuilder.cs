@@ -14,7 +14,7 @@ namespace FluentCommands.Builders
     /// <summary>
     /// Parent builder of <see cref="InlineKeyboardBuilder"/> and <see cref="ReplyKeyboardBuilder"/>. Stores keyboard information provided to a <see cref="Command"/> object.
     /// </summary>
-    public sealed class KeyboardBuilder : IInlineKeyboardBuilder, IReplyKeyboardBuilder, IFluentInterface
+    public class KeyboardBuilder : IInlineKeyboardBuilder, IReplyKeyboardBuilder, IFluentInterface
     {
         private bool _rowsUpdated = false;
 
@@ -26,6 +26,14 @@ namespace FluentCommands.Builders
         /// Gets the <see cref="KeyboardButton"/> rows to be used to create a <see cref="ReplyKeyboardMarkup"/>.
         /// </summary>
         internal List<KeyboardButton[]> ReplyRows { get; private set; } = new List<KeyboardButton[]>();
+        /// <summary>
+        /// Gets the <see cref="ReplyKeyboardRemove"/> to be used for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// </summary>
+        internal ReplyKeyboardRemove ReplyRemove { get; private set; } = null;
+        /// <summary>
+        /// Gets the <see cref="ForceReplyMarkup"/> to be used for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// </summary>
+        internal ForceReplyMarkup ForceReply { get; private set; } = null;
         /// <summary>
         /// Gets the boolean that will be assigned to <see cref="ReplyKeyboardMarkup.OneTimeKeyboard"/>.
         /// </summary>
@@ -53,9 +61,31 @@ namespace FluentCommands.Builders
         }
 
         /// <summary>
-        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder"/> of the correct type for this <see cref="Command"/>.
+        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
         /// </summary>
         internal KeyboardBuilder() { }
+
+        /// <summary>
+        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// </summary>
+        /// <param name="forceReplyMarkup"></param>
+        /// <param name="selective"></param>
+        internal KeyboardBuilder(ForceReplyMarkup forceReplyMarkup, bool selective = false)
+        {
+            ForceReply = forceReplyMarkup;
+            Selective = selective;
+        }
+
+        /// <summary>
+        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// </summary>
+        /// <param name="replyKeyboardRemove"></param>
+        /// <param name="selective"></param>
+        internal KeyboardBuilder(ReplyKeyboardRemove replyKeyboardRemove, bool selective = false)
+        {
+            ReplyRemove = replyKeyboardRemove;
+            Selective = selective;
+        }
 
         /// <summary>
         /// Adds a row of <see cref="InlineKeyboardButton"/>[] to <see cref="InlineRows"/>.
@@ -98,6 +128,9 @@ namespace FluentCommands.Builders
 
         /// <summary>
         /// Finalizes the keyboard with optional settings for the <see cref="ReplyKeyboardMarkup"/> that will be generated from this builder.
+        /// <para>OneTimeKeyboard: Requests clients to hide the keyboard as soon as it's been used. </para>
+        /// <para>ResizeKeyboard: Requests clients to resize the keyboard vertically for optimal fit.</para>
+        /// <para>Selective: Use this parameter if you want to show the keyboard to specific users only.</para>
         /// </summary>
         /// <param name="oneTimeKeyboard">The boolean that will be assigned to <see cref="ReplyKeyboardMarkup.OneTimeKeyboard"/>.</param>
         /// <param name="resizeKeyboard">The boolean that will be assigned to <see cref="ReplyKeyboardMarkup.ResizeKeyboard"/>.</param>

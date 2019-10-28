@@ -5,10 +5,11 @@ using System.IO;
 using FluentCommands.Menus;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuAnimationCancellationToken : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Animation caption (may also be used when resending animation by file_id), 0-1024 characters.

@@ -18,7 +18,7 @@ namespace FluentCommands
                 .Aliases("lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao", "lmao")
                 .HelpDescription("lmao")
                 .UsingParseMode(Telegram.Bot.Types.Enums.ParseMode.Default)
-                .Keyboard().Inline(k => { });
+                .ReplyMarkup().Inline(k => { });
         }
 
         [Command("e")]

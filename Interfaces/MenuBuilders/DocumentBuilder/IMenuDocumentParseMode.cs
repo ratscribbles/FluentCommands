@@ -4,10 +4,11 @@ using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.DocumentBuilder
 {
-    public interface IMenuDocumentParseMode : IFluentInterface, IMenuItem
+    public interface IMenuDocumentParseMode : IReplyMarkupable<IMenuDocumentReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.

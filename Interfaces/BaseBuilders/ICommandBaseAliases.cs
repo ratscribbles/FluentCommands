@@ -22,19 +22,19 @@ namespace FluentCommands.Interfaces.BaseBuilders
         /// Constructs an <see cref="IKeyboardBuilder"/> for this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        IKeyboardBuilder Keyboard();
+        IKeyboardBuilder<ICommandBaseKeyboard> ReplyMarkup();
         /// <summary>
         /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseKeyboard Keyboard(InlineKeyboardMarkup markup);
+        ICommandBaseKeyboard ReplyMarkup(InlineKeyboardMarkup markup);
         /// <summary>
         /// Adds a <see cref="ReplyKeyboardMarkup"/> to the <see cref="KeyboardBuilder"/> of this <see cref="ICommandBaseBuilder"/>.
         /// </summary>
         /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> for this future <see cref="Command"/>.</param>
         /// <returns>Returns this <see cref="ICommandBaseBuilder"/> as an <see cref="ICommandBaseKeyboard"/>, removing this option from the fluent builder.</returns>
-        ICommandBaseKeyboard Keyboard(ReplyKeyboardMarkup markup);
+        ICommandBaseKeyboard ReplyMarkup(ReplyKeyboardMarkup markup);
         /// <summary>
         /// Adds an <see cref="IKeyboardButton"/> to this <see cref="ICommandBaseBuilder"/>. Ends fluent building for this object (this is the final option availalble).
         /// </summary>

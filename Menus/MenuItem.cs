@@ -95,7 +95,7 @@ namespace FluentCommands.Menus
 
         //// Fluent Builders ////
 
-        internal static Menu Empty() => new Menu(new MenuItem());
+        internal static Menu Empty() => new MenuItem();
         public static IMenuBuilder WithChatAction(ChatAction chatAction) { var m = new MenuItem { ChatAction = chatAction }; return m; }
         public static IMenuBuilder As() => new MenuItem();
         public IMenuAnimationBuilder Animation() { MenuType = MenuType.Animation; return this; }
@@ -113,8 +113,7 @@ namespace FluentCommands.Menus
         public IMenuVideoBuilder Video() { MenuType = MenuType.Video; return this; }
         public IMenuVideoNoteBuilder VideoNote() { MenuType = MenuType.VideoNote; return this; }
         public IMenuVoiceBuilder Voice() { MenuType = MenuType.Voice; return this; }
-        public Menu Done() => new Menu(this);
-        public Menu DoneAndSendTo(int idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
-        public Menu DoneAndSendTo(long idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
+        public Menu SendTo(int idToSendTo) { SendToThis = idToSendTo; return this; }
+        public Menu SendTo(long idToSendTo) { SendToThis = idToSendTo; return this; }
     }
 }

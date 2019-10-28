@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
@@ -6,7 +7,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VoiceBuilder
 {
-    public interface IMenuVoiceDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuVoiceDisableNotification : IReplyMarkupable<IMenuVoiceReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Duration of the voice message in seconds.

@@ -16,7 +16,7 @@ namespace FluentCommands.Builders
     /// Builder that creates <see cref="CommandBaseBuilder"/> objects to assemble into commands of this Module.
     /// </summary>
     public sealed class ModuleBuilder : IModuleBuilder, 
-        ICommandBaseBuilderOfModule, ICommandBaseOfModuleDescriptionBuilder, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleKeyboard, ICommandBaseOfModuleCompletion, IKeyboardBuilderOfModule,
+        ICommandBaseBuilderOfModule, ICommandBaseOfModuleDescriptionBuilder, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleKeyboard, ICommandBaseOfModuleCompletion, IKeyboardBuilder<ICommandBaseOfModuleKeyboard>, IReplyMarkupable<ICommandBaseOfModuleKeyboard>,
         IFluentInterface
     {
         /// <summary> Stores the module type when using alternate building form. </summary>
@@ -112,14 +112,14 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="buildAction">Delegate that constructs a <see cref="KeyboardBuilder"/> for this future <see cref="FluentCommands.Command"/>.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        public IKeyboardBuilderOfModule Keyboard() => this;
+        public IKeyboardBuilder<ICommandBaseOfModuleKeyboard> ReplyMarkup() => this;
 
         /// <summary>
         /// Returns this <see cref="IKeyboardBuilder"/> as one marked for <see cref="InlineKeyboardMarkup"/> objects.
         /// </summary>
         public ICommandBaseOfModuleKeyboard Inline(Action<IInlineKeyboardBuilder> buildAction)
         {
-            CommandStorage.Keyboard().Inline(buildAction);
+            CommandStorage.ReplyMarkup().Inline(buildAction);
             this[CommandStorage.Name] = CommandStorage;
             if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
             return this;
@@ -129,7 +129,7 @@ namespace FluentCommands.Builders
         /// </summary>
         public ICommandBaseOfModuleKeyboard Reply(Action<IReplyKeyboardBuilder> buildAction)
         {
-            CommandStorage.Keyboard().Reply(buildAction);
+            CommandStorage.ReplyMarkup().Reply(buildAction);
             this[CommandStorage.Name] = CommandStorage;
             if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
             return this;
@@ -139,9 +139,9 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="markup">The <see cref="InlineKeyboardMarkup"/></param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseOfModuleKeyboard Keyboard(InlineKeyboardMarkup markup)
+        public ICommandBaseOfModuleKeyboard ReplyMarkup(InlineKeyboardMarkup markup)
         {
-            CommandStorage.Keyboard(markup);
+            CommandStorage.ReplyMarkup(markup);
             this[CommandStorage.Name] = CommandStorage;
             if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
             return this;
@@ -151,11 +151,24 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> being added to this command.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseOfModuleKeyboard Keyboard(ReplyKeyboardMarkup markup)
+        public ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardMarkup markup)
         {
-            CommandStorage.Keyboard(markup);
+            CommandStorage.ReplyMarkup(markup);
             this[CommandStorage.Name] = CommandStorage;
             if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            return this;
+        }
+        public ICommandBaseOfModuleKeyboard ReplyMarkup(ForceReplyMarkup markup, bool selective = false)
+        {
+            CommandStorage.ReplyMarkup(markup, selective);
+            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            return this;
+        }
+
+        public ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardRemove markup, bool selective = false)
+        {
+            CommandStorage.ReplyMarkup(markup, selective);
+            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
             return this;
         }
         /// <summary>
@@ -183,5 +196,18 @@ namespace FluentCommands.Builders
             return this;
         }
 
+        public ICommandBaseOfModuleKeyboard Remove(bool selective = false)
+        {
+            CommandStorage.Remove(selective);
+            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            return this;
+        }
+
+        public ICommandBaseOfModuleKeyboard ForceReply(bool selective = false)
+        {
+            CommandStorage.ForceReply(selective);
+            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            return this;
+        }
     }
 }

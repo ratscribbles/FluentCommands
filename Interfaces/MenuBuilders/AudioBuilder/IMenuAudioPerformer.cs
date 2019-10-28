@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioPerformer : IFluentInterface, IMenuItem
+    public interface IMenuAudioPerformer : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.

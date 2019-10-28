@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 using System.IO;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuContactCancellationToken : IReplyMarkupable<IMenuContactReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.

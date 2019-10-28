@@ -4,10 +4,11 @@ using System.Text;
 using Telegram.Bot.Types.Enums;
 using System.IO;
 using Telegram.Bot.Types;
+using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioCancellationToken : IFluentInterface, IMenuItem
+    public interface IMenuAudioCancellationToken : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Audio caption, 0-1024 characters.

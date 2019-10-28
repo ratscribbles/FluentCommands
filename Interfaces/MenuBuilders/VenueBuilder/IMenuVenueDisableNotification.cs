@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FluentCommands.Interfaces.KeyboardBuilders;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VenueBuilder
 {
-    public interface IMenuVenueDisableNotification : IFluentInterface, IMenuItem
+    public interface IMenuVenueDisableNotification : IReplyMarkupable<IMenuVenueReplyMarkup>, IFluentInterface, IMenuItem
     {
         /// <summary>
         /// Optional. Foursquare identifier of the venue.

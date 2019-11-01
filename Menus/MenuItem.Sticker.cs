@@ -8,11 +8,15 @@ using Telegram.Bot.Types.InputFiles;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.StickerBuilder;
+using FluentCommands.Interfaces.KeyboardBuilders;
+using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuStickerBuilder, IMenuStickerOptionalBuilder,
-        IMenuStickerCancellationToken, IMenuStickerDisableNotification
+        IMenuStickerCancellationToken, IMenuStickerDisableNotification,
+        IMenuStickerReplyMarkup, IKeyboardBuilder<IMenuStickerReplyMarkup>
     {
         #region Required
         IMenuStickerOptionalBuilder IMenuStickerBuilder.Source(string source) { Source = source; return this; }
@@ -33,6 +37,58 @@ namespace FluentCommands.Menus
         ////
         IMenuItem IMenuStickerDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuItem IMenuStickerDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        ////
+        IMenuItem IMenuStickerReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenuItem IMenuStickerReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        #endregion
+        #region Keyboard Implementation
+        IKeyboardBuilder<IMenuStickerReplyMarkup> IReplyMarkupable<IMenuStickerReplyMarkup>.ReplyMarkup() => this;
+
+        IMenuStickerReplyMarkup IReplyMarkupable<IMenuStickerReplyMarkup>.ReplyMarkup(InlineKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuStickerReplyMarkup IReplyMarkupable<IMenuStickerReplyMarkup>.ReplyMarkup(ReplyKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuStickerReplyMarkup IReplyMarkupable<IMenuStickerReplyMarkup>.ReplyMarkup(ForceReplyMarkup markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuStickerReplyMarkup IReplyMarkupable<IMenuStickerReplyMarkup>.ReplyMarkup(ReplyKeyboardRemove markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuStickerReplyMarkup IKeyboardBuilder<IMenuStickerReplyMarkup>.Inline(Action<IInlineKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
+            return this;
+        }
+
+        IMenuStickerReplyMarkup IKeyboardBuilder<IMenuStickerReplyMarkup>.Reply(Action<IReplyKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateReply(CommandService.UpdateKeyboardRows(keyboard.ReplyRows));
+            ReplyMarkup = new ReplyKeyboardMarkup(keyboard.ReplyRows);
+            return this;
+        }
+
+        IMenuStickerReplyMarkup IKeyboardBuilder<IMenuStickerReplyMarkup>.Remove(bool selective)
+        {
+            var keyboard = new ReplyKeyboardRemove
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
+
+        IMenuStickerReplyMarkup IKeyboardBuilder<IMenuStickerReplyMarkup>.ForceReply(bool selective)
+        {
+            var keyboard = new ForceReplyMarkup
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
         #endregion
     }
 }

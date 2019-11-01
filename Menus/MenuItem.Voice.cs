@@ -9,11 +9,15 @@ using Telegram.Bot.Types.InputFiles;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.VoiceBuilder;
+using FluentCommands.Interfaces.KeyboardBuilders;
+using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuVoiceBuilder, IMenuVoiceOptionalBuilder,
-        IMenuVoiceCancellationToken, IMenuVoiceCaption, IMenuVoiceDisableNotification, IMenuVoiceDuration, IMenuVoiceParseMode
+        IMenuVoiceCancellationToken, IMenuVoiceCaption, IMenuVoiceDisableNotification, IMenuVoiceDuration, IMenuVoiceParseMode,
+        IMenuVoiceReplyMarkup, IKeyboardBuilder<IMenuVoiceReplyMarkup>  
     {
         #region Required
         IMenuVoiceOptionalBuilder IMenuVoiceBuilder.Source(string source) { Source = source; return this; }
@@ -55,6 +59,58 @@ namespace FluentCommands.Menus
         ////
         IMenuItem IMenuVoiceParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuItem IMenuVoiceParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        ////
+        IMenuItem IMenuVoiceReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenuItem IMenuVoiceReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        #endregion
+        #region Keyboard Implementation
+        IKeyboardBuilder<IMenuVoiceReplyMarkup> IReplyMarkupable<IMenuVoiceReplyMarkup>.ReplyMarkup() => this;
+
+        IMenuVoiceReplyMarkup IReplyMarkupable<IMenuVoiceReplyMarkup>.ReplyMarkup(InlineKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuVoiceReplyMarkup IReplyMarkupable<IMenuVoiceReplyMarkup>.ReplyMarkup(ReplyKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuVoiceReplyMarkup IReplyMarkupable<IMenuVoiceReplyMarkup>.ReplyMarkup(ForceReplyMarkup markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuVoiceReplyMarkup IReplyMarkupable<IMenuVoiceReplyMarkup>.ReplyMarkup(ReplyKeyboardRemove markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuVoiceReplyMarkup IKeyboardBuilder<IMenuVoiceReplyMarkup>.Inline(Action<IInlineKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
+            return this;
+        }
+
+        IMenuVoiceReplyMarkup IKeyboardBuilder<IMenuVoiceReplyMarkup>.Reply(Action<IReplyKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateReply(CommandService.UpdateKeyboardRows(keyboard.ReplyRows));
+            ReplyMarkup = new ReplyKeyboardMarkup(keyboard.ReplyRows);
+            return this;
+        }
+
+        IMenuVoiceReplyMarkup IKeyboardBuilder<IMenuVoiceReplyMarkup>.Remove(bool selective)
+        {
+            var keyboard = new ReplyKeyboardRemove
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
+
+        IMenuVoiceReplyMarkup IKeyboardBuilder<IMenuVoiceReplyMarkup>.ForceReply(bool selective)
+        {
+            var keyboard = new ForceReplyMarkup
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
         #endregion
     }
 }

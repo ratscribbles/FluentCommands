@@ -7,12 +7,16 @@ using Telegram.Bot.Types.Payments;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder;
+using FluentCommands.Interfaces.KeyboardBuilders;
+using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuInvoiceBuilder, IMenuInvoiceOptionalBuilder,
         IMenuInvoiceBuilderCurrency, IMenuInvoiceBuilderDescription, IMenuInvoiceBuilderPayload, IMenuInvoiceBuilderProviderToken, IMenuInvoiceBuilderStartParameter, IMenuInvoiceBuilderTitle,
-        IMenuInvoiceCancellationToken, IMenuInvoiceDisableNotification, IMenuInvoiceIsFlexible, IMenuInvoiceNeedsEmail, IMenuInvoiceNeedsName, IMenuInvoiceNeedsPhoneNumber, IMenuInvoiceNeedsShippingAddress, IMenuInvoicePhotoHeight, IMenuInvoicePhotoSize, IMenuInvoicePhotoUrl, IMenuInvoicePhotoWidth, IMenuInvoiceProviderData
+        IMenuInvoiceCancellationToken, IMenuInvoiceDisableNotification, IMenuInvoiceIsFlexible, IMenuInvoiceNeedsEmail, IMenuInvoiceNeedsName, IMenuInvoiceNeedsPhoneNumber, IMenuInvoiceNeedsShippingAddress, IMenuInvoicePhotoHeight, IMenuInvoicePhotoSize, IMenuInvoicePhotoUrl, IMenuInvoicePhotoWidth, IMenuInvoiceProviderData,
+        IMenuInvoiceReplyMarkup, IKeyboardBuilderForceInline<IMenuInvoiceReplyMarkup>
     {
         #region Required
         IMenuInvoiceBuilderTitle IMenuInvoiceBuilder.Title(string title) { Title = title; return this; }
@@ -144,6 +148,24 @@ namespace FluentCommands.Menus
         ////
         IMenuItem IMenuInvoiceProviderData.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuItem IMenuInvoiceProviderData.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        ////
+        IMenuItem IMenuInvoiceReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenuItem IMenuInvoiceReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        #endregion
+
+        #region Keyboard Implementation
+        IKeyboardBuilderForceInline<IMenuInvoiceReplyMarkup> IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>.ReplyMarkup() => this;
+
+        IMenuInvoiceReplyMarkup IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>.ReplyMarkup(InlineKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuInvoiceReplyMarkup IKeyboardBuilderForceInline<IMenuInvoiceReplyMarkup>.Inline(Action<IInlineKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
+            return this;
+        }
         #endregion
     }
 }

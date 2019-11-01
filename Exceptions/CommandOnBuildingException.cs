@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 namespace FluentCommands.Exceptions
 {
     /// <summary>
-    /// Thrown when a <see cref="Command"/> of the same name already exists within <see cref="CommandService"/>.
+    /// Thrown when the <see cref="CommandService"/> encounters an unrecoverable state after initializing.
     /// </summary>
     [Serializable]
     public class CommandOnBuildingException : Exception, ISerializable

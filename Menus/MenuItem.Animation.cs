@@ -9,11 +9,15 @@ using Telegram.Bot.Types.InputFiles;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.AnimationBuilder;
+using FluentCommands.Interfaces.KeyboardBuilders;
+using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuAnimationBuilder, IMenuAnimationOptionalBuilder,
-        IMenuAnimationCancellationToken, IMenuAnimationCaption, IMenuAnimationDisableNotification, IMenuAnimationDuration, IMenuAnimationHeight, IMenuAnimationParseMode, IMenuAnimationReplyToMessage, IMenuAnimationThumbnail
+        IMenuAnimationCancellationToken, IMenuAnimationCaption, IMenuAnimationDisableNotification, IMenuAnimationDuration, IMenuAnimationHeight, IMenuAnimationParseMode, IMenuAnimationReplyToMessage, IMenuAnimationThumbnail,
+        IMenuAnimationReplyMarkup, IKeyboardBuilder<IMenuAnimationReplyMarkup>
     {
         #region Required
         IMenuAnimationOptionalBuilder IMenuAnimationBuilder.Source(string source) { Source = new InputOnlineFile(source); return this; }
@@ -95,12 +99,69 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationParseMode.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         IMenuItem IMenuAnimationParseMode.Width(int width) { Width = width; return this; }
         ////
+        IMenuAnimationReplyToMessage IMenuAnimationReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenuAnimationReplyToMessage IMenuAnimationReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenuAnimationThumbnail IMenuAnimationReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenuAnimationThumbnail IMenuAnimationReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenuAnimationThumbnail IMenuAnimationReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenuItem IMenuAnimationReplyMarkup.Width(int width) { Width = width; return this; }
+        ///
         IMenuAnimationThumbnail IMenuAnimationReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         IMenuItem IMenuAnimationReplyToMessage.Width(int width) { Width = width; return this; }
         ////
         IMenuItem IMenuAnimationThumbnail.Width(int width) { Width = width; return this; }
+        #endregion
+
+        #region Keyboard Implementation
+        IKeyboardBuilder<IMenuAnimationReplyMarkup> IReplyMarkupable<IMenuAnimationReplyMarkup>.ReplyMarkup() => this;
+
+        IMenuAnimationReplyMarkup IReplyMarkupable<IMenuAnimationReplyMarkup>.ReplyMarkup(InlineKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuAnimationReplyMarkup IReplyMarkupable<IMenuAnimationReplyMarkup>.ReplyMarkup(ReplyKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuAnimationReplyMarkup IReplyMarkupable<IMenuAnimationReplyMarkup>.ReplyMarkup(ForceReplyMarkup markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuAnimationReplyMarkup IReplyMarkupable<IMenuAnimationReplyMarkup>.ReplyMarkup(ReplyKeyboardRemove markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuAnimationReplyMarkup IKeyboardBuilder<IMenuAnimationReplyMarkup>.Inline(Action<IInlineKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
+            return this;
+        }
+
+        IMenuAnimationReplyMarkup IKeyboardBuilder<IMenuAnimationReplyMarkup>.Reply(Action<IReplyKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateReply(CommandService.UpdateKeyboardRows(keyboard.ReplyRows));
+            ReplyMarkup = new ReplyKeyboardMarkup(keyboard.ReplyRows);
+            return this;
+        }
+
+        IMenuAnimationReplyMarkup IKeyboardBuilder<IMenuAnimationReplyMarkup>.Remove(bool selective)
+        {
+            var keyboard = new ReplyKeyboardRemove
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
+
+        IMenuAnimationReplyMarkup IKeyboardBuilder<IMenuAnimationReplyMarkup>.ForceReply(bool selective)
+        {
+            var keyboard = new ForceReplyMarkup
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
         #endregion
     }
 }

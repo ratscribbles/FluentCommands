@@ -7,11 +7,15 @@ using Telegram.Bot.Types;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.ContactBuilder;
+using FluentCommands.Interfaces.KeyboardBuilders;
+using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuContactBuilder, IMenuContactBuilderPhoneNumber, IMenuContactOptionalBuilder,
-        IMenuContactCancellationToken, IMenuContactDisableNotification, IMenuContactLastName, IMenuContactReplyToMessage, IMenuContactThumbnail
+        IMenuContactCancellationToken, IMenuContactDisableNotification, IMenuContactLastName, IMenuContactReplyToMessage, IMenuContactThumbnail,
+        IMenuContactReplyMarkup, IKeyboardBuilder<IMenuContactReplyMarkup>
     {
         #region Required
         IMenuContactBuilderPhoneNumber IMenuContactBuilder.PhoneNumber(string phoneNumber) { PhoneNumber = phoneNumber; return this; }
@@ -55,12 +59,69 @@ namespace FluentCommands.Menus
         IMenuContactThumbnail IMenuContactLastName.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         IMenuItem IMenuContactLastName.VCard(string vCard) { VCard = vCard; return this; }
         ////
+        IMenuContactReplyToMessage IMenuContactReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenuContactReplyToMessage IMenuContactReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenuContactThumbnail IMenuContactReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenuContactThumbnail IMenuContactReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenuContactThumbnail IMenuContactReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenuItem IMenuContactReplyMarkup.VCard(string vCard) { VCard = vCard; return this; }
+        ////
         IMenuContactThumbnail IMenuContactReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         IMenuItem IMenuContactReplyToMessage.VCard(string vCard) { VCard = vCard; return this; }
         ////
         IMenuItem IMenuContactThumbnail.VCard(string vCard) { VCard = vCard; return this; }
+        #endregion
+
+        #region Keyboard Implementation
+        IKeyboardBuilder<IMenuContactReplyMarkup> IReplyMarkupable<IMenuContactReplyMarkup>.ReplyMarkup() => this;
+
+        IMenuContactReplyMarkup IReplyMarkupable<IMenuContactReplyMarkup>.ReplyMarkup(InlineKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuContactReplyMarkup IReplyMarkupable<IMenuContactReplyMarkup>.ReplyMarkup(ReplyKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuContactReplyMarkup IReplyMarkupable<IMenuContactReplyMarkup>.ReplyMarkup(ForceReplyMarkup markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuContactReplyMarkup IReplyMarkupable<IMenuContactReplyMarkup>.ReplyMarkup(ReplyKeyboardRemove markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuContactReplyMarkup IKeyboardBuilder<IMenuContactReplyMarkup>.Inline(Action<IInlineKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);    
+            return this;
+        }
+
+        IMenuContactReplyMarkup IKeyboardBuilder<IMenuContactReplyMarkup>.Reply(Action<IReplyKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateReply(CommandService.UpdateKeyboardRows(keyboard.ReplyRows));
+            ReplyMarkup = new ReplyKeyboardMarkup(keyboard.ReplyRows);
+            return this;
+        }
+
+        IMenuContactReplyMarkup IKeyboardBuilder<IMenuContactReplyMarkup>.Remove(bool selective)
+        {
+            var keyboard = new ReplyKeyboardRemove
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
+
+        IMenuContactReplyMarkup IKeyboardBuilder<IMenuContactReplyMarkup>.ForceReply(bool selective)
+        {
+            var keyboard = new ForceReplyMarkup
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
         #endregion
     }
 }

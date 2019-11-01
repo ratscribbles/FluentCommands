@@ -9,11 +9,15 @@ using Telegram.Bot.Types.InputFiles;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.AudioBuilder;
+using FluentCommands.Interfaces.KeyboardBuilders;
+using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
     public partial class MenuItem : IMenuAudioBuilder, IMenuAudioOptionalBuilder,
-        IMenuAudioCancellationToken, IMenuAudioCaption, IMenuAudioDisableNotification, IMenuAudioDuration, IMenuAudioParseMode, IMenuAudioPerformer, IMenuAudioThumbnail
+        IMenuAudioCancellationToken, IMenuAudioCaption, IMenuAudioDisableNotification, IMenuAudioDuration, IMenuAudioParseMode, IMenuAudioPerformer, IMenuAudioThumbnail,
+        IMenuAudioReplyMarkup, IKeyboardBuilder<IMenuAudioReplyMarkup>
     {
         #region Required
         IMenuAudioOptionalBuilder IMenuAudioBuilder.Source(string source) { Source = source; return this; }
@@ -75,13 +79,68 @@ namespace FluentCommands.Menus
         IMenuAudioThumbnail IMenuAudioParseMode.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAudioThumbnail IMenuAudioParseMode.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         IMenuItem IMenuAudioParseMode.Title(string title) { Title = title; return this; }
-        ////
+        ////    
         IMenuAudioThumbnail IMenuAudioPerformer.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAudioThumbnail IMenuAudioPerformer.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAudioThumbnail IMenuAudioPerformer.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         IMenuItem IMenuAudioPerformer.Title(string title) { Title = title; return this; }
         ////
+        IMenuAudioThumbnail IMenuAudioReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenuAudioThumbnail IMenuAudioReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenuAudioThumbnail IMenuAudioReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenuItem IMenuAudioReplyMarkup.Title(string title) { Title = title; return this; }
+        ////
         IMenuItem IMenuAudioThumbnail.Title(string title) { Title = title; return this; }
+        #endregion
+
+        #region Keyboard Implementation
+        IKeyboardBuilder<IMenuAudioReplyMarkup> IReplyMarkupable<IMenuAudioReplyMarkup>.ReplyMarkup() => this;
+
+        IMenuAudioReplyMarkup IReplyMarkupable<IMenuAudioReplyMarkup>.ReplyMarkup(InlineKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuAudioReplyMarkup IReplyMarkupable<IMenuAudioReplyMarkup>.ReplyMarkup(ReplyKeyboardMarkup markup) { ReplyMarkup = markup; return this; }
+
+        IMenuAudioReplyMarkup IReplyMarkupable<IMenuAudioReplyMarkup>.ReplyMarkup(ForceReplyMarkup markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuAudioReplyMarkup IReplyMarkupable<IMenuAudioReplyMarkup>.ReplyMarkup(ReplyKeyboardRemove markup, bool selective) { ReplyMarkup = markup; return this; }
+
+        IMenuAudioReplyMarkup IKeyboardBuilder<IMenuAudioReplyMarkup>.Inline(Action<IInlineKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
+            return this;
+        }
+
+        IMenuAudioReplyMarkup IKeyboardBuilder<IMenuAudioReplyMarkup>.Reply(Action<IReplyKeyboardBuilder> buildAction)
+        {
+            KeyboardBuilder keyboard = new KeyboardBuilder();
+            buildAction(keyboard);
+            keyboard.UpdateReply(CommandService.UpdateKeyboardRows(keyboard.ReplyRows));
+            ReplyMarkup = new ReplyKeyboardMarkup(keyboard.ReplyRows);
+            return this;
+        }
+
+        IMenuAudioReplyMarkup IKeyboardBuilder<IMenuAudioReplyMarkup>.Remove(bool selective)
+        {
+            var keyboard = new ReplyKeyboardRemove
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
+
+        IMenuAudioReplyMarkup IKeyboardBuilder<IMenuAudioReplyMarkup>.ForceReply(bool selective)
+        {
+            var keyboard = new ForceReplyMarkup
+            {
+                Selective = selective
+            };
+            ReplyMarkup = keyboard;
+            return this;
+        }
         #endregion
     }
 }

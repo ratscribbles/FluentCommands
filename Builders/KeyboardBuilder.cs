@@ -157,5 +157,17 @@ namespace FluentCommands.Builders
         {
             if (!_rowsUpdated) { ReplyRows = rows; _rowsUpdated = true; }
         }
+
+        public static implicit operator InlineKeyboardMarkup(KeyboardBuilder k)
+        {
+            var rows = CommandService.UpdateKeyboardRows(k?.InlineRows);
+            return new InlineKeyboardMarkup(rows);
+        }
+
+        public static implicit operator ReplyKeyboardMarkup(KeyboardBuilder k)
+        {
+            var rows = CommandService.UpdateKeyboardRows(k?.ReplyRows);
+            return new ReplyKeyboardMarkup(rows);
+        }
     }
 }

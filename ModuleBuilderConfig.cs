@@ -20,11 +20,11 @@ namespace FluentCommands
         //! Would conseqently force users to create their own solutions everytime (which would usually be about the same)
         public bool UseInternalKeyboardStateHandler { get; set; } = true;
         public bool UseDefaultErrorMessage { get; set; } = true;
-        public bool BruteForceKeyboardReferences { get; set; } = false;
+        public bool BruteForceKeyboardReferences { get; set; } = true;
         public bool DeleteCommandAfterCall { get; set; } = false;
         public bool LogModuleActivities { get; set; } = false;
         public string Prefix { get; set; } = "/";
-        public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
+        public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.");
         public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
 
         //! Put this in the commandservice class

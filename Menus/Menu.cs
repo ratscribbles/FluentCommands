@@ -26,12 +26,6 @@ namespace FluentCommands.Menus
         /// <param name="m"></param>
         internal Menu(MenuItem m) => MenuItem = m;
 
-        /// <summary>
-        /// Converts a <see cref="Menus.MenuItem"/> into a <see cref="Menu"/> object implicitly.
-        /// </summary>
-        /// <param name="m"></param>
-        public static implicit operator Menu(MenuItem m) => new Menu(m);
-
         public async Task Send(TelegramBotClient client, CallbackQueryEventArgs e, IReplyMarkup replyMarkup = null, MenuMode menuMode = MenuMode.Default) =>
             await Send_Logic(client, e, replyMarkup, menuMode);
         internal async Task Send<TModule>(TelegramBotClient client, CallbackQueryEventArgs e, IReplyMarkup replyMarkup = null, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>

@@ -33,15 +33,48 @@ namespace FluentCommands
     {
         //! ENFORCE that ALL commands that have buttons have callbacks that reference that command and that command only.
 
-        private static bool _lastMessageIsMenu;
-        private static bool _commandsArePopulated = false;
-        private static readonly Type[] _telegramEventArgs = { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
+        private static Toggle _lastMessageIsMenu = new Toggle(false);
+        private static ToggleOnce _commandsArePopulated = new ToggleOnce(false);
+        private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new[] { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
+
+        // Consider making these all ( or some of these ) IReadOnly variants of dictionary
         private static readonly Dictionary<Type, Dictionary<string, Command>> _commands = new Dictionary<Type, Dictionary<string, Command>>();
         /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId, int is messageId.</para></summary>
         private static readonly Dictionary<int, Dictionary<long, Dictionary<int, Message>>> _botLastMessage = new Dictionary<int, Dictionary<long, Dictionary<int, Message>>>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         internal static readonly Dictionary<Type, ModuleBuilder> Modules = new Dictionary<Type, ModuleBuilder>();
+        ///////
+        
         internal static CommandServiceConfig GlobalConfig { get; private set; } = new CommandServiceConfig();
+        internal static IReadOnlyCollection<Type> AssemblyTypes { get; }
+
+        /// <summary>
+        /// Initializes the following:
+        /// <para>- AssemblyTypes readonly collection</para>
+        /// </summary>
+        static CommandService()
+        {
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            List<Type> assemblyTypes = new List<Type>();
+
+            foreach (var assembly in assemblies)
+            {
+                List<Type> internalTypes;
+
+                try
+                {
+                    internalTypes = assembly.GetTypes().ToList();
+                }
+                catch (ReflectionTypeLoadException e)
+                {
+                    internalTypes = e.Types.Where(type => type != null).ToList();
+                }
+
+                assemblyTypes.AddRange(internalTypes);
+            }
+
+            AssemblyTypes = assemblyTypes;
+        }
 
         #region Start/Init Overloads
         /// <summary>
@@ -78,35 +111,16 @@ namespace FluentCommands
             if (cfg == default) cfg = new CommandServiceConfig();
             GlobalConfig = cfg;
 
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            List<Type> assemblyTypes = new List<Type>();
-
-            foreach (var assembly in assemblies)
-            {
-                List<Type> internalTypes;
-
-                try
-                {
-                    internalTypes = assembly.GetTypes().ToList();
-                }
-                catch (ReflectionTypeLoadException e)
-                {
-                    internalTypes = e.Types.Where(type => type != null).ToList();
-                }
-
-                assemblyTypes.AddRange(internalTypes);
-            }
-
             Init_1_ModuleAssembler();
             Init_2_KeyboardAssembler();
             Init_3_CommandAssembler();
 
-            _commandsArePopulated = true;
+            _commandsArePopulated.Value = true;
 
             void Init_1_ModuleAssembler()
             {
                 // Collects *every* ModuleBuilder command context (all classes that derive from CommandContext)
-                var allCommandContexts = assemblyTypes
+                var allCommandContexts = AssemblyTypes
                     .Where(type => type.BaseType != null && type.BaseType.IsAbstract && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>))
                     .ToList();
 
@@ -196,115 +210,18 @@ namespace FluentCommands
                         if (commandBase.KeyboardInfo == null) continue;
                         else
                         {
-                            if (commandBase.KeyboardInfo.InlineRows.Any()) commandBase.KeyboardInfo.UpdateInline(UpdateKeyboardRows<InlineKeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.InlineRows));
-                            if (commandBase.KeyboardInfo.ReplyRows.Any()) commandBase.KeyboardInfo.UpdateReply(UpdateKeyboardRows<KeyboardButton>(commandClass, commandName, commandBase.KeyboardInfo.ReplyRows));
+                            if (commandBase.KeyboardInfo.InlineRows.Any()) commandBase.KeyboardInfo.UpdateInline(UpdateKeyboardRows(commandBase.KeyboardInfo.InlineRows, commandClass, commandName, false));
+                            if (commandBase.KeyboardInfo.ReplyRows.Any()) commandBase.KeyboardInfo.UpdateReply(UpdateKeyboardRows(commandBase.KeyboardInfo.ReplyRows, commandClass, commandName, false));
 
                             Modules[commandClass][commandName] = commandBase;
                         }
                     }
                 }
-
-                // Updates keyboard rows by iterating through each row and checking each button for an implicitly-converted KeybaordButtonReference.
-                List<TButton[]> UpdateKeyboardRows<TButton>(Type parentModule, string parentCommandName, List<TButton[]> rows)
-                    where TButton : IKeyboardButton
-                {
-                    List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
-
-                    foreach (var row in rows)
-                    {
-                        var updatedKeyboardButtons = new List<TButton>();
-
-                        foreach (var button in row)
-                        {
-                            if (button != null
-                             && button.Text != null
-                             && button.Text.Contains("COMMANDBASEBUILDERREFERENCE"))
-                            {
-                                var match = FluentRegex.CheckButtonReference.Match(button.Text);
-                                if (!match.Success)
-                                {
-                                    match = FluentRegex.CheckButtonLinkedReference.Match(button.Text);
-                                    if (!match.Success) throw new CommandOnBuildingException($"Unknown error occurred while building command keyboards: button contained reference text \"{button.Text}\"");
-                                    else UpdateButton(match, true);
-                                }
-                                else UpdateButton(match);
-
-                                // Locates the reference being pointed to by this TButton and updates it.
-                                void UpdateButton(Match m, bool isLinked = false)
-                                {
-                                    IKeyboardButton referencedButton;
-
-                                    string commandNameReference = m.Groups[1].Value ?? throw new CommandOnBuildingException("An unknown error occurred while building command keyboards (command Name Reference was null).");
-
-                                    if (isLinked)
-                                    {
-                                        string moduleTextReference = match.Groups[2].Value ?? throw new CommandOnBuildingException("An unknown error occurred while building command keyboards (module text reference was null).");
-
-                                        var referencedModule = assemblyTypes
-                                           .Where(type => type.Name == moduleTextReference)
-                                           .FirstOrDefault();
-
-                                        if (referencedModule == null) throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a module that doesn't appear to exist.");
-
-                                        if (!(referencedModule.BaseType != null
-                                            && referencedModule.BaseType.IsAbstract
-                                            && referencedModule.BaseType.IsGenericType
-                                            && referencedModule.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>)))
-                                            throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a module that doesn't appear to be a valid command context: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
-
-                                        if (!Modules[referencedModule].ModuleCommandBases.ContainsKey(commandNameReference))
-                                            throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a command that doesn't exist in linked module: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
-
-                                        referencedButton = Modules[referencedModule].ModuleCommandBases[commandNameReference]?.InButton;
-                                    }
-                                    else
-                                    {
-                                        if (!Modules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
-                                            throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a command that doesn't exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
-
-                                        referencedButton = Modules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
-                                    }
-
-                                    if (referencedButton == null || (referencedButton != null && typeof(TButton) != referencedButton.GetType()))
-                                    {
-                                        //: Dependency: check the moduleconfig and see if it should throw here.
-
-                                        if (false) throw new CommandOnBuildingException($"Command \"{parentCommandName}\" has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule.FullName}) is set to terminate building when this occurs.");
-                                        else
-                                        {
-                                            // Attempts to create a reference to the command when a button reference isn't available.
-
-                                            switch (typeof(TButton))
-                                            {
-                                                case var t when typeof(TButton) == typeof(InlineKeyboardButton):
-                                                    referencedButton = InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::");
-                                                    break;
-                                                case var t when typeof(TButton) == typeof(KeyboardButton):
-                                                    referencedButton = new KeyboardButton(commandNameReference);
-                                                    break;
-                                                default: // Should NEVER happen, ever
-                                                    throw new CommandOnBuildingException($"An unknown exception occurred while building the keyboards for command {parentCommandName} (no type detected for TButton)");
-                                            }
-
-                                        }
-                                    }
-
-                                    updatedKeyboardButtons.Add((TButton)referencedButton);
-                                }
-                            }
-                            else updatedKeyboardButtons.Add(button);
-                        }
-
-                        updatedKeyboardBuilder.Add(updatedKeyboardButtons.ToArray());
-                    }
-
-                    return updatedKeyboardBuilder;
-                }
             }
             void Init_3_CommandAssembler()
             {
                 // With modules assembled, can collect *every* method labeled as a Command:
-                var allCommandMethods = assemblyTypes
+                var allCommandMethods = AssemblyTypes
                     .Where(type => type.IsClass && Modules.ContainsKey(type))
                     .SelectMany(type => type.GetMethods())
                     .Where(method => method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
@@ -489,6 +406,132 @@ namespace FluentCommands
         }
         #endregion
 
+        // Updates keyboard rows by iterating through each row and checking each button for an implicitly-converted KeybaordButtonReference.
+        internal static List<TButton[]> UpdateKeyboardRows<TButton>(List<TButton[]> rows, Type parentModule = null, string parentCommandName = null, bool isMenu = true)
+            where TButton : IKeyboardButton
+        {
+            List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
+
+            ModuleBuilderConfig config;
+            Func<string, Exception> keyboardException;
+            string keyboardContainer;
+            if (isMenu)
+            {
+                config = new ModuleBuilderConfig();
+
+                keyboardContainer = "Menu";
+
+                keyboardException = (string s) =>
+                {
+                    //: Do logging
+                    return new MenuReplyMarkupException(s);
+                };
+            }
+            else
+            {
+                config = Modules?[parentModule]?.Config;
+                if (config == null)
+                {
+                    config = new ModuleBuilderConfig();
+                    //: Do Logging, but continue.
+                }
+
+                keyboardContainer = $"Command \"{parentCommandName ?? "NULL"}\"";
+
+                keyboardException = (string s) =>
+                {
+                    //: Do logging
+                    return new CommandOnBuildingException(s);
+                };
+            }
+
+            foreach (var row in rows)
+            {
+                var updatedKeyboardButtons = new List<TButton>();
+
+                foreach (var button in row)
+                {
+                    if (button != null
+                        && button.Text != null
+                        && button.Text.Contains("COMMANDBASEBUILDERREFERENCE"))
+                    {
+                        var match = FluentRegex.CheckButtonReference.Match(button.Text);
+                        if (!match.Success)
+                        {
+                            match = FluentRegex.CheckButtonLinkedReference.Match(button.Text);
+                            if (!match.Success) throw keyboardException($"Unknown error occurred while building {keyboardContainer} keyboard(s): button contained reference text \"{button.Text}\"");
+                            else UpdateButton(match, true);
+                        }
+                        else UpdateButton(match);
+
+                        // Locates the reference being pointed to by this TButton and updates it.
+                        void UpdateButton(Match m, bool isLinked = false)
+                        {
+                            IKeyboardButton referencedButton;
+
+                            string commandNameReference = m.Groups[1].Value ?? throw keyboardException($"An unknown error occurred while building {keyboardContainer} keyboards (command Name Reference was null).");
+
+                            if (isLinked)
+                            {
+                                string moduleTextReference = match.Groups[2].Value ?? throw keyboardException($"An unknown error occurred while building {keyboardContainer} keyboard(s) (module text reference was null).");
+
+                                var referencedModule = AssemblyTypes
+                                    .Where(type => type.Name == moduleTextReference)
+                                    .FirstOrDefault();
+
+                                if (referencedModule == null) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to exist.");
+
+                                if (!(referencedModule.BaseType != null
+                                    && referencedModule.BaseType.IsAbstract
+                                    && referencedModule.BaseType.IsGenericType
+                                    && referencedModule.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>)))
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to be a valid command context: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+
+                                if (!Modules[referencedModule].ModuleCommandBases.ContainsKey(commandNameReference))
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't exist in linked module: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+
+                                referencedButton = Modules[referencedModule].ModuleCommandBases[commandNameReference]?.InButton;
+                            }
+                            else
+                            {
+                                if (parentModule == null || !Modules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command in Module: {parentModule.FullName ?? "\"NULL (check stack trace)\""} that doesn't appear to exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+
+                                referencedButton = Modules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
+                            }
+
+                            if (referencedButton == null || (referencedButton != null && typeof(TButton) != referencedButton.GetType()))
+                            {
+                                if (!config.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
+                                else
+                                {
+                                    // Attempts to create a reference to the command when a button reference isn't available.
+                                    switch (typeof(TButton))
+                                    {
+                                        case var _ when typeof(TButton) == typeof(InlineKeyboardButton):
+                                            referencedButton = InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::");
+                                            break;
+                                        case var _ when typeof(TButton) == typeof(KeyboardButton):
+                                            referencedButton = new KeyboardButton(commandNameReference);
+                                            break;
+                                        default: // Should NEVER happen, ever
+                                            throw keyboardException($"An unknown exception occurred while building the keyboards for {keyboardContainer} (no type detected for TButton)");
+                                    }
+                                }
+                            }
+
+                            updatedKeyboardButtons.Add((TButton)referencedButton);
+                        }
+                    }
+                    else updatedKeyboardButtons.Add(button);
+                }
+
+                updatedKeyboardBuilder.Add(updatedKeyboardButtons.ToArray());
+            }
+
+            return updatedKeyboardBuilder;
+        }
+
         #region Evaluate/ProcessInput Overloads
         /// <summary>
         /// Evaluates the user's message to check and execute a command if a command was issued.
@@ -565,7 +608,10 @@ namespace FluentCommands
         }
         public static async Task Eval_oldLogic<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
         {
-            if (e.CallbackQuery.Message.MessageId != 0) _lastMessageIsMenu = false;
+            if (e.CallbackQuery.Message.MessageId != 0)
+            {
+                if (_lastMessageIsMenu == false) _lastMessageIsMenu.Flip();
+            }
         }
 
 

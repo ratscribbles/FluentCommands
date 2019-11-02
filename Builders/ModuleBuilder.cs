@@ -20,12 +20,12 @@ namespace FluentCommands.Builders
         IFluentInterface
     {
         /// <summary> Stores the module type when using alternate building form. </summary>
-        private Type TypeStorage { get; } = null;
+        private Type TypeStorage { get; }
         /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
-        private CommandBaseBuilder CommandStorage { get; set; }
+        private CommandBaseBuilder? CommandStorage { get; set; } = null;
         /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleBuilderConfig)"/> to update this.</summary>
         internal ModuleBuilderConfig Config { get; private set; } = new ModuleBuilderConfig();
-        /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="CommandBase"/> and <see cref="FluentCommands.Command"/> objects.</summary>
+        /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
         internal readonly Dictionary<string, CommandBaseBuilder> ModuleCommandBases = new Dictionary<string, CommandBaseBuilder>();
 
         /// <summary>
@@ -37,17 +37,12 @@ namespace FluentCommands.Builders
         {
             get
             {
-                if (key == null) throw new CommandOnBuildingException($"Command was null in module: {TypeStorage.FullName ?? "NULL"}");
+                if (key is null) throw new CommandOnBuildingException($"Command was null in module: {TypeStorage.FullName ?? "NULL"}");
                 if(!ModuleCommandBases.ContainsKey(key)) ModuleCommandBases.TryAdd(key, new CommandBaseBuilder(key));
                 return ModuleCommandBases[key];
             }
             set => ModuleCommandBases[key] = (CommandBaseBuilder)value;
         }
-
-        /// <summary>
-        /// Instantiates a new <see cref="ModuleBuilder"/> to create <see cref="CommandBaseBuilder"/> objects with.
-        /// </summary>
-        internal ModuleBuilder() { }
 
         /// <summary>
         /// Instantiates a new <see cref="ModuleBuilder"/> to create <see cref="CommandBaseBuilder"/> objects with.
@@ -64,10 +59,10 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseBuilderOfModule"/>, beginning the build process.</returns>
         public ICommandBaseBuilderOfModule Command(string commandName)
         {
-            if (commandName == null) throw new CommandOnBuildingException($"Command name in module {TypeStorage.FullName ?? "??NULL??"} was null.");
-            if (ModuleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.Name ?? "??NULL??"}, with the command name: \"{commandName}\"");
+            if (commandName is null) throw new CommandOnBuildingException($"Command name in module {TypeStorage.FullName ?? "??NULL??"} was null.");
+            if (ModuleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.FullName ?? "??NULL??"}, with the command name: \"{commandName}\"");
             CommandStorage = (CommandBaseBuilder)this[commandName];
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            if(!(TypeStorage is null)) CommandService.Modules[TypeStorage] = this;
             return this;
         }
         /// <summary>
@@ -77,10 +72,9 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleAliases"/>, removing this option from the fluent builder.</returns>
         public ICommandBaseOfModuleAliases Aliases(params string[] aliases)
         {
-            if (aliases.Any(alias => alias == null)) throw new CommandOnBuildingException($"Command \"{CommandStorage.Name ?? "??NULL??"}\" in module {TypeStorage.FullName ?? "??NULL??"} had an alias that was null.");
-            CommandStorage.Aliases(aliases.Distinct().ToArray());
-            this[CommandStorage.Name] = CommandStorage;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            if (aliases.Any(alias => alias is null)) throw new CommandOnBuildingException($"Command \"{CommandStorage?.Name ?? "??NULL??"}\" in module {TypeStorage?.FullName ?? "??NULL??"} had an alias that was null.");
+            CommandStorage!.Aliases(aliases.Distinct().ToArray());
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -90,9 +84,8 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescriptionBuilder"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
         public ICommandBaseOfModuleDescriptionBuilder HelpDescription(string description)
         {
-            CommandStorage.HelpDescription(description);
-            this[CommandStorage.Name] = CommandStorage;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.HelpDescription(description);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -102,9 +95,8 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, removing this option from the fluent builder.</returns>
         public ICommandBaseOfModuleDescription UsingParseMode(ParseMode parseMode)
         {
-            CommandStorage.UsingParseMode(parseMode);
-            this[CommandStorage.Name] = CommandStorage;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.UsingParseMode(parseMode);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -119,9 +111,8 @@ namespace FluentCommands.Builders
         /// </summary>
         public ICommandBaseOfModuleKeyboard Inline(Action<IInlineKeyboardBuilder> buildAction)
         {
-            CommandStorage.ReplyMarkup().Inline(buildAction);
-            this[CommandStorage.Name] = CommandStorage;
-            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ReplyMarkup().Inline(buildAction);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -129,9 +120,8 @@ namespace FluentCommands.Builders
         /// </summary>
         public ICommandBaseOfModuleKeyboard Reply(Action<IReplyKeyboardBuilder> buildAction)
         {
-            CommandStorage.ReplyMarkup().Reply(buildAction);
-            this[CommandStorage.Name] = CommandStorage;
-            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ReplyMarkup().Reply(buildAction);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -141,9 +131,8 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
         public ICommandBaseOfModuleKeyboard ReplyMarkup(InlineKeyboardMarkup markup)
         {
-            CommandStorage.ReplyMarkup(markup);
-            this[CommandStorage.Name] = CommandStorage;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ReplyMarkup(markup);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -153,22 +142,21 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
         public ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardMarkup markup)
         {
-            CommandStorage.ReplyMarkup(markup);
-            this[CommandStorage.Name] = CommandStorage;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ReplyMarkup(markup);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         public ICommandBaseOfModuleKeyboard ReplyMarkup(ForceReplyMarkup markup, bool selective = false)
         {
-            CommandStorage.ReplyMarkup(markup, selective);
-            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ReplyMarkup(markup, selective);
+            UpdateBuilder(CommandStorage);
             return this;
         }
 
         public ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardRemove markup, bool selective = false)
         {
-            CommandStorage.ReplyMarkup(markup, selective);
-            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ReplyMarkup(markup, selective);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -179,9 +167,8 @@ namespace FluentCommands.Builders
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleCompletion"/>, signalling the end of this command's construction.</returns>
         public ICommandBaseOfModuleCompletion KeyboardButtonReference(IKeyboardButton button)
         {
-            CommandStorage.KeyboardButtonReference(button);
-            this[CommandStorage.Name] = CommandStorage;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.KeyboardButtonReference(button);
+            UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
@@ -189,25 +176,26 @@ namespace FluentCommands.Builders
         /// <para>(If you meant to end the command building process, call <see cref="Done"/> instead!)</para>
         /// </summary>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="IModuleBuilder"/> to begin the command building process again.</returns>
-        public IModuleBuilder Next()
-        {
-            CommandStorage = null;
-            if(TypeStorage != null) CommandService.Modules[TypeStorage] = this;
-            return this;
-        }
+        public IModuleBuilder Next() => this;
 
         public ICommandBaseOfModuleKeyboard Remove(bool selective = false)
         {
-            CommandStorage.Remove(selective);
-            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.Remove(selective);
+            UpdateBuilder(CommandStorage);
             return this;
         }
 
         public ICommandBaseOfModuleKeyboard ForceReply(bool selective = false)
         {
-            CommandStorage.ForceReply(selective);
-            if (TypeStorage != null) CommandService.Modules[TypeStorage] = this;
+            CommandStorage!.ForceReply(selective);
+            UpdateBuilder(CommandStorage);
             return this;
+        }
+
+        private void UpdateBuilder(CommandBaseBuilder c)
+        {
+            if (!(c is null)) this[c.Name] = c;
+            if (!(TypeStorage is null)) CommandService.Modules[TypeStorage] = this;
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using FluentCommands.Builders;
 using FluentCommands.Exceptions;
 using Telegram.Bot.Args;
 
@@ -15,7 +16,7 @@ namespace FluentCommands.Helper
         /// </summary>
         /// <exception cref="CommandOnBuildingException"></exception>
         /// <exception cref="InvalidCommandNameException"></exception>
-        internal static void CheckCommandNameValidity(string commandName, bool isAlias = false, string aliasName = null)
+        internal static void CheckCommandNameValidity(string? commandName, bool isAlias = false, string aliasName = null)
         {
             if (isAlias)
             {
@@ -27,7 +28,7 @@ namespace FluentCommands.Helper
             }
             else CheckName(commandName);
 
-            void CheckName(string name, bool alias = false)
+            void CheckName(string? name, bool alias = false)
             {
                 string nullOrWhitespace;
                 string tooLong;

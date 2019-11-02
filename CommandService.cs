@@ -67,7 +67,7 @@ namespace FluentCommands
                 }
                 catch (ReflectionTypeLoadException e)
                 {
-                    internalTypes = e.Types.Where(type => type != null).ToList();
+                    internalTypes = e.Types.Where(type => !(type is null)).ToList();
                 }
 
                 assemblyTypes.AddRange(internalTypes);
@@ -102,7 +102,7 @@ namespace FluentCommands
         /// This is the logic necessary to initialize the CommandService.
         /// </summary>
         /// <param name="cfg"></param>
-        private static void Init(CommandServiceConfig cfg = default)
+        private static void Init(CommandServiceConfig? cfg = default)
         {
             // Force-Exits the method if it has successfully completed before.
             if (_commandsArePopulated) return; //! Possibly log that it was started more than once
@@ -121,16 +121,15 @@ namespace FluentCommands
             {
                 // Collects *every* ModuleBuilder command context (all classes that derive from CommandContext)
                 var allCommandContexts = AssemblyTypes
-                    .Where(type => type.BaseType != null && type.BaseType.IsAbstract && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>))
+                    .Where(type => !(type.BaseType is null) && type.BaseType.IsAbstract && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>))
                     .ToList();
 
                 string unexpected = "An unexpected error occurred while building command module: ";
 
-                if (allCommandContexts == null) throw new CommandOnBuildingException(unexpected + "Collection of command contexts was null. Please submit a bug report and/or contact the creator of this library if this issue persists.");
+                if (allCommandContexts is null) throw new CommandOnBuildingException(unexpected + "Collection of command contexts was null. Please submit a bug report and/or contact the creator of this library if this issue persists.");
 
                 foreach (var context in allCommandContexts)
                 {
-                    var moduleBuilder = new ModuleBuilder();
 
                     object moduleContext;
                     try { moduleContext = Activator.CreateInstance(context) ?? throw new CommandOnBuildingException(); }
@@ -160,12 +159,14 @@ namespace FluentCommands
                     catch (ArgumentNullException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
                     Type commandClass;
-                    try { commandClass = (Type)property.GetValue(moduleContext, null) ?? throw new CommandOnBuildingException(); }
+                    try { commandClass = (Type?)property.GetValue(moduleContext, null) ?? throw new CommandOnBuildingException(); }
                     catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (TargetParameterCountException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    var moduleBuilder = new ModuleBuilder(commandClass);
 
                     try
                     {
@@ -174,7 +175,7 @@ namespace FluentCommands
                         method_OnBuilding.Invoke(moduleContext, new object[] { moduleBuilder });
                         method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfig });
 
-                        if (moduleConfig == null) moduleConfig = new ModuleBuilderConfig();
+                        if (moduleConfig is null) moduleConfig = new ModuleBuilderConfig();
                         moduleBuilder.SetConfig(moduleConfig);
                     }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -190,7 +191,6 @@ namespace FluentCommands
                         AuxiliaryMethods.CheckCommandNameValidity(commandName);
                     }
 
-                    if (commandClass == null) throw new CommandOnBuildingException();
                     if (Modules.ContainsKey(commandClass)) throw new CommandOnBuildingException();
                     Modules.Add(commandClass, moduleBuilder);
                 }
@@ -207,7 +207,7 @@ namespace FluentCommands
                         var commandName = moduleKvp.Key;
                         var commandBase = moduleKvp.Value;
 
-                        if (commandBase.KeyboardInfo == null) continue;
+                        if (commandBase.KeyboardInfo is null) continue;
                         else
                         {
                             if (commandBase.KeyboardInfo.InlineRows.Any()) commandBase.KeyboardInfo.UpdateInline(UpdateKeyboardRows(commandBase.KeyboardInfo.InlineRows, commandClass, commandName, false));
@@ -224,25 +224,25 @@ namespace FluentCommands
                 var allCommandMethods = AssemblyTypes
                     .Where(type => type.IsClass && Modules.ContainsKey(type))
                     .SelectMany(type => type.GetMethods())
-                    .Where(method => method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
+                    .Where(method => !(method is null) && method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
                     .ToList();
 
                 foreach (var method in allCommandMethods)
                 {
-                    var thisModule = method.DeclaringType;
-                    var methodCommandAttributeName = method.GetCustomAttribute<CommandAttribute>().Name;
+                    var thisModule = method.DeclaringType ?? throw new CommandOnBuildingException("Error getting the DeclaringType (module) of a method while command building. (Returned null.)");
+                    var methodCommandAttributeName = method.GetCustomAttribute<CommandAttribute>()?.Name ?? throw new CommandOnBuildingException($"Error determining the Command Attribute name of a method in module: {thisModule.FullName ?? "NULL"} while command building. (Returned null.)");
 
                     if (!_commands.ContainsKey(thisModule)) _commands[thisModule] = new Dictionary<string, Command>();
 
                     var thisCommandBase = Modules[thisModule].ModuleCommandBases?[methodCommandAttributeName];
 
-                    if (thisCommandBase == null) TryAddCommand(new CommandBase(methodCommandAttributeName));
-                    else TryAddCommand(thisCommandBase.ConvertToBase());
+                    if (thisCommandBase is null) TryAddCommand(new CommandBaseBuilder(methodCommandAttributeName));
+                    else TryAddCommand(thisCommandBase);
 
                     // Local function; attempts to add the Command to the dictionary. Throws on failure.
-                    void TryAddCommand(CommandBase commandBase)
+                    void TryAddCommand(CommandBaseBuilder commandBase)
                     {
-                        foreach (var alias in commandBase.Aliases) AuxiliaryMethods.CheckCommandNameValidity(commandBase.Name, true, alias);
+                        foreach (var alias in commandBase.InAliases) AuxiliaryMethods.CheckCommandNameValidity(commandBase.Name, true, alias);
 
                         // Checks the incoming method for signature validity; throws if not valid.
                         if (!method.IsStatic
@@ -254,82 +254,41 @@ namespace FluentCommands
                             switch (method.GetParameters()[1].ParameterType)
                             {
                                 case Type t when t == typeof(CallbackQueryEventArgs):
-                                    AddCallbackQueryCommand();
+                                    AddCommand<CallbackQueryCommand>(commandBase);
                                     break;
                                 case Type t when t == typeof(ChosenInlineResultEventArgs):
-                                    AddChosenInlineResultCommand();
+                                    AddCommand<ChosenInlineResultCommand>(commandBase);
                                     break;
                                 case Type t when t == typeof(InlineQueryEventArgs):
-                                    AddInlineQueryCommand();
+                                    AddCommand<InlineQueryCommand>(commandBase);
                                     break;
                                 case Type t when t == typeof(MessageEventArgs):
-                                    AddMessageCommand();
+                                    AddCommand<MessageCommand>(commandBase);
                                     break;
                                 case Type t when t == typeof(UpdateEventArgs):
-                                    AddUpdateCommand();
+                                    AddCommand<UpdateCommand>(commandBase);
                                     break;
                             }
 
-                            // Local functions for each command type.
-                            void AddCallbackQueryCommand()
+                            // Adds the finished command to the command list.
+                            void AddCommand<T>(CommandBaseBuilder c) where T : Command
                             {
+                                T? newCommand = (typeof(T)) switch
+                                {
+                                    var _ when typeof(T) == typeof(CallbackQueryCommand) => new CallbackQueryCommand(commandBase, method, thisModule) as T,
+                                    var _ when typeof(T) == typeof(ChosenInlineResultCommand) => new ChosenInlineResultCommand(commandBase, method, thisModule) as T,
+                                    var _ when typeof(T) == typeof(InlineQueryCommand) => new InlineQueryCommand(commandBase, method, thisModule) as T,
+                                    var _ when typeof(T) == typeof(MessageCommand) => new MessageCommand(commandBase, method, thisModule) as T,
+                                    var _ when typeof(T) == typeof(UpdateCommand) => new UpdateCommand(commandBase, method, thisModule) as T,
+                                    _ => throw new Exception()
+                                };
+
+                                if (newCommand is null) throw new Exception();
+
                                 try
                                 {
-                                    var newCommand = new CallbackQueryCommand(commandBase, method);
                                     _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                    AddAliases(newCommand, commandBase.Aliases);
-                                }
-                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                            }
-                            void AddChosenInlineResultCommand()
-                            {
-                                try
-                                {
-                                    var newCommand = new ChosenInlineResultCommand(commandBase, method);
-                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                    AddAliases(newCommand, commandBase.Aliases);
-                                }
-                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                            }
-                            void AddInlineQueryCommand()
-                            {
-                                try
-                                {
-                                    var newCommand = new InlineQueryCommand(commandBase, method);
-                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                    AddAliases(newCommand, commandBase.Aliases);
-                                }
-                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                            }
-                            void AddMessageCommand()
-                            {
-                                try
-                                {
-                                    var newCommand = new MessageCommand(commandBase, method);
-                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                    AddAliases(newCommand, commandBase.Aliases);
-                                }
-                                catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
-                                catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
-                                catch (MissingMethodException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method not found.", e); }
-                                catch (MethodAccessException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method MUST be marked public.", e); }
-                            }
-                            void AddUpdateCommand()
-                            {
-                                try
-                                {
-                                    var newCommand = new UpdateCommand(commandBase, method);
-                                    _commands[thisModule][methodCommandAttributeName] = newCommand;
-                                    AddAliases(newCommand, commandBase.Aliases);
+                                    AddAliases(newCommand, commandBase.InAliases);
                                 }
                                 catch (ArgumentNullException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: method was null.", e); }
                                 catch (ArgumentException e) { throw new CommandOnBuildingException($"Command {methodCommandAttributeName}: ", e); }
@@ -407,12 +366,12 @@ namespace FluentCommands
         #endregion
 
         // Updates keyboard rows by iterating through each row and checking each button for an implicitly-converted KeybaordButtonReference.
-        internal static List<TButton[]> UpdateKeyboardRows<TButton>(List<TButton[]> rows, Type parentModule = null, string parentCommandName = null, bool isMenu = true)
+        internal static List<TButton[]> UpdateKeyboardRows<TButton>(List<TButton[]> rows, Type? parentModule = null, string? parentCommandName = null, bool isMenu = true)
             where TButton : IKeyboardButton
         {
             List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
 
-            ModuleBuilderConfig config;
+            ModuleBuilderConfig? config;
             Func<string, Exception> keyboardException;
             string keyboardContainer;
             if (isMenu)
@@ -429,8 +388,8 @@ namespace FluentCommands
             }
             else
             {
-                config = Modules?[parentModule]?.Config;
-                if (config == null)
+                config = Modules[parentModule ?? throw new InvalidKeyboardRowException()]?.Config;
+                if (config is null)
                 {
                     config = new ModuleBuilderConfig();
                     //: Do Logging, but continue.
@@ -451,8 +410,8 @@ namespace FluentCommands
 
                 foreach (var button in row)
                 {
-                    if (button != null
-                        && button.Text != null
+                    if (button is { }
+                        && button.Text is { }
                         && button.Text.Contains("COMMANDBASEBUILDERREFERENCE"))
                     {
                         var match = FluentRegex.CheckButtonReference.Match(button.Text);
@@ -467,7 +426,7 @@ namespace FluentCommands
                         // Locates the reference being pointed to by this TButton and updates it.
                         void UpdateButton(Match m, bool isLinked = false)
                         {
-                            IKeyboardButton referencedButton;
+                            IKeyboardButton? referencedButton;
 
                             string commandNameReference = m.Groups[1].Value ?? throw keyboardException($"An unknown error occurred while building {keyboardContainer} keyboards (command Name Reference was null).");
 
@@ -479,44 +438,39 @@ namespace FluentCommands
                                     .Where(type => type.Name == moduleTextReference)
                                     .FirstOrDefault();
 
-                                if (referencedModule == null) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to exist.");
+                                if (referencedModule is null) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to exist.");
 
-                                if (!(referencedModule.BaseType != null
+                                if (!(referencedModule.BaseType is { }
                                     && referencedModule.BaseType.IsAbstract
                                     && referencedModule.BaseType.IsGenericType
                                     && referencedModule.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>)))
-                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to be a valid command context: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to be a valid command context: {referencedModule?.FullName ?? "NULL"} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
                                 if (!Modules[referencedModule].ModuleCommandBases.ContainsKey(commandNameReference))
-                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't exist in linked module: {referencedModule.FullName} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't exist in linked module: {referencedModule?.FullName ?? "NULL"} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
                                 referencedButton = Modules[referencedModule].ModuleCommandBases[commandNameReference]?.InButton;
                             }
                             else
                             {
-                                if (parentModule == null || !Modules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
-                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command in Module: {parentModule.FullName ?? "\"NULL (check stack trace)\""} that doesn't appear to exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+                                if (parentModule is null || !Modules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command in Module: {parentModule?.FullName ?? "\"NULL (check stack trace)\""} that doesn't appear to exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
                                 referencedButton = Modules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
                             }
 
-                            if (referencedButton == null || (referencedButton != null && typeof(TButton) != referencedButton.GetType()))
+                            if (referencedButton is null || typeof(TButton) != referencedButton.GetType())
                             {
-                                if (!config.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
+                                if (!config.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule?.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
                                 else
                                 {
                                     // Attempts to create a reference to the command when a button reference isn't available.
-                                    switch (typeof(TButton))
+                                    referencedButton = (typeof(TButton)) switch
                                     {
-                                        case var _ when typeof(TButton) == typeof(InlineKeyboardButton):
-                                            referencedButton = InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::");
-                                            break;
-                                        case var _ when typeof(TButton) == typeof(KeyboardButton):
-                                            referencedButton = new KeyboardButton(commandNameReference);
-                                            break;
-                                        default: // Should NEVER happen, ever
-                                            throw keyboardException($"An unknown exception occurred while building the keyboards for {keyboardContainer} (no type detected for TButton)");
-                                    }
+                                        var _ when typeof(TButton) == typeof(InlineKeyboardButton) => InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::"),
+                                        var _ when typeof(TButton) == typeof(KeyboardButton) => new KeyboardButton(commandNameReference),
+                                        _ => throw keyboardException($"An unknown exception occurred while building the keyboards for {keyboardContainer} (no type detected for TButton)"),
+                                    };
                                 }
                             }
 
@@ -654,9 +608,9 @@ namespace FluentCommands
 
 
 
-            if (module == null) throw new NullReferenceException("The Module was null."); //? Log?
-            if (client == null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
-            if (e == null) throw new NullReferenceException("The EventArgs was null."); //? Log?
+            if (module is null) throw new NullReferenceException("The Module was null."); //? Log?
+            if (client is null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
+            if (e is null) throw new NullReferenceException("The EventArgs was null."); //? Log?
 
             if (!Modules.ContainsKey(module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
 

@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <nullable>enable</nullable>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +16,9 @@
     <None Remove=".gitattributes" />
     <None Remove=".gitignore" />
     <None Remove="Interfaces\ve-DCCD.tmp" />
+    <None Remove="nkpjelfy.ny1~" />
     <None Remove="token.txt" />
+    <None Remove="zid5brs1.1zx~" />
   </ItemGroup>
 
   <ItemGroup>

@@ -29,11 +29,11 @@ namespace FluentCommands.Builders
         /// <summary>
         /// Gets the <see cref="ReplyKeyboardRemove"/> to be used for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
         /// </summary>
-        internal ReplyKeyboardRemove ReplyRemove { get; private set; } = null;
+        internal ReplyKeyboardRemove? ReplyRemove { get; private set; } = null;
         /// <summary>
         /// Gets the <see cref="ForceReplyMarkup"/> to be used for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
         /// </summary>
-        internal ForceReplyMarkup ForceReply { get; private set; } = null;
+        internal ForceReplyMarkup? ForceReply { get; private set; } = null;
         /// <summary>
         /// Gets the boolean that will be assigned to <see cref="ReplyKeyboardMarkup.OneTimeKeyboard"/>.
         /// </summary>
@@ -160,13 +160,13 @@ namespace FluentCommands.Builders
 
         public static implicit operator InlineKeyboardMarkup(KeyboardBuilder k)
         {
-            var rows = CommandService.UpdateKeyboardRows(k?.InlineRows);
+            var rows = CommandService.UpdateKeyboardRows(k?.InlineRows ?? new List<InlineKeyboardButton[]>());
             return new InlineKeyboardMarkup(rows);
         }
 
         public static implicit operator ReplyKeyboardMarkup(KeyboardBuilder k)
         {
-            var rows = CommandService.UpdateKeyboardRows(k?.ReplyRows);
+            var rows = CommandService.UpdateKeyboardRows(k?.ReplyRows ?? new List<KeyboardButton[]>());
             return new ReplyKeyboardMarkup(rows);
         }
     }

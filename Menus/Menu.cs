@@ -118,14 +118,14 @@ namespace FluentCommands.Menus
                         break;
                     case MenuType.Game:
                         //? How to send reply keyboard lmao
-                        if (replyMarkup is InlineKeyboardMarkup || replyMarkup == null) messages.Add(await client.SendGameAsync(m.SendToThis, m.ShortName, m.DisableNotification, m.ReplyToMessage.MessageId, (InlineKeyboardMarkup)replyMarkup, m.Token));
+                        if (replyMarkup is InlineKeyboardMarkup || replyMarkup is null) messages.Add(await client.SendGameAsync(m.SendToThis, m.ShortName, m.DisableNotification, m.ReplyToMessage.MessageId, (InlineKeyboardMarkup)replyMarkup, m.Token));
                         else messages.Add(await client.SendGameAsync(m.SendToThis, m.ShortName, m.DisableNotification, m.ReplyToMessage.MessageId, cancellationToken: m.Token)); //? Log this?
                         break;
                     case MenuType.Invoice:
                         if (CommandService._messageUserCache[client.BotId][e.Message.Chat.Id].Chat.Type != Telegram.Bot.Types.Enums.ChatType.Private) messages.Add(new Message()); //? throw? log it? idk
                         else
                         {
-                            if (replyMarkup is InlineKeyboardMarkup || replyMarkup == null)
+                            if (replyMarkup is InlineKeyboardMarkup || replyMarkup is null)
                                 messages.Add(await client.SendInvoiceAsync((int)m.SendToThis, m.Title, m.Description, m.Payload, m.ProviderToken, m.StartParameter, m.Currency, m.Prices, m.ProviderData, m.PhotoUrl, m.PhotoSize, m.PhotoWidth, m.PhotoHeight, m.NeedsName, m.NeedsPhoneNumber, m.NeedsEmail, m.NeedsShippingAddress, m.IsFlexibile, m.DisableNotification, m.ReplyToMessage.MessageId, (InlineKeyboardMarkup)replyMarkup));
                             else
                                 //: Log this
@@ -174,7 +174,7 @@ namespace FluentCommands.Menus
             //    {
             //        case MenuType.Animation:
             //            msgToEdit = _messageBotCache[client.BotId][e.Message.Chat.Id];
-            //            if(replyMarkup is InlineKeyboardMarkup || replyMarkup == null)
+            //            if(replyMarkup is InlineKeyboardMarkup || replyMarkup is null)
             //            {
             //                await client.EditMessageCaptionAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, m.Caption, (InlineKeyboardMarkup)replyMarkup);
             //                await client.EditMessageMediaAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, new InputMediaAnimation(m.Source.Url), (InlineKeyboardMarkup)replyMarkup, m.Token);

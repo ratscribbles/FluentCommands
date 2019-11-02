@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using FluentCommands.Menus;
+using FluentCommands.Builders;
 
 namespace FluentCommands.CommandTypes
 {
@@ -14,10 +15,10 @@ namespace FluentCommands.CommandTypes
     internal delegate Task<Menu> InlineQueryCommandMenuDelegate(TelegramBotClient c, InlineQueryEventArgs e);
     internal class InlineQueryCommand : Command
     {
-        internal InlineQueryCommandDelegate Invoke { get; private set; }
-        internal InlineQueryCommandMenuDelegate InvokeWithMenuItem { get; private set; }
+        internal InlineQueryCommandDelegate? Invoke { get; private set; }
+        internal InlineQueryCommandMenuDelegate? InvokeWithMenuItem { get; private set; }
 
-        internal InlineQueryCommand(CommandBase commandBase, MethodInfo method) : base(commandBase)
+        internal InlineQueryCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {
             if(method.ReturnType == typeof(Task<Menu>))
             {

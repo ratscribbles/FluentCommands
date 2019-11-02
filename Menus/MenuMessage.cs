@@ -18,7 +18,7 @@ namespace FluentCommands.Menus
             get => _menu;
             private set
             {
-                if (value == null) _menu = MenuItem.Empty();
+                if (value is null) _menu = MenuItem.Empty();
             }
         }
         internal Message Message
@@ -26,7 +26,7 @@ namespace FluentCommands.Menus
             get => _message;
             private set
             {
-                if (value == null) _message = new Message();
+                if (value is null) _message = new Message();
             }
         }
     }

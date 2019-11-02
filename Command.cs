@@ -14,7 +14,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands
 {
-    internal enum KeyboardType { None, Inline, Reply }
+    internal enum KeyboardType { None, Inline, Reply, ForceReply, Remove }
     internal class Command
     {
         internal Type Module { get; private set; }
@@ -23,31 +23,47 @@ namespace FluentCommands
         internal string[] Aliases { get; private set; } = Array.Empty<string>();
         internal string Description { get; private set; } = "";
         internal ParseMode ParseMode { get; private set; } = ParseMode.Default;
-        internal IKeyboardButton Button { get; private set; } = null;
+        internal IKeyboardButton? Button { get; private set; } = null;
+        internal IReplyMarkup? ReplyMarkup { get; private set; } = null;
         internal KeyboardType KeyboardType { get; private set; } = KeyboardType.None;
-        internal ReplyKeyboardMarkup ReplyKeyboard { get; private set; } = null;
-        internal InlineKeyboardMarkup InlineKeyboard { get; private set; } = null;
 
-        private protected Command(CommandBase commandBase)
+        private protected Command(CommandBaseBuilder commandBase, Type module)
         {
-            Module = commandBase.Module;
+            Module = module;
             Name = commandBase.Name;
-            Aliases = commandBase.Aliases;
-            Description = commandBase.Description;
-            ParseMode = commandBase.ParseMode;
-            Button = commandBase.Button;
+            Aliases = commandBase.InAliases;
+            Description = commandBase.InDescription;
+            ParseMode = commandBase.InParseMode;
+            Button = commandBase.InButton;
 
-            if(commandBase.KeyboardInfo != null)
+            if(!(commandBase.KeyboardInfo is null))
             {
-                if (commandBase.KeyboardInfo.InlineRows.Any())
+                switch (commandBase.KeyboardInfo)
                 {
-                    InlineKeyboard = new InlineKeyboardMarkup(commandBase.KeyboardInfo.InlineRows);
-                    KeyboardType = KeyboardType.Inline;
-                }
-                if (commandBase.KeyboardInfo.ReplyRows.Any())
-                {
-                    ReplyKeyboard = new ReplyKeyboardMarkup(commandBase.KeyboardInfo.ReplyRows);
-                    KeyboardType = KeyboardType.Reply;
+                    case var _ when commandBase.KeyboardInfo.InlineRows.Any():
+                        ReplyMarkup = new InlineKeyboardMarkup(commandBase.KeyboardInfo.InlineRows);
+                        KeyboardType = KeyboardType.Inline;
+                        break;
+                    case var _ when commandBase.KeyboardInfo.ReplyRows.Any():
+                        ReplyMarkup = new ReplyKeyboardMarkup(commandBase.KeyboardInfo.ReplyRows) 
+                        { 
+                            OneTimeKeyboard = commandBase.KeyboardInfo.OneTimeKeyboard,
+                            ResizeKeyboard = commandBase.KeyboardInfo.ResizeKeyboard,
+                            Selective = commandBase.KeyboardInfo.Selective
+                        };
+                        KeyboardType = KeyboardType.Reply;
+                        break;
+                    case var _ when !(commandBase.KeyboardInfo.ForceReply is null):
+                        ReplyMarkup = new ForceReplyMarkup { Selective = commandBase.KeyboardInfo.Selective };
+                        KeyboardType = KeyboardType.ForceReply;
+                        break;
+                    case var _ when !(commandBase.KeyboardInfo.ReplyRemove is null):
+                        ReplyMarkup = new ReplyKeyboardRemove() { Selective = commandBase.KeyboardInfo.Selective };
+                        KeyboardType = KeyboardType.Remove;
+                        break;
+                    default:
+                        ReplyMarkup = null;
+                        break;
                 }
             }
         }

@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using FluentCommands.Menus;
+using FluentCommands.Builders;
 
 namespace FluentCommands.CommandTypes
 {
@@ -14,10 +15,10 @@ namespace FluentCommands.CommandTypes
     internal delegate Task<Menu> UpdateCommandMenuDelegate(TelegramBotClient c, UpdateEventArgs e);
     internal class UpdateCommand : Command
     {
-        internal UpdateCommandDelegate Invoke { get; private set; }
-        internal UpdateCommandMenuDelegate InvokeWithMenuItem { get; private set; }
+        internal UpdateCommandDelegate? Invoke { get; private set; }
+        internal UpdateCommandMenuDelegate? InvokeWithMenuItem { get; private set; }
 
-        internal UpdateCommand(CommandBase commandBase, MethodInfo method) : base(commandBase)
+        internal UpdateCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {
             if(method.ReturnType == typeof(Task<Menu>))
             {

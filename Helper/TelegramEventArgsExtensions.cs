@@ -19,7 +19,7 @@ namespace FluentCommands.Helper
         internal static string GetRawInput(this UpdateEventArgs e)
         {
             var update = e?.Update;
-            if (update == null) return "";
+            if (update is null) return "";
             else if (update.CallbackQuery != null) return update.CallbackQuery?.Data ?? "";
             else if (update.ChosenInlineResult != null) return update.ChosenInlineResult?.Query ?? "";
             else if (update.InlineQuery != null) return update.InlineQuery?.Query ?? "";
@@ -39,7 +39,7 @@ namespace FluentCommands.Helper
         internal static long GetChatId(this UpdateEventArgs e)
         {
             var update = e?.Update;
-            if (update == null) return 0;
+            if (update is null) return 0;
             else if (update.CallbackQuery != null) return update.CallbackQuery?.Message?.Chat?.Id ?? 0;
             else if (update.ChosenInlineResult != null) return update.ChosenInlineResult?.From?.Id ?? 0;
             else if (update.InlineQuery != null) return update.InlineQuery?.From?.Id ?? 0;
@@ -59,20 +59,20 @@ namespace FluentCommands.Helper
         internal static int GetUserId(this UpdateEventArgs e)
         {
             var update = e?.Update;
-            if (update == null) return 0;
-            else if (update.CallbackQuery != null)
+            if (update is null) return 0;
+            else if (!(update.CallbackQuery is null))
             {
                 { if (!update.CallbackQuery?.From?.IsBot ?? false) return update.CallbackQuery?.From?.Id ?? 0; else return 0; }
             }
-            else if (update.ChosenInlineResult != null)
+            else if (!(update.ChosenInlineResult is null))
             {
                 { if (!update.ChosenInlineResult?.From?.IsBot ?? false) return update.ChosenInlineResult?.From?.Id ?? 0; else return 0; }
             }
-            else if (update.InlineQuery != null)
+            else if (!(update.InlineQuery is null))
             {
                 { if (!update.InlineQuery?.From?.IsBot ?? false) return update.InlineQuery?.From?.Id ?? 0; else return 0; }
             }
-            else if (update.Message != null)
+            else if (!(update.Message is null))
             {
                 { if (!update.Message?.From?.IsBot ?? false) return update.Message?.From?.Id ?? 0; else return 0; }
             }

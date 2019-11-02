@@ -13,7 +13,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace FluentCommands.Builders
 {
     /// <summary>
-    /// Builder responsible for creating <see cref="CommandBase"/> objects, that will be used to create full <see cref="Command"/> objects for the <see cref="CommandService"/>.
+    /// Builder responsible for creating <see cref="Command"/> objects for the <see cref="CommandService"/>.
     /// </summary>
     public sealed class CommandBaseBuilder : ICommandBaseBuilder,
         ICommandBaseAliases, ICommandDescriptionBuilder, ICommandBaseKeyboard, ICommandBaseDescription, IReplyMarkupable<ICommandBaseKeyboard>, IKeyboardBuilder<ICommandBaseKeyboard>,
@@ -38,11 +38,11 @@ namespace FluentCommands.Builders
         /// <summary>
         /// Gets the <see cref="IKeyboardButton"/> for this <see cref="Command"/>. Used to call this command via Keyboard Markups, such as <see cref="InlineKeyboardMarkup"/> and <see cref="ReplyKeyboardMarkup"/>).
         /// </summary>
-        internal IKeyboardButton InButton { get; private set; } = null;
+        internal IKeyboardButton? InButton { get; private set; } = null;
         /// <summary>
         /// Gets the <see cref="KeyboardBuilder"/> for this <see cref="Command"/>
         /// </summary>
-        internal KeyboardBuilder KeyboardInfo { get; private set; } = null;
+        internal KeyboardBuilder? KeyboardInfo { get; private set; } = null;
 
         /// <summary>
         /// Instantiates a new <see cref="CommandBaseBuilder"/>, which will be used to construct a <see cref="Command"/> for this Module.
@@ -192,23 +192,5 @@ namespace FluentCommands.Builders
         {
             InButton = button;
         }
-        /// <summary>
-        /// Converts a <see cref="CommandBaseBuilder"/> into a <see cref="CommandBase"/>, to be formed into a <see cref="Command"/>.
-        /// </summary>
-        /// <returns>Returns the converted <see cref="CommandBase"/>.</returns>
-        internal CommandBase ConvertToBase()
-        {
-            return new CommandBase
-            {
-                Aliases = this.InAliases,
-                Button = this.InButton,
-                Description = this.InDescription,
-                KeyboardInfo = this.KeyboardInfo,
-                Name = this.Name,
-                ParseMode = this.InParseMode
-            };
-        }
-
-
     }
 }

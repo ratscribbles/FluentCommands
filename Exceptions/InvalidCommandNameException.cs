@@ -9,7 +9,7 @@ namespace FluentCommands.Exceptions
     [Serializable]
     public class InvalidCommandNameException : Exception, ISerializable
     {
-        public string ResourceReferenceProperty { get; set; }
+        public string ResourceReferenceProperty { get; set; } = "";
 
         public InvalidCommandNameException() { }
 
@@ -19,7 +19,7 @@ namespace FluentCommands.Exceptions
 
         protected InvalidCommandNameException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty");
+            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty") ?? "";
         }
     }
 }

@@ -12,7 +12,7 @@ namespace FluentCommands.Exceptions
     [Serializable]
     public class DuplicateCommandException : Exception, ISerializable
     {
-        public string ResourceReferenceProperty { get; set; }
+        public string ResourceReferenceProperty { get; set; } = "";
 
         public DuplicateCommandException() { }
 
@@ -22,7 +22,7 @@ namespace FluentCommands.Exceptions
 
         protected DuplicateCommandException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty");
+            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty") ?? "";
         }
     }
 }

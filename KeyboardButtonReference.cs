@@ -9,7 +9,6 @@ namespace FluentCommands
     public class KeyboardButtonReference : IFluentInterface
     {
         internal string Name { get; private set; }
-        internal Type LinkedModule { get; private set; }
 
         internal KeyboardButtonReference(string commandName) => Name = commandName;
 

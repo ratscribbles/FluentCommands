@@ -13,7 +13,7 @@ namespace FluentCommands.Exceptions
     [Serializable]
     public class MenuReplyMarkupException : Exception, ISerializable
     {
-        public string ResourceReferenceProperty { get; set; }
+        public string ResourceReferenceProperty { get; set; } = "";
 
         public MenuReplyMarkupException() { }
 
@@ -23,7 +23,7 @@ namespace FluentCommands.Exceptions
 
         protected MenuReplyMarkupException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty");
+            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty") ?? "";
         }
     }
 }

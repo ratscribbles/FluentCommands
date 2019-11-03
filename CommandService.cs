@@ -546,16 +546,19 @@ namespace FluentCommands
 
             async Task ProcessCommand(Command c)
             {
-                if(c is MessageCommand)
+                if (c is MessageCommand)
                 {
                     var command = c as MessageCommand;
-                    if (command.InvokeWithMenuItem != null)
+                    if (command is { })
                     {
-                        var menu = await command.InvokeWithMenuItem(client, e);
-                        //: check keyboards.
-                        await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
+                        if (command.InvokeWithMenuItem != null)
+                        {
+                            var menu = await command.InvokeWithMenuItem(client, e);
+                            //: check keyboards.
+                            await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
+                        }
+                        else if (command.Invoke != null) await command.Invoke(client, e);
                     }
-                    else if (command.Invoke != null) await command.Invoke(client, e);
                 }
                 // Do nothing if it's not the right type.
             }
@@ -678,10 +681,12 @@ namespace FluentCommands
                         return;
                     case var _ when cmd is MessageCommand:
                         {
-                            if (!(e is MessageEventArgs)) goto default;
                             var c = cmd as MessageCommand;
                             var args = e as MessageEventArgs;
-                            if (c.InvokeWithMenuItem != null)
+
+                            if (!(e is MessageEventArgs) || c is null || args is null) goto default;
+
+                            if (c.InvokeWithMenuItem is { })
                             {
                                 var menu = await c.InvokeWithMenuItem(client, args);
                                 //: check keyboards.
@@ -690,7 +695,7 @@ namespace FluentCommands
                                 //: consider an extension method, or just a method added to the class itself
                                 // await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
                             }
-                            else if (c.Invoke != null) await c.Invoke(client, args);
+                            else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
                     case var _ when cmd is UpdateCommand:

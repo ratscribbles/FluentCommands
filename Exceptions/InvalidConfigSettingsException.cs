@@ -11,7 +11,7 @@ namespace FluentCommands.Exceptions
     [Serializable]
     public class InvalidConfigSettingsException : Exception, ISerializable
     {
-        public string ResourceReferenceProperty { get; set; }
+        public string ResourceReferenceProperty { get; set; } = "";
 
         public InvalidConfigSettingsException() { }
 
@@ -21,7 +21,7 @@ namespace FluentCommands.Exceptions
 
         protected InvalidConfigSettingsException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty");
+            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty") ?? "";
         }
     }
 }

@@ -9,7 +9,7 @@ namespace FluentCommands.Exceptions
     [Serializable]
     public class InvalidKeyboardRowException : Exception, ISerializable
     {
-        public string ResourceReferenceProperty { get; set; }
+        public string ResourceReferenceProperty { get; set; } = "";
 
         public InvalidKeyboardRowException() { }
 
@@ -19,7 +19,7 @@ namespace FluentCommands.Exceptions
 
         protected InvalidKeyboardRowException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
-            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty");
+            ResourceReferenceProperty = info.GetString("ResourceReferenceProperty") ?? "";
         }
     }
 }

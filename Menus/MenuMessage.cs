@@ -10,8 +10,8 @@ namespace FluentCommands.Menus
     /// </summary>
     internal class MenuMessage
     {
-        private Menu _menu;
-        private Message _message;
+        private Menu? _menu;
+        private Message? _message;
 
         internal Menu Menu
         {

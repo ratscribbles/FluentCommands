@@ -24,7 +24,7 @@ namespace FluentCommands
         public bool DeleteCommandAfterCall { get; set; } = false;
         public bool LogModuleActivities { get; set; } = false;
         public string Prefix { get; set; } = "/";
-        public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.");
+        public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
         public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
 
         //! Put this in the commandservice class

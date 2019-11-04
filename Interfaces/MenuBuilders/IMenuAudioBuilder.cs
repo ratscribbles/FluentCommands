@@ -8,7 +8,7 @@ using FluentCommands.Interfaces.MenuBuilders.AudioBuilder;
 
 namespace FluentCommands.Interfaces.MenuBuilders
 {
-    public interface IMenuAudioBuilder : IFluentInterface, IMenuItem
+    public interface IMenuAudioBuilder : IFluentInterface
     {
         /// <summary>
         /// Required. Provides the source file of this <see cref="MenuItem"/>.

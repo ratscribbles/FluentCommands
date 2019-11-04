@@ -62,7 +62,7 @@ namespace FluentCommands.Builders
             if (commandName is null) throw new CommandOnBuildingException($"Command name in module {TypeStorage.FullName ?? "??NULL??"} was null.");
             if (ModuleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.FullName ?? "??NULL??"}, with the command name: \"{commandName}\"");
             CommandStorage = (CommandBaseBuilder)this[commandName];
-            if(!(TypeStorage is null)) CommandService.Modules[TypeStorage] = this;
+            UpdateBuilder(CommandStorage); //: Double check this line if anything goes wrong.
             return this;
         }
         /// <summary>
@@ -192,10 +192,12 @@ namespace FluentCommands.Builders
             return this;
         }
 
+        /// <summary>Updates the <see cref="ModuleBuilder"/> in the Modules dictionary contained within the <see cref="CommandService"/>.</summary>
+        /// <param name="c"></param>
         private void UpdateBuilder(CommandBaseBuilder c)
         {
             if (!(c is null)) this[c.Name] = c;
-            if (!(TypeStorage is null)) CommandService.Modules[TypeStorage] = this;
+            if (!(TypeStorage is null)) CommandService.UpdateBuilderInTempModules(this, TypeStorage);
         }
     }
 }

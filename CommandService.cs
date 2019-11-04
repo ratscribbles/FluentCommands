@@ -33,10 +33,10 @@ namespace FluentCommands
     /// </summary>
     public sealed class CommandService
     {
-        private static readonly Lazy<CommandService> _instance = new Lazy<CommandService>(new CommandService(_cfg));
+        private static readonly Lazy<CommandService> _instance = new Lazy<CommandService>(() => new CommandService(_tempCfg));
         private static Toggle _lastMessageIsMenu = new Toggle(false);
         private static ToggleOnce _commandServiceStarted = new ToggleOnce(false);
-        private static CommandServiceConfig _cfg = new CommandServiceConfig();
+        private static CommandServiceConfig _tempCfg = new CommandServiceConfig();
         private static readonly IReadOnlyCollection<Type> _assemblyTypes;
         private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new[] { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId.</para></summary>
@@ -44,36 +44,48 @@ namespace FluentCommands
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Dictionary<Type, ModuleBuilder> _tempModules = new Dictionary<Type, ModuleBuilder>();
         ///////
-        private CommandServiceConfig Config { get; }
+        private readonly CommandServiceConfig _config;
+        private readonly IReadOnlyDictionary<Type, ModuleBuilder> _modules;
+        private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> _commands;
+        ///////
         private static CommandService Instance { get => _instance.Value; }
-        private static IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> Commands { get; }
-        internal static IReadOnlyDictionary<Type, ModuleBuilder> Modules { get; }
-        internal static CommandServiceConfig GlobalConfig
-        {
-            get => _cfg;
-            set
-            {
-                if (_commandServiceStarted) return;
-                else
-                {
-                    if (value is null) _cfg = new CommandServiceConfig();
-                    else _cfg = value;
+        private static IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> Commands { get => _instance.Value._commands; }
+        internal static IReadOnlyDictionary<Type, ModuleBuilder> Modules { get => _instance.Value._modules; }
+        internal static CommandServiceConfig GlobalConfig { get => _instance.Value._config; }
 
-                    if(!_commandServiceStarted) _commandServiceStarted.Value = true;
-                }
-            }
-        }
 
         /// <summary>
-        /// Initializes the following:
-        /// <para>- AssemblyTypes readonly collection</para>
-        /// <para>- Modules readonly dictionary</para>
-        /// <para>- Commands readonly dictionary</para>
+        /// Guarantees the Assembly Types are cached before the CommandService starts.
         /// </summary>
         static CommandService()
         {
-            _assemblyTypes = Init_0_PopulateAssemblies();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            List<Type> assemblyTypes = new List<Type>();
 
+            foreach (var assembly in assemblies)
+            {
+                List<Type> internalTypes;
+
+                try { internalTypes = assembly.GetTypes().ToList(); }
+                catch (ReflectionTypeLoadException e) { internalTypes = e.Types.Where(type => !(type is null)).ToList(); }
+
+                assemblyTypes.AddRange(internalTypes);
+            }
+
+            _assemblyTypes = assemblyTypes;
+        }
+
+        /// <summary>
+        /// Constructor for use only with the singleton. Populates the following:
+        /// <para>- Modules readonly dictionary</para>
+        /// <para>- Commands readonly dictionary</para>
+        /// </summary>
+        private CommandService(CommandServiceConfig cfg) 
+        {
+            if (_commandServiceStarted) return;
+
+            _config = cfg;
+                
             var tempCommands = new Dictionary<Type, Dictionary<string, Command>>();
 
             Init_1_ModuleAssembler();
@@ -83,26 +95,9 @@ namespace FluentCommands
             var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<string, Command>>();
             foreach (var kvp in tempCommands.ToList()) tempCommandsToReadOnly.Add(kvp.Key, kvp.Value);
 
-            Modules = _tempModules;
-            Commands = tempCommandsToReadOnly;
+            _modules = _tempModules;
+            _commands = tempCommandsToReadOnly;
 
-            List<Type> Init_0_PopulateAssemblies()
-            {
-                var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                List<Type> assemblyTypes = new List<Type>();
-
-                foreach (var assembly in assemblies)
-                {
-                    List<Type> internalTypes;
-
-                    try { internalTypes = assembly.GetTypes().ToList(); }
-                    catch (ReflectionTypeLoadException e) { internalTypes = e.Types.Where(type => !(type is null)).ToList(); }
-
-                    assemblyTypes.AddRange(internalTypes);
-                }
-
-                return assemblyTypes;
-            }
             void Init_1_ModuleAssembler()
             {
                 /* Description:
@@ -115,7 +110,7 @@ namespace FluentCommands
                 var allCommandContexts = _assemblyTypes
                     .Where(type => !(type.BaseType is null)
                         && type.BaseType.IsAbstract
-                        && type.BaseType.IsGenericType 
+                        && type.BaseType.IsGenericType
                         && type.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>))
                     .ToList();
 
@@ -435,18 +430,27 @@ namespace FluentCommands
             }
         }
 
-        private CommandService(CommandServiceConfig cfg) { Config = cfg; }
-
         #region Start/Init Overloads
         /// <summary>
         /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/>.
         /// </summary>
-        public static void Start() => _commandServiceStarted.Value = true;
+        public static void Start() 
+        {
+            if (_commandServiceStarted) return;
+            var _ = Instance;
+            _commandServiceStarted.Value = true;
+        }
 
         /// <summary>
         /// Initializes the <see cref="CommandService"/>.
         /// </summary>
-        public static void Start(CommandServiceConfig cfg) => GlobalConfig = cfg ?? new CommandServiceConfig();
+        public static void Start(CommandServiceConfig cfg) 
+        {
+            if (_commandServiceStarted) return;
+            _tempCfg = cfg ?? new CommandServiceConfig();
+            var _ = Instance;
+            _commandServiceStarted.Value = true;
+        }
 
         //: Create code examples for this documentation
         /// <summary>
@@ -454,9 +458,15 @@ namespace FluentCommands
         /// </summary>
         public static void Start(Action<CommandServiceConfig> buildAction)
         {
+            if (_commandServiceStarted) return;
+
             CommandServiceConfig cfg = new CommandServiceConfig();
             buildAction(cfg);
-            GlobalConfig = cfg ?? new CommandServiceConfig();
+            _tempCfg = cfg ?? new CommandServiceConfig();
+
+            var _ = Instance;
+
+            _commandServiceStarted.Value = true;
         }
         #endregion
 

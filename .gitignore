@@ -10,7 +10,7 @@
 *.userosscache
 *.sln.docstates
 
-token.txt
+bottoken.txt
 TestProgram.cs
 AnalyzerNotes.cs
 

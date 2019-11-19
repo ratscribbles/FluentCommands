@@ -20,10 +20,10 @@ namespace FluentCommands.Attributes
         Administrator = 256
     }
     /// <summary>
-    /// Flags <see cref="Command"/> methods to check for specific <see cref="Telegram.Bot.Types.User"/> permissions before execution.
+    /// Flags <see cref="Command"/> methods or an entire <see cref="CommandModule{TModule}"/> to check for specific <see cref="Telegram.Bot.Types.User"/> permissions before executing command inputs.
     /// <para>Please use bitwise OR (the | operator) to check multiple permissions.</para>
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class PermissionsAttribute : Attribute
     {
         internal Permissions Permissions { get; private set; } = Permissions.None;

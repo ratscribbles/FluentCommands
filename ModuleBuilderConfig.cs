@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using FluentCommands.Exceptions;
+using FluentCommands.Logging;
 using FluentCommands.Menus;
+using FluentCommands.Helper;
 
 namespace FluentCommands
 {
@@ -18,12 +20,14 @@ namespace FluentCommands
     {
         //? Consider moving away from an internal state handler and forcing the user to handle it on their own.
         //! Would conseqently force users to create their own solutions everytime (which would usually be about the same)
-        public bool UseInternalKeyboardStateHandler { get; set; } = true;
-        public bool UseDefaultErrorMessage { get; set; } = true;
-        public bool BruteForceKeyboardReferences { get; set; } = true;
+        public bool UseInternalKeyboardStateHandler { get; set; } = false;
+        public bool UseDefaultErrorMessage { get; set; } = false;
+        public bool BruteForceKeyboardReferences { get; set; } = false;
         public bool DeleteCommandAfterCall { get; set; } = false;
         public bool LogModuleActivities { get; set; } = false;
+        public FluentLogLevel MaximumLogLevel { get; set; } = FluentLogLevel.Fatal;
         public string Prefix { get; set; } = "/";
+        public LoggingEvent? UseLoggingEventHandler { get; set; }
         public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
         public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
 

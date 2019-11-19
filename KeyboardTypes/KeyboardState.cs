@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FluentCommands
+namespace FluentCommands.KeyboardTypes
 {
     internal enum CommandState
     {

@@ -9,24 +9,58 @@ using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types.Enums;
 using FluentCommands.CommandTypes;
 using FluentCommands.Interfaces.KeyboardBuilders;
+using FluentCommands.Logging;
 
 namespace FluentCommands.Builders
 {
     /// <summary>
     /// Builder that creates <see cref="CommandBaseBuilder"/> objects to assemble into commands of this Module.
     /// </summary>
-    public sealed class ModuleBuilder : IModuleBuilder, 
+    public sealed class ModuleBuilder : IModuleBuilder,
         ICommandBaseBuilderOfModule, ICommandBaseOfModuleDescriptionBuilder, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleKeyboard, ICommandBaseOfModuleCompletion, IKeyboardBuilder<ICommandBaseOfModuleKeyboard>, IReplyMarkupable<ICommandBaseOfModuleKeyboard>,
         IFluentInterface
     {
+        /// <summary>Stored logger for this <see cref="CommandModule{TModule}"/>.</summary>
+        private readonly Lazy<ModuleLogger> _logger;
+        /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
+        private readonly Dictionary<string, CommandBaseBuilder> _moduleCommandBases = new Dictionary<string, CommandBaseBuilder>();
+
         /// <summary> Stores the module type when using alternate building form. </summary>
-        private Type TypeStorage { get; }
+        internal Type TypeStorage { get; }
         /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
         private CommandBaseBuilder? CommandStorage { get; set; } = null;
         /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleBuilderConfig)"/> to update this.</summary>
         internal ModuleBuilderConfig Config { get; private set; } = new ModuleBuilderConfig();
-        /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
-        internal readonly Dictionary<string, CommandBaseBuilder> ModuleCommandBases = new Dictionary<string, CommandBaseBuilder>();
+        /// <summary>Logger for this <see cref="CommandModule{TModule}"/>. <para>If logging isn't enabled for this module, returns the <see cref="CommandService"/> logger instead.</para></summary>
+        internal IFluentLogger Logger
+        { 
+            get 
+            {
+                if (Config.LogModuleActivities) return _logger.Value;
+                else
+                {
+                    if (CommandService.GlobalConfig.CaptureAllLoggingEvents) return _logger.Value;
+                    else return CommandService.EmptyLogger;
+                }
+            } 
+        }
+        /// <summary>The config object for this <see cref="ModuleBuilder"/>. Readonly.</summary>
+        //ModuleBuilderConfig IReadOnlyModule.Config { get { return Config; } }
+        /// <summary>The internal <see cref="CommandBaseBuilder"/> dictionary for this <see cref="ModuleBuilder"/>. Readonly.</summary>
+        internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get { return _moduleCommandBases; } }
+        /// <summary>Logger for this <see cref="CommandModule{TModule}"/>. <para>If logging isn't enabled for this module, returns the <see cref="CommandService"/> logger instead.</para></summary>
+        //IFluentLogger IReadOnlyModule.Logger
+        //{
+        //    get
+        //    {
+        //        if (Config.LogModuleActivities) return _logger.Value;
+        //        else
+        //        {
+        //            if (CommandService.GlobalConfig.CaptureAllLoggingEvents) return _logger.Value;
+        //            else return CommandService.EmptyLogger;
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Indexer used primarily for the "build action" <see cref="Action"/> version of the fluent builder API.
@@ -38,19 +72,25 @@ namespace FluentCommands.Builders
             get
             {
                 if (key is null) throw new CommandOnBuildingException($"Command was null in module: {TypeStorage.FullName ?? "NULL"}");
-                if(!ModuleCommandBases.ContainsKey(key)) ModuleCommandBases.TryAdd(key, new CommandBaseBuilder(key));
-                return ModuleCommandBases[key];
+                if(!_moduleCommandBases.ContainsKey(key)) _moduleCommandBases.TryAdd(key, new CommandBaseBuilder(key));
+                return _moduleCommandBases[key];
             }
-            set => ModuleCommandBases[key] = (CommandBaseBuilder)value;
+            set => _moduleCommandBases[key] = (CommandBaseBuilder)value;
         }
 
         /// <summary>
         /// Instantiates a new <see cref="ModuleBuilder"/> to create <see cref="CommandBaseBuilder"/> objects with.
         /// </summary>
         /// <param name="t">The class this ModuleBuilder is targeting.</param>
-        internal ModuleBuilder(Type t) => TypeStorage = t;
+        internal ModuleBuilder(Type t)
+        {
+            TypeStorage = t;
+            _logger = new Lazy<ModuleLogger>(() => new ModuleLogger(t));
+        }
 
         internal void SetConfig(ModuleBuilderConfig cfg) => Config = cfg;
+        internal void SetHandler(LoggingEvent l) => _logger.Value.LoggingEvent += l;
+        //internal IReadOnlyModule AsReadOnly() => this;
 
         /// <summary>
         /// Creates a new command for this module.
@@ -60,7 +100,7 @@ namespace FluentCommands.Builders
         public ICommandBaseBuilderOfModule Command(string commandName)
         {
             if (commandName is null) throw new CommandOnBuildingException($"Command name in module {TypeStorage.FullName ?? "??NULL??"} was null.");
-            if (ModuleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.FullName ?? "??NULL??"}, with the command name: \"{commandName}\"");
+            if (_moduleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.FullName ?? "??NULL??"}, with the command name: \"{commandName}\"");
             CommandStorage = (CommandBaseBuilder)this[commandName];
             UpdateBuilder(CommandStorage); //: Double check this line if anything goes wrong.
             return this;

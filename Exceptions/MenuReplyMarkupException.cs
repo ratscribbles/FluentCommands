@@ -11,15 +11,17 @@ namespace FluentCommands.Exceptions
     /// Thrown when a <see cref="Menus.Menu"/> object has any exceptional issue in building its <see cref="IReplyMarkup"/>.
     /// </summary>
     [Serializable]
-    public class MenuReplyMarkupException : Exception, ISerializable
+    public class MenuReplyMarkupException : Exception, ISerializable, IFluentCommandsException
     {
         public string ResourceReferenceProperty { get; set; } = "";
+        public string? Description { get; }
+        public Exception? Inner { get; }
 
         public MenuReplyMarkupException() { }
 
-        public MenuReplyMarkupException(string description) : base(description) { }
+        public MenuReplyMarkupException(string description) : base(description) { Description = description; }
 
-        public MenuReplyMarkupException(string description, Exception inner) : base(description, inner) { }
+        public MenuReplyMarkupException(string description, Exception inner) : base(description, inner) { Description = description; Inner = inner; }
 
         protected MenuReplyMarkupException(SerializationInfo info, StreamingContext context) : base(info, context)
         {

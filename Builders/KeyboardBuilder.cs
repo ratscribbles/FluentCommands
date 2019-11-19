@@ -8,11 +8,12 @@ using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.BaseBuilders;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.KeyboardTypes;
 
 namespace FluentCommands.Builders
 {
     /// <summary>
-    /// Parent builder of <see cref="InlineKeyboardBuilder"/> and <see cref="ReplyKeyboardBuilder"/>. Stores keyboard information provided to a <see cref="Command"/> object.
+    /// Parent builder of <see cref="InlineKeyboardBuilder"/> and <see cref="ReplyKeyboardBuilder"/>. Stores keyboard information provided to a <see cref="Command"/> or <see cref="Menus.Menu"/> object.
     /// </summary>
     public class KeyboardBuilder : IInlineKeyboardBuilder, IReplyKeyboardBuilder, IFluentInterface
     {

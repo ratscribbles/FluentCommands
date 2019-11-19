@@ -21,6 +21,8 @@ using Telegram.Bot.Types.InputFiles;
 using System.Runtime.CompilerServices;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using FluentCommands.Logging;
+using System.Diagnostics;
 
 [assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
@@ -34,25 +36,28 @@ namespace FluentCommands
     public sealed class CommandService
     {
         private static readonly Lazy<CommandService> _instance = new Lazy<CommandService>(() => new CommandService(_tempCfg));
-        private static Toggle _lastMessageIsMenu = new Toggle(false);
-        private static ToggleOnce _commandServiceStarted = new ToggleOnce(false);
-        private static CommandServiceConfig _tempCfg = new CommandServiceConfig();
+        private static readonly Lazy<CommandServiceLogger> _logger = new Lazy<CommandServiceLogger>(() => new CommandServiceLogger());
+        private static readonly Lazy<EmptyLogger> _emptyLogger = new Lazy<EmptyLogger>(() => new EmptyLogger());
         private static readonly IReadOnlyCollection<Type> _assemblyTypes;
         private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new[] { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId.</para></summary>
         private static readonly Dictionary<int, ConcurrentDictionary<long, Message[]>> _botLastMessages = new Dictionary<int, ConcurrentDictionary<long, Message[]>>();
         private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
         private static readonly Dictionary<Type, ModuleBuilder> _tempModules = new Dictionary<Type, ModuleBuilder>();
+        private static Toggle _lastMessageIsMenu = new Toggle(false);
+        private static ToggleOnce _commandServiceStarted = new ToggleOnce(false);
+        private static CommandServiceConfig _tempCfg = new CommandServiceConfig();
         ///////
         private readonly CommandServiceConfig _config;
-        private readonly IReadOnlyDictionary<Type, ModuleBuilder> _modules;
+        private readonly IReadOnlyDictionary<Type, IReadOnlyModule> _modules;
         private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> _commands;
         ///////
-        private static CommandService Instance { get => _instance.Value; }
-        private static IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> Commands { get => _instance.Value._commands; }
-        internal static IReadOnlyDictionary<Type, ModuleBuilder> Modules { get => _instance.Value._modules; }
-        internal static CommandServiceConfig GlobalConfig { get => _instance.Value._config; }
-
+        private static CommandService Instance { get { return _instance.Value; } }
+        private static IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> Commands { get { return _instance.Value._commands; } }
+        internal static IReadOnlyDictionary<Type, IReadOnlyModule> Modules { get { return _instance.Value._modules; } }
+        internal static IFluentLogger Logger { get { return _logger.Value; } }
+        internal static IFluentLogger EmptyLogger { get { return _emptyLogger.Value; } }
+        internal static CommandServiceConfig GlobalConfig { get { return _instance.Value._config; } }
 
         /// <summary>
         /// Guarantees the Assembly Types are cached before the CommandService starts.
@@ -76,16 +81,17 @@ namespace FluentCommands
         }
 
         /// <summary>
-        /// Constructor for use only with the singleton. Populates the following:
+        /// Constructor for use only with the singleton. Enforces that these objects are completely unable to be modified and are read-only. Populates the following:
         /// <para>- Modules readonly dictionary</para>
         /// <para>- Commands readonly dictionary</para>
+        /// <para>- Global config object</para>
         /// </summary>
         private CommandService(CommandServiceConfig cfg) 
         {
-            if (_commandServiceStarted) return;
-
             _config = cfg;
-                
+
+            if (cfg.UseLoggingEventHandler is { }) _logger.Value.LoggingEvent += cfg.UseLoggingEventHandler;
+
             var tempCommands = new Dictionary<Type, Dictionary<string, Command>>();
 
             Init_1_ModuleAssembler();
@@ -95,7 +101,7 @@ namespace FluentCommands
             var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<string, Command>>();
             foreach (var kvp in tempCommands.ToList()) tempCommandsToReadOnly.Add(kvp.Key, kvp.Value);
 
-            _modules = _tempModules;
+            _modules = _tempModules.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyModule)kvp.Value);
             _commands = tempCommandsToReadOnly;
 
             void Init_1_ModuleAssembler()
@@ -162,10 +168,18 @@ namespace FluentCommands
                         ModuleBuilderConfig moduleConfig = new ModuleBuilderConfig();
 
                         method_OnBuilding.Invoke(moduleContext, new object[] { moduleBuilder });
-                        method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfig });
+                        if (moduleBuilder is null) throw new CommandOnBuildingException(); //: describe in detail
 
-                        if (moduleConfig is null) moduleConfig = new ModuleBuilderConfig();
+                        method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfig });
+                        if (moduleConfig is null) throw new CommandOnBuildingException(); //: describe in detail
+
                         moduleBuilder.SetConfig(moduleConfig);
+
+                        if (moduleConfig.LogModuleActivities)
+                        {
+                            if (moduleConfig.UseLoggingEventHandler is { }) moduleBuilder.SetHandler(moduleConfig.UseLoggingEventHandler);
+                            else throw new CommandOnBuildingException($"Module {moduleBuilder.TypeStorage.FullName} has logging enabled, but it has no event handler set. Please double check your code and make sure to add an event handler in your OnConfiguring method for this module through the UseLoggingEventHandler property.");
+                        }
                     }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -175,13 +189,13 @@ namespace FluentCommands
                     catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
-                    foreach (var commandName in moduleBuilder.ModuleCommandBases.Keys)
+                    foreach (var commandName in moduleBuilder.AsReadOnly().ModuleCommandBases.Keys)
                     {
                         AuxiliaryMethods.CheckCommandNameValidity(commandName);
                     }
                 }
             }
-            void Init_2_KeyboardAssembler()
+            void Init_2_KeyboardAssembler() 
             {
                 /* Description:
                   *
@@ -194,7 +208,7 @@ namespace FluentCommands
                     var commandClass = kvp.Key;
                     var module = kvp.Value;
 
-                    foreach (var moduleKvp in module.ModuleCommandBases.ToList())
+                    foreach (var moduleKvp in module.AsReadOnly().ModuleCommandBases.ToList())
                     {
                         var commandName = moduleKvp.Key;
                         var commandBase = moduleKvp.Value;
@@ -202,51 +216,23 @@ namespace FluentCommands
                         if (commandBase.KeyboardInfo is null) continue;
                         else
                         {
-                            if (commandBase.KeyboardInfo.InlineRows.Any()) commandBase.KeyboardInfo.UpdateInline(UpdateKeyboardRows_InitialBeforeAssigningModuleProperty(commandBase.KeyboardInfo.InlineRows, commandClass, commandName, false));
-                            if (commandBase.KeyboardInfo.ReplyRows.Any()) commandBase.KeyboardInfo.UpdateReply(UpdateKeyboardRows_InitialBeforeAssigningModuleProperty(commandBase.KeyboardInfo.ReplyRows, commandClass, commandName, false));
+                            if (commandBase.KeyboardInfo.InlineRows.Any()) commandBase.KeyboardInfo.UpdateInline(UpdateKeyboardRows_InitialBeforeAssigningModuleProperty(commandBase.KeyboardInfo.InlineRows, commandClass, commandName));
+                            if (commandBase.KeyboardInfo.ReplyRows.Any()) commandBase.KeyboardInfo.UpdateReply(UpdateKeyboardRows_InitialBeforeAssigningModuleProperty(commandBase.KeyboardInfo.ReplyRows, commandClass, commandName));
 
                             _tempModules[commandClass][commandName] = commandBase;
                         }
                     }
                 }
 
-                static List<TButton[]> UpdateKeyboardRows_InitialBeforeAssigningModuleProperty<TButton>(List<TButton[]> rows, Type? parentModule = null, string? parentCommandName = null, bool isMenu = true)
+                static List<TButton[]> UpdateKeyboardRows_InitialBeforeAssigningModuleProperty<TButton>(List<TButton[]> rows, Type? parentModule = null, string? parentCommandName = null)
                     where TButton : IKeyboardButton
                 {
                     List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
-
-                    ModuleBuilderConfig? config;
-                    Func<string, Exception> keyboardException;
-                    string keyboardContainer;
-                    if (isMenu)
-                    {
-                        config = new ModuleBuilderConfig();
-
-                        keyboardContainer = "Menu";
-
-                        keyboardException = (string s) =>
-                        {
-                            //: Do logging
-                            return new MenuReplyMarkupException(s);
-                        };
-                    }
-                    else
-                    {
-                        config = _tempModules[parentModule ?? throw new InvalidKeyboardRowException("Error updating keyboard rows. (Keyboard belonged to a Command, but the Command's module type was null.")]?.Config;
-                        if (config is null)
-                        {
-                            config = new ModuleBuilderConfig();
-                            //: Do Logging, but continue.
-                        }
-
-                        keyboardContainer = $"Command \"{parentCommandName ?? "NULL"}\"";
-
-                        keyboardException = (string s) =>
-                        {
-                            //: Do logging
-                            return new CommandOnBuildingException(s);
-                        };
-                    }
+                    Type buttonType = typeof(TButton);
+                    ModuleBuilderConfig? config = _tempModules[parentModule ?? throw new InvalidKeyboardRowException("Error updating keyboard rows. (Keyboard belonged to a Command, but the Command's module type was null.")]?.Config
+                            ?? throw new CommandOnBuildingException($"Module: \"{parentModule.FullName ?? "NULL"}\" config was null while building commands.");
+                    Func<string, Exception> keyboardException = (string s) => { return new CommandOnBuildingException(s); };
+                    string keyboardContainer = $"Command \"{parentCommandName ?? "NULL"}\"";
 
                     foreach (var row in rows)
                     {
@@ -290,29 +276,29 @@ namespace FluentCommands
                                             && referencedModule.BaseType.GetGenericTypeDefinition() == typeof(CommandModule<>)))
                                             throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to be a valid command context: {referencedModule?.FullName ?? "NULL"} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
-                                        if (!_tempModules[referencedModule].ModuleCommandBases.ContainsKey(commandNameReference))
+                                        if (!_tempModules[referencedModule].AsReadOnly().ModuleCommandBases.ContainsKey(commandNameReference))
                                             throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't exist in linked module: {referencedModule?.FullName ?? "NULL"} (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
-                                        referencedButton = _tempModules[referencedModule].ModuleCommandBases[commandNameReference]?.InButton;
+                                        referencedButton = _tempModules[referencedModule].AsReadOnly().ModuleCommandBases[commandNameReference]?.InButton;
                                     }
                                     else
                                     {
-                                        if (parentModule is null || !_tempModules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
+                                        if (parentModule is null || !_tempModules[parentModule].AsReadOnly().ModuleCommandBases.ContainsKey(commandNameReference))
                                             throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command in Module: {parentModule?.FullName ?? "\"NULL (check stack trace)\""} that doesn't appear to exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
-                                        referencedButton = _tempModules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
+                                        referencedButton = _tempModules[parentModule].AsReadOnly().ModuleCommandBases[commandNameReference]?.InButton;
                                     }
 
-                                    if (referencedButton is null || typeof(TButton) != referencedButton.GetType())
+                                    if (referencedButton is null || buttonType != referencedButton.GetType())
                                     {
                                         if (!config.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule?.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
                                         else
                                         {
                                             // Attempts to create a reference to the command when a button reference isn't available.
-                                            referencedButton = (typeof(TButton)) switch
+                                            referencedButton = (buttonType) switch
                                             {
-                                                var _ when typeof(TButton) == typeof(InlineKeyboardButton) => InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::"),
-                                                var _ when typeof(TButton) == typeof(KeyboardButton) => new KeyboardButton(commandNameReference),
+                                                var _ when buttonType == typeof(InlineKeyboardButton) => InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::"),
+                                                var _ when buttonType == typeof(KeyboardButton) => new KeyboardButton(commandNameReference),
                                                 _ => throw keyboardException($"An unknown exception occurred while building the keyboards for {keyboardContainer} (no type detected for TButton)"),
                                             };
                                         }
@@ -352,7 +338,7 @@ namespace FluentCommands
 
                     if (!tempCommands.ContainsKey(thisModule)) tempCommands[thisModule] = new Dictionary<string, Command>();
 
-                    var thisCommandBase = _tempModules[thisModule].ModuleCommandBases?[methodCommandAttributeName];
+                    var thisCommandBase = _tempModules[thisModule].AsReadOnly().ModuleCommandBases[methodCommandAttributeName];
 
                     if (thisCommandBase is null) TryAddCommand(new CommandBaseBuilder(methodCommandAttributeName));
                     else TryAddCommand(thisCommandBase);
@@ -430,25 +416,27 @@ namespace FluentCommands
             }
         }
 
-        #region Start/Init Overloads
+        #region Start Overloads
         /// <summary>
         /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/>.
         /// </summary>
         public static void Start() 
         {
-            if (_commandServiceStarted) return;
-            var _ = Instance;
+            if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect. Please consider checking your code and restarting your application to prevent this warning.").ConfigureAwait(false)); return; }
+            _ = Instance;
             _commandServiceStarted.Value = true;
         }
 
         /// <summary>
         /// Initializes the <see cref="CommandService"/>.
         /// </summary>
-        public static void Start(CommandServiceConfig cfg) 
+        public static void Start(CommandServiceConfig cfg)
         {
-            if (_commandServiceStarted) return;
-            _tempCfg = cfg ?? new CommandServiceConfig();
-            var _ = Instance;
+            if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect; consider checking your code and restarting your application to prevent this warning.").ConfigureAwait(false)); return; }
+            if (cfg is null) throw new CommandOnBuildingException("CommandServiceConfig was null.");
+
+            _tempCfg = cfg;
+            _ = Instance;
             _commandServiceStarted.Value = true;
         }
 
@@ -458,14 +446,17 @@ namespace FluentCommands
         /// </summary>
         public static void Start(Action<CommandServiceConfig> buildAction)
         {
-            if (_commandServiceStarted) return;
-
+            if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect; consider checking your code and restarting to prevent this warning.").ConfigureAwait(false)); return; }
+            
             CommandServiceConfig cfg = new CommandServiceConfig();
-            buildAction(cfg);
-            _tempCfg = cfg ?? new CommandServiceConfig();
 
-            var _ = Instance;
+            if (buildAction is { }) buildAction(cfg);
+            else throw new CommandOnBuildingException("BuildAction for the CommandServiceConfig was null.");
 
+            if (cfg is null) throw new CommandOnBuildingException("CommandServiceConfig was null. Please check your BuildAction delegate and restart your application. If this issue persists, please contact the creator of this library.");
+
+            _tempCfg = cfg;
+            _ = Instance;
             _commandServiceStarted.Value = true;
         }
         #endregion
@@ -488,7 +479,7 @@ namespace FluentCommands
             buildAction(module);
 
             if (!_tempModules.ContainsKey(moduleType)) _tempModules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.Name}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            else throw new CommandOnBuildingException($"This module, {moduleType.FullName ?? "NULL"}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
         }
 
         /// <summary>
@@ -505,7 +496,7 @@ namespace FluentCommands
             var moduleType = typeof(TModule);
             var module = new ModuleBuilder(moduleType);
             if (!_tempModules.ContainsKey(moduleType)) _tempModules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.FullName}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            else throw new CommandOnBuildingException($"This module, {moduleType.FullName ?? "NULL"}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
             return _tempModules[moduleType];
         }
 
@@ -518,7 +509,7 @@ namespace FluentCommands
         {
             var moduleModule = new ModuleBuilder(module);
             if (!_tempModules.ContainsKey(module)) _tempModules.Add(module, moduleModule);
-            else throw new CommandOnBuildingException($"This module, {module.FullName}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
+            else throw new CommandOnBuildingException($"This module, {module.FullName ?? "NULL"}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
             return _tempModules[module];
         }
         #endregion
@@ -642,21 +633,23 @@ namespace FluentCommands
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
         /// <exception cref="Exception"></exception>
-        private static async Task ProcessInput(Type module, TelegramBotClient client, EventArgs e)
+        private static async Task ProcessInput(Type module, TelegramBotClient client, TelegramUpdateEventArgs e)
         {
             if (!_commandServiceStarted) return; // Log
 
 
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
 
+            var logger = Modules[module].Logger;
+            await logger.Debug("");
 
             if (module is null) throw new NullReferenceException("The Module was null."); //? Log?
             if (client is null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
             if (e is null) throw new NullReferenceException("The EventArgs was null."); //? Log?
 
-            if (!_tempModules.ContainsKey(module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
+            if (!Modules.ContainsKey(module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
 
-            string input = AuxiliaryMethods.GetEventArgsRawInput(e);
+            if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out string input)) return;
             var botId = client.BotId;
             var config = _tempModules[module]?.Config ?? new ModuleBuilderConfig();
             var prefix = config.Prefix;
@@ -699,31 +692,35 @@ namespace FluentCommands
                 {
                     case var _ when cmd is CallbackQueryCommand:
                         {
-                            if (!(e is CallbackQueryEventArgs)) goto default;
                             var c = cmd as ChosenInlineResultCommand;
-                            var args = e as ChosenInlineResultEventArgs;
+                            var args = e.CallbackQueryEventArgs;
+
+                            if (c is null || args is null) goto default;
                         }
                         return;
                     case var _ when cmd is ChosenInlineResultCommand:
                         {
-                            if (!(e is ChosenInlineResultEventArgs)) goto default;
                             var c = cmd as ChosenInlineResultCommand;
-                            var args = e as ChosenInlineResultEventArgs;
+                            var args = e.ChosenInlineResultEventArgs;
+
+                            if (c is null || args is null) goto default;
                         }
                         return;
                     case var _ when cmd is InlineQueryCommand:
                         {
-                            if (!(e is InlineQueryEventArgs)) goto default;
                             var c = cmd as InlineQueryCommand;
-                            var args = e as InlineQueryEventArgs;
+                            var args = e.InlineQueryEventArgs;
+
+                            if (c is null || args is null) goto default;
+
                         }
                         return;
                     case var _ when cmd is MessageCommand:
                         {
                             var c = cmd as MessageCommand;
-                            var args = e as MessageEventArgs;
+                            var args = e.MessageEventArgs;
 
-                            if (!(e is MessageEventArgs) || c is null || args is null) goto default;
+                            if (c is null || args is null) goto default;
 
                             if (c.InvokeWithMenuItem is { })
                             {
@@ -739,10 +736,10 @@ namespace FluentCommands
                         return;
                     case var _ when cmd is UpdateCommand:
                         {
-                            if (!(e is UpdateEventArgs)) goto default;
                             var c = cmd as UpdateCommand;
-                            var args = e as UpdateEventArgs;
+                            var args = e.UpdateEventArgs;
 
+                            if (c is null || args is null) goto default;
                         }
                         return;
                     default:
@@ -762,7 +759,7 @@ namespace FluentCommands
         /// <param name="client">The <see cref="TelegramBotClient"/> that sent the <see cref="Message"/> being retrieved in this method.</param>
         /// <param name="e">The <see cref="UpdateEventArgs"/> being used to locate the last <see cref="Message"/>.</param>
         /// <returns>Returns the last <see cref="Message"/> objects sent by the bot in this <see cref="Chat"/> instance as an <see cref="IReadOnlyCollection{Message}"/>.</returns>
-        public static IReadOnlyCollection<Message> BotLastMessages(TelegramBotClient client, EventArgs e)
+        public static IReadOnlyCollection<Message> BotLastMessages(TelegramBotClient client, TelegramUpdateEventArgs e)
         {
             long chatId;
             if (AuxiliaryMethods.TryGetEventArgsChatId(e, out long c_id)) chatId = c_id;
@@ -820,6 +817,7 @@ namespace FluentCommands
             where TButton : IKeyboardButton
         {
             List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
+            Type buttonType = typeof(TButton);
 
             ModuleBuilderConfig? config;
             Func<string, Exception> keyboardException;
@@ -832,24 +830,18 @@ namespace FluentCommands
 
                 keyboardException = (string s) =>
                 {
-                    //: Do logging
                     return new MenuReplyMarkupException(s);
                 };
             }
             else
             {
-                config = Modules[parentModule ?? throw new InvalidKeyboardRowException("Error updating keyboard rows. (Keyboard belonged to a Command, but the Command's module type was null.")]?.Config;
-                if (config is null)
-                {
-                    config = new ModuleBuilderConfig();
-                    //: Do Logging, but continue.
-                }
+                config = Modules[parentModule ?? throw new InvalidKeyboardRowException("Error updating keyboard rows. (Keyboard belonged to a Command, but the Command's module type was null.")]?.Config
+                    ?? throw new NullReferenceException($"Module: \"{parentModule.FullName ?? "NULL"}\" config was null while updating keyboard rows for this Command.");
 
                 keyboardContainer = $"Command \"{parentCommandName ?? "NULL"}\"";
 
                 keyboardException = (string s) =>
                 {
-                    //: Do logging
                     return new CommandOnBuildingException(s);
                 };
             }
@@ -909,17 +901,17 @@ namespace FluentCommands
                                 referencedButton = Modules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
                             }
 
-                            if (referencedButton is null || typeof(TButton) != referencedButton.GetType())
+                            if (referencedButton is null || buttonType != referencedButton.GetType())
                             {
                                 if (!config.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule?.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
                                 else
                                 {
                                     // Attempts to create a reference to the command when a button reference isn't available.
-                                    referencedButton = (typeof(TButton)) switch
+                                    referencedButton = (buttonType) switch
                                     {
-                                        var _ when typeof(TButton) == typeof(InlineKeyboardButton) => InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::"),
-                                        var _ when typeof(TButton) == typeof(KeyboardButton) => new KeyboardButton(commandNameReference),
-                                        _ => throw keyboardException($"An unknown exception occurred while building the keyboards for {keyboardContainer} (no type detected for TButton)"),
+                                        var _ when buttonType == typeof(InlineKeyboardButton) => InlineKeyboardButton.WithCallbackData(commandNameReference, $"BUTTONREFERENCEDCOMMAND::{commandNameReference}::"),
+                                        var _ when buttonType == typeof(KeyboardButton) => new KeyboardButton(commandNameReference),
+                                        _ => throw keyboardException($"An unknown exception occurred while building the keyboards for {keyboardContainer} (no valid type detected for TButton)"),
                                     };
                                 }
                             }
@@ -936,5 +928,11 @@ namespace FluentCommands
             return updatedKeyboardBuilder;
         }
         #endregion
+
+        /// <summary>Passes args to the global event used by the <see cref="CommandService"/> Logger.</summary>
+        internal static async Task PassToGlobalEvent(FluentLoggingEventArgs args)
+        {
+            await _logger.Value.GlobalEvent(args).ConfigureAwait(false);
+        }
     }
 }

@@ -26,28 +26,30 @@ namespace FluentCommands.Menus
         /// <param name="m"></param>
         internal Menu(MenuItem m) => MenuItem = m;
 
-        public async Task Send(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
-            await Send_Logic(client, e, menuMode);
-        internal async Task Send<TModule>(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
-            await Send_Logic(client, e, menuMode, typeof(TModule));
-        public async Task Send(TelegramBotClient client, ChosenInlineResultEventArgs e, MenuMode menuMode = MenuMode.Default) =>
-            await Send_Logic(client, e, menuMode);
-        internal async Task Send<TModule>(TelegramBotClient client, ChosenInlineResultEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
-            await Send_Logic(client, e, menuMode, typeof(TModule));
-        public async Task Send(TelegramBotClient client, InlineQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
-            await Send_Logic(client, e, menuMode);
-        internal async Task Send<TModule>(TelegramBotClient client, InlineQueryEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
-            await Send_Logic(client, e, menuMode, typeof(TModule));
-        public async Task Send(TelegramBotClient client, MessageEventArgs e, MenuMode menuMode = MenuMode.Default) =>
-            await Send_Logic(client, e, menuMode);
-        internal async Task Send<TModule>(TelegramBotClient client, MessageEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
-            await Send_Logic(client, e, menuMode, typeof(TModule));
-        public async Task Send(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) =>
-            await Send_Logic(client, e, menuMode);
-        internal async Task Send<TModule>(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
-            await Send_Logic(client, e, menuMode, typeof(TModule));
+        public async Task Send(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.Default) => await Send_Logic(client, e, menuMode);
 
-        private async Task Send_Logic(TelegramBotClient client, EventArgs e, MenuMode menuMode = MenuMode.Default, Type? module = null)
+        //public async Task Send(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, ChosenInlineResultEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, ChosenInlineResultEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, InlineQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, InlineQueryEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, MessageEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, MessageEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+
+        private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.Default, Type? module = null)
         {
             //? should this method be public? aimed at transforming MenuItems into replacements for the weird client methods
             //: additionally, please fix the signature of this method

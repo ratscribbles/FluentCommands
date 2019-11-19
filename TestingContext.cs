@@ -7,6 +7,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Args;
+using FluentCommands.Logging;
 
 namespace FluentCommands
 {
@@ -19,6 +20,17 @@ namespace FluentCommands
                 .HelpDescription("lmao")
                 .UsingParseMode(Telegram.Bot.Types.Enums.ParseMode.Default)
                 .ReplyMarkup().Inline(k => { });
+        }
+
+        protected override void OnConfiguring(ModuleBuilderConfig moduleBuilderConfig)
+        {
+            moduleBuilderConfig.LogModuleActivities = false;
+            moduleBuilderConfig.UseLoggingEventHandler = OnLogging;
+        }
+
+        public static async Task OnLogging(FluentLoggingEventArgs args)
+        {
+            await Console.Out.WriteLineAsync("RECEIVED FROM THE MODULE CONTEXT!! POGGERS");
         }
 
         [Command("e")]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using FluentCommands.Builders;
@@ -74,39 +75,37 @@ namespace FluentCommands.Helper
             }
         }
         /// <summary>
-        /// Checks an EventArgs to see if it's a recognized TelegramEventArgs, and then attempts to get the raw input from that EventArgs.
+        /// Checks which <see cref="EventArgs"/> is contained within the <see cref="TelegramUpdateEventArgs"/>, and returns the user's raw input for <see cref="Command"/> processing. 
+        /// <para>Returns false if the raw input was unable to be found, and outs an empty string.</para>
         /// </summary>
-        /// <param name="eventArgs"></param>
+        /// <param name="e"></param>
         /// <returns></returns>
-        internal static string GetEventArgsRawInput(EventArgs eventArgs)
+        internal static bool TryGetEventArgsRawInput(TelegramUpdateEventArgs e, out string rawInput)
         {
-            switch (eventArgs)
+            rawInput = e switch
             {
-                case var _ when eventArgs is CallbackQueryEventArgs:
-                    return ((CallbackQueryEventArgs)eventArgs).GetRawInput();
-                case var _ when eventArgs is ChosenInlineResultEventArgs:
-                    return ((ChosenInlineResultEventArgs)eventArgs).GetRawInput();
-                case var _ when eventArgs is InlineQueryEventArgs:
-                    return ((InlineQueryEventArgs)eventArgs).GetRawInput();
-                case var _ when eventArgs is MessageEventArgs:
-                    return ((MessageEventArgs)eventArgs).GetRawInput();
-                case var _ when eventArgs is UpdateEventArgs:
-                    return ((UpdateEventArgs)eventArgs).GetRawInput();
-                default:
-                    return "";
-            }
+                var _ when e.CallbackQueryEventArgs is { } => e.CallbackQueryEventArgs.GetRawInput(),
+                var _ when e.ChosenInlineResultEventArgs is { } => e.ChosenInlineResultEventArgs.GetRawInput(),
+                var _ when e.InlineQueryEventArgs is { } => e.InlineQueryEventArgs.GetRawInput(),
+                var _ when e.MessageEventArgs is { } => e.MessageEventArgs.GetRawInput(),
+                var _ when e.UpdateEventArgs is { } => e.UpdateEventArgs.GetRawInput(),
+                _ => "",
+            };
+
+            if (rawInput == "") return false;
+            else return true;
         }
-        /// <summary>Checks if the given EventArgs is a TelegramEventArgs object, and returns the Chat Id for <see cref="Command"/> processing. 
-        /// <para>Returns 0 if not found, or if a bot (this bot) is the sender.</para></summary>
-        internal static bool TryGetEventArgsChatId(EventArgs eventArgs, out long chatId)
+        /// <summary>Checks which <see cref="EventArgs"/> is contained within the <see cref="TelegramUpdateEventArgs"/>, and returns the Chat Id for <see cref="Command"/> processing. 
+        /// <para>Returns false if not found, or if a bot (this bot) is the sender, and outs "0".</para></summary>
+        internal static bool TryGetEventArgsChatId(TelegramUpdateEventArgs e, out long chatId)
         {
-            chatId = eventArgs switch
+            chatId = e switch
             {
-                var _ when eventArgs is CallbackQueryEventArgs => ((CallbackQueryEventArgs)eventArgs).GetChatId(),
-                var _ when eventArgs is ChosenInlineResultEventArgs => ((ChosenInlineResultEventArgs)eventArgs).GetChatId(),
-                var _ when eventArgs is InlineQueryEventArgs => ((InlineQueryEventArgs)eventArgs).GetChatId(),
-                var _ when eventArgs is MessageEventArgs => ((MessageEventArgs)eventArgs).GetChatId(),
-                var _ when eventArgs is UpdateEventArgs => ((UpdateEventArgs)eventArgs).GetChatId(),
+                var _ when e.CallbackQueryEventArgs is { } => e.CallbackQueryEventArgs.GetChatId(),
+                var _ when e.ChosenInlineResultEventArgs is { } => e.ChosenInlineResultEventArgs.GetChatId(),
+                var _ when e.InlineQueryEventArgs is { } => e.InlineQueryEventArgs.GetChatId(),
+                var _ when e.MessageEventArgs is { } => e.MessageEventArgs.GetChatId(),
+                var _ when e.UpdateEventArgs is { } => e.UpdateEventArgs.GetChatId(),
                 _ => 0,
             };
 
@@ -114,16 +113,16 @@ namespace FluentCommands.Helper
             else return true;
         }
         /// <summary>Checks if the given EventArgs is a TelegramEventArgs object, and returns the Chat Id for <see cref="Command"/> processing. 
-        /// <para>Returns 0 if not found, or if a bot (this bot) is the sender.</para></summary>
-        internal static bool TryGetEventArgsUserId(EventArgs eventArgs, out int userId)
+        /// <para>Returns false if not found, or if a bot (this bot) is the sender, and outs "0".</para></summary>
+        internal static bool TryGetEventArgsUserId(TelegramUpdateEventArgs e, out int userId)
         {
-            userId = eventArgs switch
+            userId = e switch
             {
-                var _ when eventArgs is CallbackQueryEventArgs => ((CallbackQueryEventArgs)eventArgs).GetUserId(),
-                var _ when eventArgs is ChosenInlineResultEventArgs => ((ChosenInlineResultEventArgs)eventArgs).GetUserId(),
-                var _ when eventArgs is InlineQueryEventArgs => ((InlineQueryEventArgs)eventArgs).GetUserId(),
-                var _ when eventArgs is MessageEventArgs => ((MessageEventArgs)eventArgs).GetUserId(),
-                var _ when eventArgs is UpdateEventArgs => ((UpdateEventArgs)eventArgs).GetUserId(),
+                var _ when e.CallbackQueryEventArgs is { } => e.CallbackQueryEventArgs.GetUserId(),
+                var _ when e.ChosenInlineResultEventArgs is { } => e.ChosenInlineResultEventArgs.GetUserId(),
+                var _ when e.InlineQueryEventArgs is { } => e.InlineQueryEventArgs.GetUserId(),
+                var _ when e.MessageEventArgs is { } => e.MessageEventArgs.GetUserId(),
+                var _ when e.UpdateEventArgs is { } => e.UpdateEventArgs.GetUserId(),
                 _ => 0,
             };
 

@@ -15,8 +15,8 @@ namespace FluentCommands.CommandTypes
     internal delegate Task<Menu> UpdateCommandMenuDelegate(TelegramBotClient c, UpdateEventArgs e);
     internal class UpdateCommand : Command
     {
-        internal UpdateCommandDelegate? Invoke { get; private set; }
-        internal UpdateCommandMenuDelegate? InvokeWithMenuItem { get; private set; }
+        internal UpdateCommandDelegate? Invoke { get; }
+        internal UpdateCommandMenuDelegate? InvokeWithMenuItem { get; }
 
         internal UpdateCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {

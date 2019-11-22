@@ -15,8 +15,8 @@ namespace FluentCommands.CommandTypes
     internal delegate Task<Menu> MessageCommandMenuDelegate(TelegramBotClient c, MessageEventArgs e);
     internal class MessageCommand : Command
     {
-        internal MessageCommandDelegate? Invoke { get; private set; }
-        internal MessageCommandMenuDelegate? InvokeWithMenuItem { get; private set; }
+        internal MessageCommandDelegate? Invoke { get; }
+        internal MessageCommandMenuDelegate? InvokeWithMenuItem { get; }
 
         internal MessageCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {

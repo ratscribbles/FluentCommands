@@ -5,20 +5,33 @@ using System.Text;
 
 namespace FluentCommands
 {
-    public class CommandServiceConfig
+    internal class CommandServiceConfig
     {
-        public bool Logging { get; set; }
-        public bool UseDefaultRules { get; set; }
-        public bool UseDefaultErrorMsg { get; set; }
-        public bool UseInternalStateHandlerForReplyKeyboards { get; set; }
-        public bool UseGlobalLogging { get; set; }
-        public bool CaptureAllLoggingEvents { get; set; }
-        public LoggingEvent UseLoggingEventHandler { get; set; }
-        public FluentLogLevel MaximumLogLevel { get; set; }
-        public bool SwallowExceptions { get; set; }
-        public string DefaultPrefix { get; set; } = "/";
-        public MenuMode DefaultMenuMode { get; set; } = MenuMode.NoAction;
+        internal bool Logging { get; }
+        internal bool UseDefaultRules { get; }
+        internal bool UseDefaultErrorMsg { get; }
+        internal bool UseInternalStateHandlerForReplyKeyboards { get; }
+        internal bool UseGlobalLogging { get; }
+        internal bool CaptureAllLoggingEvents { get; }
+        internal LoggingEvent? UseLoggingEventHandler { get; }
+        internal FluentLogLevel MaximumLogLevel { get; }
+        internal bool SwallowExceptions { get; }
+        internal string DefaultPrefix { get; }
+        internal MenuMode DefaultMenuMode { get; }
 
-        public CommandServiceConfig() { }
+        internal CommandServiceConfig(Builders.CommandServiceConfigBuilder c)
+        {
+            CaptureAllLoggingEvents = c.CaptureAllLoggingEvents;
+            DefaultMenuMode = c.DefaultMenuMode;
+            DefaultPrefix = c.DefaultPrefix;
+            Logging = c.Logging;
+            MaximumLogLevel = c.MaximumLogLevel;
+            SwallowExceptions = c.SwallowExceptions;
+            UseDefaultErrorMsg = c.UseDefaultErrorMsg;
+            UseDefaultRules = c.UseDefaultRules;
+            UseGlobalLogging = c.UseGlobalLogging;
+            UseInternalStateHandlerForReplyKeyboards = c.UseInternalStateHandlerForReplyKeyboards;
+            UseLoggingEventHandler = c.UseLoggingEventHandler;
+        }
     }
 }

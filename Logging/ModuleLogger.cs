@@ -27,7 +27,7 @@ namespace FluentCommands.Logging
         }
 
         private readonly Type _loggerType;
-        private readonly ModuleBuilderConfig _config;
+        private readonly ModuleConfig _config;
         private LoggingEvent? _loggingEvent;
         private LoggingEvent OnLoggingEvent
         {
@@ -38,10 +38,10 @@ namespace FluentCommands.Logging
             }
         }
 
-        internal ModuleLogger(Type t)
+        internal ModuleLogger(Type t, ModuleConfig c)
         {
             _loggerType = t;
-            _config = CommandService.Modules[_loggerType].Config;
+            _config = c;
         }
 
         async Task IFluentLogger.Fatal(string message) => await Logging_Internal(FluentLogLevel.Fatal, message).ConfigureAwait(false);

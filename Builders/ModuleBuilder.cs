@@ -20,8 +20,6 @@ namespace FluentCommands.Builders
         ICommandBaseBuilderOfModule, ICommandBaseOfModuleDescriptionBuilder, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleKeyboard, ICommandBaseOfModuleCompletion, IKeyboardBuilder<ICommandBaseOfModuleKeyboard>, IReplyMarkupable<ICommandBaseOfModuleKeyboard>,
         IFluentInterface
     {
-        /// <summary>Stored logger for this <see cref="CommandModule{TModule}"/>.</summary>
-        private readonly Lazy<ModuleLogger> _logger;
         /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
         private readonly Dictionary<string, CommandBaseBuilder> _moduleCommandBases = new Dictionary<string, CommandBaseBuilder>();
 
@@ -29,38 +27,10 @@ namespace FluentCommands.Builders
         internal Type TypeStorage { get; }
         /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
         private CommandBaseBuilder? CommandStorage { get; set; } = null;
-        /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleBuilderConfig)"/> to update this.</summary>
-        internal ModuleBuilderConfig Config { get; private set; } = new ModuleBuilderConfig();
-        /// <summary>Logger for this <see cref="CommandModule{TModule}"/>. <para>If logging isn't enabled for this module, returns the <see cref="CommandService"/> logger instead.</para></summary>
-        internal IFluentLogger Logger
-        { 
-            get 
-            {
-                if (Config.LogModuleActivities) return _logger.Value;
-                else
-                {
-                    if (CommandService.GlobalConfig.CaptureAllLoggingEvents) return _logger.Value;
-                    else return CommandService.EmptyLogger;
-                }
-            } 
-        }
-        /// <summary>The config object for this <see cref="ModuleBuilder"/>. Readonly.</summary>
-        //ModuleBuilderConfig IReadOnlyModule.Config { get { return Config; } }
+        /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleConfig)"/> to update this.</summary>
+        internal ModuleConfig Config { get; private set; } = new ModuleConfig(new ModuleConfigBuilder());
         /// <summary>The internal <see cref="CommandBaseBuilder"/> dictionary for this <see cref="ModuleBuilder"/>. Readonly.</summary>
         internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get { return _moduleCommandBases; } }
-        /// <summary>Logger for this <see cref="CommandModule{TModule}"/>. <para>If logging isn't enabled for this module, returns the <see cref="CommandService"/> logger instead.</para></summary>
-        //IFluentLogger IReadOnlyModule.Logger
-        //{
-        //    get
-        //    {
-        //        if (Config.LogModuleActivities) return _logger.Value;
-        //        else
-        //        {
-        //            if (CommandService.GlobalConfig.CaptureAllLoggingEvents) return _logger.Value;
-        //            else return CommandService.EmptyLogger;
-        //        }
-        //    }
-        //}
 
         /// <summary>
         /// Indexer used primarily for the "build action" <see cref="Action"/> version of the fluent builder API.
@@ -82,15 +52,9 @@ namespace FluentCommands.Builders
         /// Instantiates a new <see cref="ModuleBuilder"/> to create <see cref="CommandBaseBuilder"/> objects with.
         /// </summary>
         /// <param name="t">The class this ModuleBuilder is targeting.</param>
-        internal ModuleBuilder(Type t)
-        {
-            TypeStorage = t;
-            _logger = new Lazy<ModuleLogger>(() => new ModuleLogger(t));
-        }
+        internal ModuleBuilder(Type t) => TypeStorage = t;
 
-        internal void SetConfig(ModuleBuilderConfig cfg) => Config = cfg;
-        internal void SetHandler(LoggingEvent l) => _logger.Value.LoggingEvent += l;
-        //internal IReadOnlyModule AsReadOnly() => this;
+        internal void SetConfig(ModuleConfig cfg) => Config = cfg;
 
         /// <summary>
         /// Creates a new command for this module.

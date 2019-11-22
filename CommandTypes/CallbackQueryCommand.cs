@@ -15,8 +15,8 @@ namespace FluentCommands.CommandTypes
     internal delegate Task<Menu> CallbackQueryCommandMenuDelegate(TelegramBotClient c, CallbackQueryEventArgs e);
     internal class CallbackQueryCommand : Command
     {
-        internal CallbackQueryCommandDelegate? Invoke { get; private set; }
-        internal CallbackQueryCommandMenuDelegate? InvokeWithMenuItem { get; private set; }
+        internal CallbackQueryCommandDelegate? Invoke { get; }
+        internal CallbackQueryCommandMenuDelegate? InvokeWithMenuItem { get; }
 
         internal CallbackQueryCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {

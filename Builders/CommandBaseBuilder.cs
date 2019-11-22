@@ -9,6 +9,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 using FluentCommands.CommandTypes;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using FluentCommands.Attributes;
 
 namespace FluentCommands.Builders
 {
@@ -19,30 +20,20 @@ namespace FluentCommands.Builders
         ICommandBaseAliases, ICommandDescriptionBuilder, ICommandBaseKeyboard, ICommandBaseDescription, IReplyMarkupable<ICommandBaseKeyboard>, IKeyboardBuilder<ICommandBaseKeyboard>,
         IFluentInterface
     {
-        /// <summary>
-        /// Gets the name of this <see cref="Command"/>.
-        /// </summary>
+        /// <summary>Gets the name of this <see cref="Command"/>.</summary>
         internal string Name { get; private set; }
-        /// <summary>
-        /// Gets the Aliases (other names) for this <see cref="Command"/>.
-        /// </summary>
+        /// <summary>Gets the Aliases (other names) for this <see cref="Command"/>.</summary>
         internal string[] InAliases { get; private set; } = Array.Empty<string>();
-        /// <summary>
-        /// Gets the Description for this <see cref="Command"/>.
-        /// </summary>
+        /// <summary>Gets the Description for this <see cref="Command"/>.</summary>
         internal string InDescription { get; private set; } = "There is no description for this command.";
-        /// <summary>
-        /// Gets the <see cref="Telegram.Bot.Types.Enums.ParseMode"/> for this <see cref="Command"/>. Used for the <see cref="Command.Description"/>).
-        /// </summary>
+        /// <summary>Gets the <see cref="Telegram.Bot.Types.Enums.ParseMode"/> for this <see cref="Command"/>. Used for the <see cref="Command.Description"/>).</summary>
         internal ParseMode InParseMode { get; private set; } = ParseMode.Default;
-        /// <summary>
-        /// Gets the <see cref="IKeyboardButton"/> for this <see cref="Command"/>. Used to call this command via Keyboard Markups, such as <see cref="InlineKeyboardMarkup"/> and <see cref="ReplyKeyboardMarkup"/>).
-        /// </summary>
+        /// <summary>Gets the <see cref="IKeyboardButton"/> for this <see cref="Command"/>. Used to call this command via Keyboard Markups, such as <see cref="InlineKeyboardMarkup"/> and <see cref="ReplyKeyboardMarkup"/>).</summary>
         internal IKeyboardButton? InButton { get; private set; } = null;
-        /// <summary>
-        /// Gets the <see cref="KeyboardBuilder"/> for this <see cref="Command"/>
-        /// </summary>
+        /// <summary>Gets the <see cref="KeyboardBuilder"/> for this <see cref="Command"/></summary>
         internal KeyboardBuilder? KeyboardInfo { get; private set; } = null;
+        /// <summary>Gets the <see cref="Attributes.Permissions"/> for this <see cref="Command"/>.</summary>
+        internal Permissions Permissions { get; private set; }
 
         /// <summary>
         /// Instantiates a new <see cref="CommandBaseBuilder"/>, which will be used to construct a <see cref="Command"/> for this Module.
@@ -50,6 +41,7 @@ namespace FluentCommands.Builders
         /// <param name="name">The name of this future <see cref="Command"/>.</param>
         internal CommandBaseBuilder(string name) => Name = name;
 
+        #region Fluent Building
         /// <summary>
         /// Adds aliases (alternate names) to this <see cref="CommandBaseBuilder"/>. Duplicates are ignored.
         /// </summary>
@@ -192,5 +184,14 @@ namespace FluentCommands.Builders
         {
             InButton = button;
         }
+        #endregion
+
+        #region Setters (for attributes)
+        ////
+        //! Add to this if additional -attribute- functionality is needed later. Do not modify the constructor or other methods.
+        ////
+
+        internal void SetPermissions(Permissions p) => Permissions = p;
+        #endregion
     }
 }

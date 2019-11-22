@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using FluentCommands.Menus;
 
 //[DeploymentItem("Microsoft.VisualStudio.TestPlatform.ObjectModel.dll")]
+//: Test logging event handlers!
 
 namespace FluentCommands.Tests.Unit
 {

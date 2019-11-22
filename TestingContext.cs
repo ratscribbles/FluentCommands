@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using FluentCommands.Logging;
+using FluentCommands.Menus;
 
 namespace FluentCommands
 {
@@ -22,10 +23,10 @@ namespace FluentCommands
                 .ReplyMarkup().Inline(k => { });
         }
 
-        protected override void OnConfiguring(ModuleBuilderConfig moduleBuilderConfig)
+        protected override void OnConfiguring(ModuleConfigBuilder config)
         {
-            moduleBuilderConfig.LogModuleActivities = false;
-            moduleBuilderConfig.UseLoggingEventHandler = OnLogging;
+            config.LogModuleActivities = true;
+            config.UseLoggingEventHandler = OnLogging;
         }
 
         public static async Task OnLogging(FluentLoggingEventArgs args)
@@ -35,6 +36,17 @@ namespace FluentCommands
 
         [Command("e")]
         public async Task E(TelegramBotClient client, MessageEventArgs e)
+        {
+            await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+        }
+
+        public async Task<(Menu, ChainResult<int>)> woweee(TelegramBotClient client, MessageEventArgs e)
+        {
+            return (MenuItem.As().Animation().Source("").Done(), 0);
+        }
+
+        [Chain("lmao", "e")]
+        public async Task ppepepe(TelegramBotClient client, MessageEventArgs e, ChainResult<int> result)
         {
             await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
         }

@@ -30,4 +30,10 @@
     <PackageReference Include="Telegram.Bot" Version="15.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="ReadOnlyCommandModule.cs">
+      <Generator>MSBuild:Compile</Generator>
+    </Compile>
+  </ItemGroup>
+
 </Project>

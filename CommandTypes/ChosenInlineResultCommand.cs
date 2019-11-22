@@ -15,8 +15,8 @@ namespace FluentCommands.CommandTypes
     internal delegate Task<Menu> ChosenInlineResultCommandMenuDelegate(TelegramBotClient c, ChosenInlineResultEventArgs e);
     internal class ChosenInlineResultCommand : Command
     {
-        internal ChosenInlineResultCommandDelegate? Invoke { get; private set; }
-        internal ChosenInlineResultCommandMenuDelegate? InvokeWithMenuItem { get; private set; }
+        internal ChosenInlineResultCommandDelegate? Invoke { get; }
+        internal ChosenInlineResultCommandMenuDelegate? InvokeWithMenuItem { get; }
 
         internal ChosenInlineResultCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {

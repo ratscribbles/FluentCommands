@@ -8,8 +8,8 @@ namespace FluentCommands.Interfaces
 {
     internal interface IReadOnlyModule
     {
-        internal ModuleBuilderConfig Config { get; }
-        internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get; }
+        internal ModuleConfig Config { get; }
         internal IFluentLogger Logger { get; }
+        internal Type TypeStorage { get; }
     }
 }

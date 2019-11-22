@@ -19,7 +19,7 @@ namespace FluentCommands
     {
         internal Type Module { get; private set; }
         internal string Name { get; private set; }
-        internal Permissions Permissions { get; set; } = Permissions.None;
+        internal Permissions Permissions { get; private set; } = Permissions.None;
         internal string[] Aliases { get; private set; } = Array.Empty<string>();
         internal string Description { get; private set; } = "";
         internal ParseMode ParseMode { get; private set; } = ParseMode.Default;
@@ -31,6 +31,7 @@ namespace FluentCommands
         {
             Module = module;
             Name = commandBase.Name;
+            Permissions = commandBase.Permissions;
             Aliases = commandBase.InAliases;
             Description = commandBase.InDescription;
             ParseMode = commandBase.InParseMode;

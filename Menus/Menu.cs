@@ -72,7 +72,7 @@ namespace FluentCommands.Menus
             if (menuMode != MenuMode.Default) mode = menuMode;
             else 
             {
-                if (module is { }) mode = CommandService.Modules?[module]?.Config?.MenuModeOverride ?? menuMode;
+                if (module is { }) mode = CommandService.Modules[module]?.Config?.MenuModeOverride ?? menuMode;
                 else mode = CommandService.GlobalConfig.DefaultMenuMode;
             }
 

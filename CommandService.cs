@@ -39,10 +39,10 @@ namespace FluentCommands
         private static readonly Lazy<CommandServiceLogger> _logger = new Lazy<CommandServiceLogger>(() => new CommandServiceLogger());
         private static readonly Lazy<EmptyLogger> _emptyLogger = new Lazy<EmptyLogger>(() => new EmptyLogger());
         private static readonly IReadOnlyCollection<Type> _assemblyTypes;
-        private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new[] { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs), typeof(TelegramUpdateEventArgs) };
+        private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new[] { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId.</para></summary>
-        private static readonly Dictionary<int, ConcurrentDictionary<long, Message[]>> _botLastMessages = new Dictionary<int, ConcurrentDictionary<long, Message[]>>();
-        private static readonly Dictionary<int, Dictionary<long, Message>> _messageUserCache = new Dictionary<int, Dictionary<long, Message>>();
+        private static readonly ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>> _botLastMessages = new ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>>();
+        private static readonly ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>> _userLastMessages = new ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>>();
         private static readonly Dictionary<Type, ModuleBuilder> _tempModules = new Dictionary<Type, ModuleBuilder>();
         private static Toggle _lastMessageIsMenu = new Toggle(false);
         private static ToggleOnce _commandServiceStarted = new ToggleOnce(false);

@@ -17,6 +17,11 @@ namespace FluentCommands
         internal InlineQueryEventArgs? InlineQueryEventArgs { get; private set; }
         internal MessageEventArgs? MessageEventArgs { get; private set; }
         internal UpdateEventArgs? UpdateEventArgs { get; private set; }
+        internal bool HasNoArgs => (CallbackQueryEventArgs is null || CallbackQueryEventArgs.CallbackQuery is null)
+                                && (ChosenInlineResultEventArgs is null || ChosenInlineResultEventArgs.ChosenInlineResult is null)
+                                && (InlineQueryEventArgs is null || InlineQueryEventArgs.InlineQuery is null)
+                                && (MessageEventArgs is null || MessageEventArgs.Message is null)
+                                && (UpdateEventArgs is null || UpdateEventArgs.Update is null);
 
         public static implicit operator TelegramUpdateEventArgs(CallbackQueryEventArgs e) => new TelegramUpdateEventArgs { CallbackQueryEventArgs = e };
         public static implicit operator TelegramUpdateEventArgs(ChosenInlineResultEventArgs e) => new TelegramUpdateEventArgs { ChosenInlineResultEventArgs = e };

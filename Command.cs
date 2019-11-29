@@ -17,15 +17,16 @@ namespace FluentCommands
     internal enum KeyboardType { None, Inline, Reply, ForceReply, Remove }
     internal class Command
     {
-        internal Type Module { get; private set; }
-        internal string Name { get; private set; }
-        internal Permissions Permissions { get; private set; } = Permissions.None;
-        internal string[] Aliases { get; private set; } = Array.Empty<string>();
-        internal string Description { get; private set; } = "";
-        internal ParseMode ParseMode { get; private set; } = ParseMode.Default;
-        internal IKeyboardButton? Button { get; private set; } = null;
-        internal IReplyMarkup? ReplyMarkup { get; private set; } = null;
-        internal KeyboardType KeyboardType { get; private set; } = KeyboardType.None;
+        internal Type Module { get; }
+        internal string Name { get; }
+        internal Permissions Permissions { get; } = Permissions.None;
+        internal Command[] Steps { get; } = Array.Empty<Command>();
+        internal string[] Aliases { get; } = Array.Empty<string>();
+        internal string Description { get; } = string.Empty;
+        internal ParseMode ParseMode { get; } = ParseMode.Default;
+        internal IKeyboardButton? Button { get; } = null;
+        internal IReplyMarkup? ReplyMarkup { get; } = null;
+        internal KeyboardType KeyboardType { get; } = KeyboardType.None;
 
         private protected Command(CommandBaseBuilder commandBase, Type module)
         {

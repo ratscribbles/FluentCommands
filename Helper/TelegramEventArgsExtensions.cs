@@ -8,23 +8,23 @@ namespace FluentCommands.Helper
     internal static class TelegramEventArgsExtensions
     {
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
-        internal static string GetRawInput(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Data ?? "";
+        internal static ReadOnlyMemory<char> GetRawInput(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Data.AsMemory() ?? ReadOnlyMemory<char>.Empty;
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
-        internal static string GetRawInput(this ChosenInlineResultEventArgs e) => e?.ChosenInlineResult?.Query ?? "";
+        internal static ReadOnlyMemory<char> GetRawInput(this ChosenInlineResultEventArgs e) => e?.ChosenInlineResult?.Query.AsMemory() ?? ReadOnlyMemory<char>.Empty;
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
-        internal static string GetRawInput(this InlineQueryEventArgs e) => e?.InlineQuery?.Query ?? "";
+        internal static ReadOnlyMemory<char> GetRawInput(this InlineQueryEventArgs e) => e?.InlineQuery?.Query.AsMemory() ?? ReadOnlyMemory<char>.Empty;
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
-        internal static string GetRawInput(this MessageEventArgs e) => e?.Message?.Text ?? "";
+        internal static ReadOnlyMemory<char> GetRawInput(this MessageEventArgs e) => e?.Message?.Text.AsMemory() ?? ReadOnlyMemory<char>.Empty;
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
-        internal static string GetRawInput(this UpdateEventArgs e)
+        internal static ReadOnlyMemory<char> GetRawInput(this UpdateEventArgs e)
         {
             var update = e?.Update;
-            if (update is null) return "";
-            else if (update.CallbackQuery != null) return update.CallbackQuery?.Data ?? "";
-            else if (update.ChosenInlineResult != null) return update.ChosenInlineResult?.Query ?? "";
-            else if (update.InlineQuery != null) return update.InlineQuery?.Query ?? "";
-            else if (update.Message != null) return update.Message?.Text ?? "";
-            else return "";
+            if (update is null) return ReadOnlyMemory<char>.Empty;
+            else if (update.CallbackQuery != null) return update.CallbackQuery?.Data.AsMemory() ?? ReadOnlyMemory<char>.Empty;
+            else if (update.ChosenInlineResult != null) return update.ChosenInlineResult?.Query.AsMemory() ?? ReadOnlyMemory<char>.Empty;
+            else if (update.InlineQuery != null) return update.InlineQuery?.Query.AsMemory() ?? ReadOnlyMemory<char>.Empty;
+            else if (update.Message != null) return update.Message?.Text.AsMemory() ?? ReadOnlyMemory<char>.Empty;
+            else return ReadOnlyMemory<char>.Empty;
         }
 
         /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>

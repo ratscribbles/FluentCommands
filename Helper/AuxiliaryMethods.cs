@@ -80,7 +80,7 @@ namespace FluentCommands.Helper
         /// </summary>
         /// <param name="e"></param>
         /// <returns></returns>
-        internal static bool TryGetEventArgsRawInput(TelegramUpdateEventArgs e, out string rawInput)
+        internal static bool TryGetEventArgsRawInput(TelegramUpdateEventArgs e, out ReadOnlyMemory<char> rawInput)
         {
             rawInput = e switch
             {
@@ -89,10 +89,10 @@ namespace FluentCommands.Helper
                 var _ when e.InlineQueryEventArgs is { } => e.InlineQueryEventArgs.GetRawInput(),
                 var _ when e.MessageEventArgs is { } => e.MessageEventArgs.GetRawInput(),
                 var _ when e.UpdateEventArgs is { } => e.UpdateEventArgs.GetRawInput(),
-                _ => "",
+                _ => ReadOnlyMemory<char>.Empty,
             };
 
-            if (rawInput == "") return false;
+            if (rawInput.IsEmpty) return false;
             else return true;
         }
         /// <summary>Checks which <see cref="EventArgs"/> is contained within the <see cref="TelegramUpdateEventArgs"/>, and returns the Chat Id for <see cref="Command"/> processing. 

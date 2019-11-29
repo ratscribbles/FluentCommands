@@ -9,6 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using FluentCommands.Logging;
 using FluentCommands.Menus;
+using FluentCommands.CommandTypes.Steps;
 
 namespace FluentCommands
 {
@@ -45,8 +46,9 @@ namespace FluentCommands
             return (MenuItem.As().Animation().Source("").Done(), 0);
         }
 
-        [Chain("lmao", "e")]
-        public async Task ppepepe(TelegramBotClient client, MessageEventArgs e, ChainResult<int> result)
+        [Command("e")]
+        [Step(-1)]
+        public async Task<IStep> ppepepe(TelegramBotClient client, MessageEventArgs e)
         {
             await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
         }

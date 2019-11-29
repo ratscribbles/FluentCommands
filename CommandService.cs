@@ -50,9 +50,9 @@ namespace FluentCommands
         ///////
         private readonly CommandServiceConfig _config;
         private readonly IReadOnlyDictionary<Type, IReadOnlyModule> _modules;
-        private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> _commands;
+        private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, Command>> _commands;
         ///////
-        private static IReadOnlyDictionary<Type, IReadOnlyDictionary<string, Command>> Commands => _instance.Value._commands;
+        private static IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, Command>> Commands => _instance.Value._commands;
         internal static IReadOnlyDictionary<Type, IReadOnlyModule> Modules => _instance.Value._modules;
         internal static IFluentLogger Logger => _logger.Value;
         internal static IFluentLogger EmptyLogger => _emptyLogger.Value;
@@ -92,7 +92,7 @@ namespace FluentCommands
 
             if (_config.UseLoggingEventHandler is { }) _logger.Value.LoggingEvent += _config.UseLoggingEventHandler;
 
-            var tempCommands = new Dictionary<Type, Dictionary<string, Command>>();
+            var tempCommands = new Dictionary<Type, Dictionary<ReadOnlyMemory<char>, Command>>();
 
             //: create an object that stores logging "events" and pops em at the end. mayb.
 
@@ -103,7 +103,7 @@ namespace FluentCommands
             var tempModules = new Dictionary<Type, IReadOnlyModule>(_tempModules.Count);
             foreach (var kvp in _tempModules.ToList()) tempModules.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value));
 
-            var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<string, Command>>();
+            var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, Command>>();
             foreach (var kvp in tempCommands.ToList()) tempCommandsToReadOnly.Add(kvp.Key, kvp.Value);
 
             _modules = tempModules;
@@ -334,12 +334,12 @@ namespace FluentCommands
                 foreach (var method in allCommandMethods)
                 {
                     var module = method.DeclaringType ?? throw new CommandOnBuildingException("Error getting the DeclaringType (module) of a method while command building. (Returned null.)");
-                    if (!tempCommands.ContainsKey(module)) tempCommands[module] = new Dictionary<string, Command>();
+                    if (!tempCommands.ContainsKey(module)) tempCommands[module] = new Dictionary<ReadOnlyMemory<char>, Command>(CommandNameComparer.Default);
 
                     var commandAttributeName = method.GetCustomAttribute<CommandAttribute>()?.Name ?? throw new CommandOnBuildingException($"Error determining the Command Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)");
                     var commandPermissions = method.GetCustomAttribute<PermissionsAttribute>()?.Permissions;
                     var modulePermissions = module.GetCustomAttribute<PermissionsAttribute>()?.Permissions;
-                    var chainAttribute = method.GetCustomAttribute<ChainAttribute>() ?? null;
+                    var chainAttribute = method.GetCustomAttribute<StepAttribute>() ?? null;
 
 
                     Permissions permissions; // Command Permissions > Module Permissions > No Permissions
@@ -409,7 +409,7 @@ namespace FluentCommands
                                 var newCommand = instance as Command;
 
                                 if (newCommand is null) throw new CommandOnBuildingException($"Unknown error occurred while building the {commandBase.Name} Chain (no command type detected). If you encounter this error, please submit a bug report (it should never happen).");
-                                else tempCommands[module][commandAttributeName] = newCommand;
+                                else tempCommands[module][commandAttributeName.AsMemory()] = newCommand;
                             }
                         }
                         else throw new CommandOnBuildingException($"Command {commandAttributeName}: method had invalid signature.");
@@ -431,7 +431,7 @@ namespace FluentCommands
 
                                 if (newCommand is null) throw new CommandOnBuildingException($"Command {c?.Name ?? "NULL"} failed to build. (Attempt to add command resulted in a null command.)");
 
-                                tempCommands[module][commandAttributeName] = newCommand;
+                                tempCommands[module][commandAttributeName.AsMemory()] = newCommand;
                                 AddAliases(newCommand, commandBase.InAliases);
                             }
                             catch (CommandOnBuildingException e) { throw e; } // For exceptional cases outlined above
@@ -446,7 +446,7 @@ namespace FluentCommands
                         {
                             foreach (string alias in aliases)
                             {
-                                tempCommands[module][alias] = commandToReference;
+                                tempCommands[module][alias.AsMemory()] = commandToReference;
                             }
                         }
                     }
@@ -565,71 +565,71 @@ namespace FluentCommands
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
         /// <exception cref="Exception"></exception>
-        public static async Task Eval_Oldlogic<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : class
-        {
-            try
-            {
-                var botId = client.BotId;
-                if (!_botLastMessages.ContainsKey(botId)) _botLastMessages.TryAdd(botId, new ConcurrentDictionary<long, Message[]>());
-                if (!_messageUserCache.ContainsKey(botId)) _messageUserCache.TryAdd(botId, new Dictionary<long, Message>());
+        //public static async Task Eval_Oldlogic<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : class
+        //{
+        //    try
+        //    {
+        //        var botId = client.BotId;
+        //        if (!_botLastMessages.ContainsKey(botId)) _botLastMessages.TryAdd(botId, new ConcurrentDictionary<long, Message[]>());
+        //        if (!_messageUserCache.ContainsKey(botId)) _messageUserCache.TryAdd(botId, new Dictionary<long, Message>());
 
-                var messageChatId = e.Message.Chat.Id;
-                if (!_botLastMessages[botId].ContainsKey(messageChatId)) _botLastMessages[botId].TryAdd(messageChatId, new Message[] { });
-                if (!_messageUserCache[botId].ContainsKey(messageChatId)) _messageUserCache[botId].TryAdd(messageChatId, new Message());
+        //        var messageChatId = e.Message.Chat.Id;
+        //        if (!_botLastMessages[botId].ContainsKey(messageChatId)) _botLastMessages[botId].TryAdd(messageChatId, new Message[] { });
+        //        if (!_messageUserCache[botId].ContainsKey(messageChatId)) _messageUserCache[botId].TryAdd(messageChatId, new Message());
 
-                //! last message received by bot (will be user)
+        //        //! last message received by bot (will be user)
 
 
-                var rawInput = e.Message.Text ?? throw new ArgumentNullException();
-                var thisConfig = _tempModules[typeof(TModule)].Config;
-                var prefix = thisConfig.Prefix ?? throw new ArgumentNullException();
-                try
-                {
-                    if (rawInput.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    {
-                        string input = rawInput.Substring(prefix.Length);
-                        var commandMatch = FluentRegex.CheckCommand.Match(input);
+        //        var rawInput = e.Message.Text ?? throw new ArgumentNullException();
+        //        var thisConfig = _tempModules[typeof(TModule)].Config;
+        //        var prefix = thisConfig.Prefix ?? throw new ArgumentNullException();
+        //        try
+        //        {
+        //            if (rawInput.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                string input = rawInput.Substring(prefix.Length);
+        //                var commandMatch = FluentRegex.CheckCommand.Match(input);
 
-                        if (!commandMatch.Success) return;
-                        else
-                        {
-                            // This message *should* be a user attempting to interact with the bot; add it to the cache.
-                            if (!e.Message.From.IsBot) _messageUserCache[botId][messageChatId] = e.Message;
+        //                if (!commandMatch.Success) return;
+        //                else
+        //                {
+        //                    // This message *should* be a user attempting to interact with the bot; add it to the cache.
+        //                    if (!e.Message.From.IsBot) _messageUserCache[botId][messageChatId] = e.Message;
 
-                            var thisCommandName = commandMatch.Groups[1].Value;
-                            var thisCommand = Commands[typeof(TModule)][thisCommandName];
+        //                    var thisCommandName = commandMatch.Groups[1].Value;
+        //                    var thisCommand = Commands[typeof(TModule)][thisCommandName];
 
-                            await ProcessCommand(thisCommand);
-                        }
-                    }
-                }
-                catch (ArgumentNullException) { return; } // Catch, default error message?, Log it, re-throw.
-                catch (ArgumentException) { return; } // Catch, Log it, re-throw.
-                catch (RegexMatchTimeoutException) { return; } // Catch, Log it, re-throw.
-            }
-            catch (NullReferenceException ex) { return; } // Catch, Log it, re-throw.
-            catch (ArgumentNullException ex) { return; } // Catch, Log it, re-throw.
-            catch (Exception ex) { return; } // Catch, Log it, re-throw.
+        //                    await ProcessCommand(thisCommand);
+        //                }
+        //            }
+        //        }
+        //        catch (ArgumentNullException) { return; } // Catch, default error message?, Log it, re-throw.
+        //        catch (ArgumentException) { return; } // Catch, Log it, re-throw.
+        //        catch (RegexMatchTimeoutException) { return; } // Catch, Log it, re-throw.
+        //    }
+        //    catch (NullReferenceException ex) { return; } // Catch, Log it, re-throw.
+        //    catch (ArgumentNullException ex) { return; } // Catch, Log it, re-throw.
+        //    catch (Exception ex) { return; } // Catch, Log it, re-throw.
 
-            async Task ProcessCommand(Command c)
-            {
-                if (c is MessageCommand)
-                {
-                    var command = c as MessageCommand;
-                    if (command is { })
-                    {
-                        if (command.InvokeWithMenuItem != null)
-                        {
-                            var menu = await command.InvokeWithMenuItem(client, e);
-                            //: check keyboards.
-                            //await SendMenu<TModule>(menu, command.ReplyMarkup, client, e)
-                        }
-                        else if (command.Invoke != null) await command.Invoke(client, e);
-                    }
-                }
-                // Do nothing if it's not the right type.
-            }
-        }
+        //    async Task ProcessCommand(Command c)
+        //    {
+        //        if (c is MessageCommand)
+        //        {
+        //            var command = c as MessageCommand;
+        //            if (command is { })
+        //            {
+        //                if (command.InvokeWithMenuItem != null)
+        //                {
+        //                    var menu = await command.InvokeWithMenuItem(client, e);
+        //                    //: check keyboards.
+        //                    //await SendMenu<TModule>(menu, command.ReplyMarkup, client, e)
+        //                }
+        //                else if (command.Invoke != null) await command.Invoke(client, e);
+        //            }
+        //        }
+        //        // Do nothing if it's not the right type.
+        //    }
+        //}
         public static async Task Eval_oldLogic<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
         {
             if (e.CallbackQuery.Message.MessageId != 0)
@@ -672,51 +672,45 @@ namespace FluentCommands
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
         /// <exception cref="Exception"></exception>
-        private static async Task ProcessInput(Type module, TelegramBotClient client, TelegramUpdateEventArgs e)
+        private static async Task ProcessInput(Type moduleType, TelegramBotClient client, TelegramUpdateEventArgs e)
         {
-            if (!_commandServiceStarted) return; // Log
+            if (!_commandServiceStarted) return; //: Log
 
+            if (moduleType is null) throw new NullReferenceException("The Module was null."); //: Log?
+            if (client is null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
+            if (e is null || e.HasNoArgs) throw new NullReferenceException("The EventArgs was null or contained no valid EventArgs."); //? Log?
+            if (!Modules.TryGetValue(moduleType, out var module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
 
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
 
-            var logger = Modules[module].Logger;
-            await logger.Debug("");
+            var logger = module.Logger;
 
-            if (module is null) throw new NullReferenceException("The Module was null."); //? Log?
-            if (client is null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
-            if (e is null) throw new NullReferenceException("The EventArgs was null."); //? Log?
-
-            if (!Modules.ContainsKey(module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
-
-            if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out string input)) return;
+            if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out ReadOnlyMemory<char> input)) return;
             var botId = client.BotId;
-            var config = _tempModules[module]?.Config ?? new ModuleConfig(new ModuleConfigBuilder()); //: perform logging; shouldn't happen! ever! in fact, this null check might be a waste
-            var prefix = config.Prefix;
-
-            Command command;
+            var config = module.Config;
+            var prefix = config.Prefix; //! Not AsMemory() due to the possibility of this string changing elsewhere
 
             try
             {
-                if (input.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                if (MemoryExtensions.StartsWith(input.Span, prefix, StringComparison.OrdinalIgnoreCase))
                 {
-                    input = input.Substring(prefix.Length);
-                    var commandMatch = FluentRegex.CheckCommand.Match(input);
+                    input = input.Slice(prefix.Length);
+                    //input = input.Substring(prefix.Length);
+                    var commandMatch = FluentRegex.CheckCommand.Match(input.Span.ToString());
 
-                    if (!commandMatch.Success) return;
-                    else
+                    if (commandMatch.Success)
                     {
-                        var commandName = commandMatch?.Groups[1]?.Value ?? "";
-                        if (Commands.ContainsKey(module) && Commands[module].ContainsKey(commandName)) command = Commands[module][commandName];
-                        else return;
+                        if (commandMatch.Groups.Count > 1)
+                        {
+                            var commandName = commandMatch.Groups[1].Value.AsMemory();
+                            if (Commands.TryGetValue(moduleType, out var moduleDict) && moduleDict.TryGetValue(commandName, out var command)) await ProcessCommand(command);
+                        }
                     }
                 }
-                else return;
             }
-            catch (ArgumentNullException) { return; } // Catch, default error message?, Log it, re-throw.
-            catch (ArgumentException) { return; } // Catch, Log it, re-throw.
-            catch (RegexMatchTimeoutException) { return; } // Catch, Log it, re-throw.
-
-            await ProcessCommand(command);
+            catch (ArgumentNullException) { return; } //: Catch, default error message?, Log it, re-throw.
+            catch (ArgumentException) { return; } //: Catch, Log it, re-throw.
+            catch (RegexMatchTimeoutException) { return; } //: Catch, Log it, re-throw.
 
             //!
             //!
@@ -729,60 +723,58 @@ namespace FluentCommands
             {
                 switch (cmd)
                 {
-                    case var _ when cmd is CallbackQueryCommand:
+                    case CallbackQueryCommand c when cmd is CallbackQueryCommand:
                         {
-                            var c = cmd as ChosenInlineResultCommand;
                             var args = e.CallbackQueryEventArgs;
 
                             if (c is null || args is null) goto default;
+
+                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
-                    case var _ when cmd is ChosenInlineResultCommand:
+                    case ChosenInlineResultCommand c when cmd is ChosenInlineResultCommand:
                         {
-                            var c = cmd as ChosenInlineResultCommand;
                             var args = e.ChosenInlineResultEventArgs;
 
                             if (c is null || args is null) goto default;
+
+                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
-                    case var _ when cmd is InlineQueryCommand:
+                    case InlineQueryCommand c when cmd is InlineQueryCommand:
                         {
-                            var c = cmd as InlineQueryCommand;
                             var args = e.InlineQueryEventArgs;
 
                             if (c is null || args is null) goto default;
 
+                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
-                    case var _ when cmd is MessageCommand:
+                    case MessageCommand c when cmd is MessageCommand:
                         {
-                            var c = cmd as MessageCommand;
                             var args = e.MessageEventArgs;
 
                             if (c is null || args is null) goto default;
 
-                            if (c.InvokeWithMenuItem is { })
-                            {
-                                //var lmao = MenuItem.WithChatAction(Telegram.Bot.Types.Enums.ChatAction.RecordAudio).Audio().Source("").DoneAndSendTo(40).Send();
-                                var menu = await c.InvokeWithMenuItem(client, args);
-                                //: check keyboards.
-                                //: Figure this out. lol. may want to remove the generics for the internal implementation
-                                //: consider an extension method, or just a method added to the class itself
-                                // await SendMenu<TModule>(menu, command.ReplyKeyboard, client, e);
-                            }
+                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
-                    case var _ when cmd is UpdateCommand:
+                    case UpdateCommand c when cmd is UpdateCommand:
                         {
-                            var c = cmd as UpdateCommand;
                             var args = e.UpdateEventArgs;
 
                             if (c is null || args is null) goto default;
+
+                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
                     default:
-                        // Perform logging.
+                        //: Perform logging.
                         return;
                 }
             }
@@ -800,24 +792,24 @@ namespace FluentCommands
         /// <returns>Returns the last <see cref="Message"/> objects sent by the bot in this <see cref="Chat"/> instance as an <see cref="IReadOnlyCollection{Message}"/>.</returns>
         public static IReadOnlyCollection<Message> BotLastMessages(TelegramBotClient client, TelegramUpdateEventArgs e)
         {
-            long chatId;
-            if (AuxiliaryMethods.TryGetEventArgsChatId(e, out long c_id)) chatId = c_id;
-            else if (AuxiliaryMethods.TryGetEventArgsUserId(e, out int u_id)) chatId = u_id;
-            else throw new Exception();
+            //long chatId;
+            //if (AuxiliaryMethods.TryGetEventArgsChatId(e, out long c_id)) chatId = c_id;
+            //else if (AuxiliaryMethods.TryGetEventArgsUserId(e, out int u_id)) chatId = u_id;
+            //else throw new Exception();
 
-            bool success;
-            byte attempts = 0;
-            Message[]? m;
-            do
-            {
-                success = _botLastMessages[client.BotId].TryGetValue(chatId, out m);
-                attempts++;
-            } 
-            while (!success && attempts < 10);
+            //bool success;
+            //byte attempts = 0;
+            //Message[]? m;
+            //do
+            //{
+            //    success = _botLastMessages[client.BotId].TryGetValue(chatId, out m);
+            //    attempts++;
+            //} 
+            //while (!success && attempts < 10);
 
-            if (m is null) m = new Message[] { };
+            //if (m is null) m = new Message[] { };
 
-            return m;
+            return new Message[0];
         }
 
         /// <summary>
@@ -826,25 +818,34 @@ namespace FluentCommands
         /// </summary>
         internal static void UpdateBotLastMessages(TelegramBotClient client, long chatId, params Message[] messages)
         {
-            bool success;
-            byte attempts = 0;
-            try
-            {
-                _botLastMessages[client.BotId].TryRemove(chatId, out _);
+            //bool success;
+            //byte attempts = 0;
+            //try
+            //{
+            //    _botLastMessages[client.BotId].TryRemove(chatId, out _);
 
-                do
-                {
-                    success = _botLastMessages[client.BotId].TryAdd(chatId, messages);
-                    attempts++;
-                } 
-                while (!success && attempts < 10);
+            //    do
+            //    {
+            //        success = _botLastMessages[client.BotId].TryAdd(chatId, messages);
+            //        attempts++;
+            //    } 
+            //    while (!success && attempts < 10);
 
-                if (!success && attempts == 10) _botLastMessages[client.BotId].TryAdd(chatId, new Message[] { });
-            }
-            catch (ArgumentNullException e) { return; } //: log it, check global cfg if should throw
-            catch (OverflowException e) { return; } //: log it, check global cfg if should throw
+            //    if (!success && attempts == 10) _botLastMessages[client.BotId].TryAdd(chatId, new Message[] { });
+            //}
+            //catch (ArgumentNullException e) { return; } //: log it, check global cfg if should throw
+            //catch (OverflowException e) { return; } //: log it, check global cfg if should throw
         }
 
+        #endregion
+
+        #region Helper Methods
+        public async Task CallCommand<TModule>(TelegramBotClient client, TelegramUpdateEventArgs e, string commandName) where TModule : CommandModule<TModule>
+        {
+            await ProcessInput(typeof(TModule), client, e);
+
+            //: this method is probably unnecessary. think about it later
+        }
         #endregion
 
         #region Update Methods

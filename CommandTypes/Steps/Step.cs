@@ -61,88 +61,103 @@ namespace FluentCommands.CommandTypes.Steps
             _token = token;
         }
 
+        internal IStep SetTo_Redo() { _stepAction = StepAction.Redo; return this; }
+        internal IStep SetTo_Redo(int delay) { _stepAction = StepAction.Redo; _delay = delay; return this; }
+        internal IStep SetTo_Restart() { _stepAction = StepAction.Move; _stepToMove = 0; return this; }
+        internal IStep SetTo_Restart(int delay) { _stepAction = StepAction.Move; _stepToMove = 0; _delay = delay; return this; }
+        internal IStep SetTo_Move(int stepNumber) { _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
+        internal IStep SetTo_Move(int stepNumber, int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
+        internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Move; return this; }
+        internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Move; _delay = delay; return this; }
+
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).
         /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> is successful.</para>
-        /// <para>To modify the default behavior, use the <see cref="IStep"/> "extension" methods provided on this <see cref="Step"/>.</para>
+        /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Success() => new Step(StepResult.Success);
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).
         /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> is successful.</para>
-        /// <para>To modify the default behavior, use the <see cref="IStep"/> "extension" methods provided on this <see cref="Step"/>.</para>
+        /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Success(Func<Task> onSuccess) => new Step(onSuccess, StepResult.Success);
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).
         /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> is successful.</para>
-        /// <para>To modify the default behavior, use the <see cref="IStep"/> "extension" methods provided on this <see cref="Step"/>.</para>
+        /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Success(Func<Task> onSuccess, CancellationToken token) => new Step(onSuccess, StepResult.Success, token);
         /// <summary>
         /// Marks a <see cref="Step"/> as failed and terminates movement to the next step (by default).
         /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> fails.</para>
-        /// <para>To modify the default behavior, use the <see cref="IStep"/> "extension" methods provided on this <see cref="Step"/>.</para>
+        /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Failure() => new Step(StepResult.Failure);
         /// <summary>
         /// Marks a <see cref="Step"/> as failed and terminates movement to the next step (by default).
         /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> fails.</para>
-        /// <para>To modify the default behavior, use the <see cref="IStep"/> "extension" methods provided on this <see cref="Step"/>.</para>
+        /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Failure(Func<Task> onFailure) => new Step(onFailure, StepResult.Failure);
         /// <summary>
         /// Marks a <see cref="Step"/> as failed and terminates movement to the next step (by default).
         /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> fails.</para>
-        /// <para>To modify the default behavior, use the <see cref="IStep"/> "extension" methods provided on this <see cref="Step"/>.</para>
+        /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Failure(Func<Task> onFailure, CancellationToken token) => new Step(onFailure, StepResult.Failure, token);
+    }
 
+    /// <summary>
+    /// This class provides extension methods for <see cref="Step"/> objects.
+    /// </summary>
+    public static class StepExtensions
+    {
         /// <summary>
         /// Forces this <see cref="Step"/> to repeat upon completion.
         /// <para>Care should be taken with this setting; an infinitely repeating <see cref="Step"/> is possible.</para>
         /// <para>The <see cref="RedoThisStep(int)"/> overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep RedoThisStep() { _stepAction = StepAction.Redo; return this; }
+        public static IStep RedoThisStep(this Step s) => s.SetTo_Redo();
         /// <summary>
         /// Forces this <see cref="Step"/> to repeat upon completion.
         /// <para>Care should be taken with this setting; an infinitely repeating <see cref="Step"/> is possible.</para>
         /// <para>This overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep RedoThisStep(int delay) { _delay = delay; _stepAction = StepAction.Redo; return this; }
+        public static IStep RedoThisStep(this Step s, int delay) => s.SetTo_Redo(delay);
         /// <summary>
         /// Forces this <see cref="Step"/> to go to the first step of this <see cref="Command"/> (the <see cref="Step"/> marked <c>0</c>) upon completion.
         /// <para>The <see cref="ReturnToStart(int)"/> overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep ReturnToStart() { _stepAction = StepAction.Move; _stepToMove = 0; return this; }
+        public static IStep ReturnToStart(this Step s) => s.SetTo_Restart();
         /// <summary>
         /// Forces this <see cref="Step"/> to go to the first step of this <see cref="Command"/> (the <see cref="Step"/> marked <c>0</c>) upon completion.
         /// <para>This overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep ReturnToStart(int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = 0; return this; }
+        public static IStep ReturnToStart(this Step s, int delay) => s.SetTo_Restart(delay);
         /// <summary>
         /// Forces this <see cref="Step"/> to go to the <see cref="Step"/> number provided upon completion.
         /// <para>If the step does not exist, terminates this <see cref="Command"/> with the default error message of this <see cref="Command"/>'s <see cref="CommandModule{TModule}"/>.</para>
         /// <para>The <see cref="MoveToStep(int, int)"/> overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep MoveToStep(int stepNumber) { _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
+        public static IStep MoveToStep(this Step s, int stepNumber) => s.SetTo_Move(stepNumber);
         /// <summary>
         /// Forces this <see cref="Step"/> to go to the <see cref="Step"/> number provided upon completion.
         /// <para>If the step does not exist, terminates this <see cref="Command"/> with the default error message of this <see cref="Command"/>'s <see cref="CommandModule{TModule}"/>.</para>
         /// <para>This overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep MoveToStep(int stepNumber, int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
+        public static IStep MoveToStep(this Step s, int stepNumber, int delay) => s.SetTo_Move(stepNumber, delay);
         /// <summary>
         /// Forces this <see cref="Step"/> to go to the previous <see cref="Step"/> upon completion.
         /// <para>If the previous <see cref="Step"/> does not exist (or the previous <see cref="Step"/> is negative), terminates this <see cref="Command"/> with the default error message of this <see cref="Command"/>'s <see cref="CommandModule{TModule}"/>.</para>
         /// <para>The <see cref="GoToPrevious(int)"/> overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep GoToPrevious() { _stepAction = StepAction.Undo; return this; }
+        public static IStep GoToPrevious(this Step s) => s.SetTo_GotoPrevious();
         /// <summary>
         /// Forces this <see cref="Step"/> to go to the previous <see cref="Step"/> upon completion.
         /// <para>If the previous <see cref="Step"/> does not exist (or the previous <see cref="Step"/> is negative), terminates this <see cref="Command"/> with the default error message of this <see cref="Command"/>'s <see cref="CommandModule{TModule}"/>.</para>
         /// <para>This overload allows this action to be delayed (in milliseconds).</para>
         /// </summary>
-        public IStep GoToPrevious(int delay) { _delay = delay; _stepAction = StepAction.Undo; return this; }
+        public static IStep GoToPrevious(this Step s, int delay) => s.SetTo_GotoPrevious(delay);
     }
 }

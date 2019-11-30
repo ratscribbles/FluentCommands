@@ -17,6 +17,7 @@ namespace FluentCommands.Attributes
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class StepAttribute : Attribute
     {
+        /// <summary>The number of this step.</summary>
         internal int StepNum { get; }
 
         /// <summary>

@@ -21,7 +21,7 @@ namespace FluentCommands.CommandTypes.Steps
             {
                 if (key > 0) return _stepData[key];
                 else if (key < 0) return _negativeStepData[-key];
-                else if (key == 0) throw new NotSupportedException("Key cannot be 0. Step 0 is the parent command, which must be invoked normally.");
+                else if (key == 0) throw new NotSupportedException("Key cannot be 0. Step 0 is the parent command, which must be invoked normally. (If you encounter this error, it was the developer's fault. Please submit a bug report if this exception occurs.)");
                 else throw new IndexOutOfRangeException("Index was out of range when attempting to access this StepContainer's internal StepData.");
             }
         }

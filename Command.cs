@@ -30,7 +30,6 @@ namespace FluentCommands
         internal IKeyboardButton? Button { get; } = null;
         internal IReplyMarkup? ReplyMarkup { get; } = null;
         internal KeyboardType KeyboardType { get; } = KeyboardType.None;
-        internal StepContainer? Step { get; private set; }
 
         private protected Command(CommandBaseBuilder commandBase, Type module)
         {
@@ -74,18 +73,17 @@ namespace FluentCommands
             }
         }
 
+        //* This is for new features, to help separate them from the original implementation. *//
         #region Extensibility Support
+        //
+        #region Properties
+        internal StepContainer? Step { get; private set; }
+        #endregion
+        //
+        #region Methods
         internal void Set_Steps(StepContainer step) => Step = step;
         #endregion
-    }
-
-    /// <summary>
-    /// Exists to provide extensibility for feature updates, without having to muck about the original implementation.
-    /// </summary>
-    internal static class CommandExtensions 
-    {
-        #region Steps
-        internal static void Set_Steps(this Command c, StepContainer step) => c.Set_Steps(step);
+        //
         #endregion
     }
 }

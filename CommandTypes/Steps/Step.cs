@@ -17,7 +17,7 @@ namespace FluentCommands.CommandTypes.Steps
         private readonly StepResult _stepResult;
         private readonly Func<Task>? _onSuccess;
         private readonly Func<Task>? _onFailure;
-        private StepInvoker? _stepInvoker;
+        private CommandInvoker<IStep>? _stepInvoker;
         private StepAction _stepAction;
         private int? _stepToMove;
         private int? _delay;
@@ -33,7 +33,7 @@ namespace FluentCommands.CommandTypes.Steps
         int? IStep.StepToMove => _stepToMove;
         Func<Task>? IStep.OnSuccess => _onSuccess;
         Func<Task>? IStep.OnFailure => _onFailure;
-        StepInvoker? IStep.Invoker => _stepInvoker;
+        CommandInvoker<IStep>? IStep.Invoker => _stepInvoker;
 
         private Step(StepResult result) => _stepResult = result;
         private Step(Func<Task> action, StepResult result)
@@ -71,7 +71,7 @@ namespace FluentCommands.CommandTypes.Steps
         internal IStep SetTo_Move(int stepNumber, int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
         internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Move; return this; }
         internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Move; _delay = delay; return this; }
-        void IStep.SetInvoker(StepInvoker invoker) => _stepInvoker = invoker;
+        void IStep.SetInvoker(CommandInvoker<IStep> invoker) => _stepInvoker = invoker;
 
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).

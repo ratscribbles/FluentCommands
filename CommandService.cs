@@ -729,7 +729,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.Invoke_ReturnStep(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
@@ -739,7 +739,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.Invoke_ReturnStep(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
@@ -749,7 +749,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.InvokeWithMenuItem(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
@@ -759,7 +759,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.InvokeWithMenuItem(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
@@ -769,7 +769,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.InvokeWithMenuItem is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.InvokeWithMenuItem(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;

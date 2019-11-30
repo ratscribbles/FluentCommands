@@ -8,30 +8,21 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using FluentCommands.Menus;
 using FluentCommands.Builders;
+using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Helper;
 
 namespace FluentCommands.CommandTypes
 {
-    internal delegate Task InlineQueryCommandDelegate(TelegramBotClient c, InlineQueryEventArgs e);
-    internal delegate Task<Menu> InlineQueryCommandMenuDelegate(TelegramBotClient c, InlineQueryEventArgs e);
     internal class InlineQueryCommand : Command
     {
-        internal InlineQueryCommandDelegate? Invoke { get; }
-        internal InlineQueryCommandMenuDelegate? InvokeWithMenuItem { get; }
+        internal CommandDelegate<InlineQueryEventArgs>? Invoke { get; }
+        internal CommandDelegate<InlineQueryEventArgs, IStep>? Invoke_ReturnStep { get; }
 
         internal InlineQueryCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {
-            if(method.ReturnType == typeof(Task<Menu>))
-            {
-                InvokeWithMenuItem = (InlineQueryCommandMenuDelegate)Delegate.CreateDelegate(typeof(InlineQueryCommandMenuDelegate), null, method);
-            }
-            else if(method.ReturnType == typeof(Task))
-            {
-                Invoke = (InlineQueryCommandDelegate)Delegate.CreateDelegate(typeof(InlineQueryCommandDelegate), null, method);
-            }
-            else
-            {
-                throw new ArgumentException();
-            }
+            if (AuxiliaryMethods.TryConvertDelegate<InlineQueryEventArgs, IStep>(method, out var c_step)) Invoke_ReturnStep = c_step;
+            else if (AuxiliaryMethods.TryConvertDelegate<InlineQueryEventArgs>(method, out var c)) Invoke = c;
+            else throw new ArgumentException();
         }
     }
 }

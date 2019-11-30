@@ -8,30 +8,21 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using FluentCommands.Menus;
 using FluentCommands.Builders;
+using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Helper;
 
 namespace FluentCommands.CommandTypes
 {
-    internal delegate Task ChosenInlineResultCommandDelegate(TelegramBotClient c, ChosenInlineResultEventArgs e);
-    internal delegate Task<Menu> ChosenInlineResultCommandMenuDelegate(TelegramBotClient c, ChosenInlineResultEventArgs e);
     internal class ChosenInlineResultCommand : Command
     {
-        internal ChosenInlineResultCommandDelegate? Invoke { get; }
-        internal ChosenInlineResultCommandMenuDelegate? InvokeWithMenuItem { get; }
+        internal CommandDelegate<ChosenInlineResultEventArgs>? Invoke {  get; }
+        internal CommandDelegate<ChosenInlineResultEventArgs, IStep>? Invoke_ReturnStep { get; }
 
         internal ChosenInlineResultCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {
-            if(method.ReturnType == typeof(Task<Menu>))
-            {
-                InvokeWithMenuItem = (ChosenInlineResultCommandMenuDelegate)Delegate.CreateDelegate(typeof(ChosenInlineResultCommandMenuDelegate), null, method);
-            }
-            else if(method.ReturnType == typeof(Task))
-            {
-                Invoke = (ChosenInlineResultCommandDelegate)Delegate.CreateDelegate(typeof(ChosenInlineResultCommandDelegate), null, method);
-            }
-            else
-            {
-                throw new ArgumentException();
-            }
+            if (AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs, IStep>(method, out var c_step)) Invoke_ReturnStep = c_step;
+            else if (AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs>(method, out var c)) Invoke = c;
+            else throw new ArgumentException();
         }
     }
 }

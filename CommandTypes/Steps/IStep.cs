@@ -14,10 +14,6 @@ namespace FluentCommands.CommandTypes.Steps
         internal StepAction StepAction { get; }
         internal int? Delay { get; }
         internal int? StepToMove { get; }
-        internal Func<Task>? OnSuccess { get; }
-        internal Func<Task>? OnFailure { get; }
-        internal CommandInvoker<IStep>? Invoker { get; }
-
-        internal void SetInvoker(CommandInvoker<IStep> invoker);
+        internal Func<Task>? OnResult { get; }
     }
 }

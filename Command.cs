@@ -19,11 +19,10 @@ namespace FluentCommands
     internal delegate Task CommandDelegate<TArgs>(TelegramBotClient c, TArgs e) where TArgs : EventArgs;
     internal delegate Task<TReturn> CommandDelegate<TArgs, TReturn>(TelegramBotClient c, TArgs e) where TArgs : EventArgs;
     internal enum KeyboardType { None, Inline, Reply, ForceReply, Remove }
-    internal class Command
+    internal class Command<TArgs>
     {
         internal Type Module { get; }
         internal string Name { get; }
-        internal Permissions Permissions { get; } = Permissions.None;
         internal string[] Aliases { get; } = Array.Empty<string>();
         internal string Description { get; } = string.Empty;
         internal ParseMode ParseMode { get; } = ParseMode.Default;
@@ -35,7 +34,6 @@ namespace FluentCommands
         {
             Module = module;
             Name = commandBase.Name;
-            Permissions = commandBase.Permissions;
             Aliases = commandBase.InAliases;
             Description = commandBase.InDescription;
             ParseMode = commandBase.InParseMode;
@@ -71,17 +69,20 @@ namespace FluentCommands
                         break;
                 }
             }
+
+            //* This is for new features, to help separate them from the original implementation. *//
+            #region Extensibility Constructor
+            Permissions = commandBase.Permissions;
+            StepInfo = commandBase.StepInfo;
+            #endregion
         }
 
         //* This is for new features, to help separate them from the original implementation. *//
         #region Extensibility Support
         //
         #region Properties
-        internal StepContainer? Step { get; private set; }
-        #endregion
-        //
-        #region Methods
-        internal void Set_Steps(StepContainer step) => Step = step;
+        internal Permissions Permissions { get; } = Permissions.None;
+        internal StepContainer? StepInfo { get; } 
         #endregion
         //
         #endregion

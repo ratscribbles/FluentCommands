@@ -9,21 +9,18 @@ using System.Threading.Tasks;
 namespace FluentCommands.CommandTypes.Steps
 {
     public enum StepResult { None, Failure, Success }
-    internal enum StepAction { None, Move, Redo, Undo }
+    public enum StepAction { None, Move, Redo, Undo }
 
     public class Step : IStep, IFluentInterface
     {
         private readonly CancellationToken _token;
         private readonly StepResult _stepResult;
-        private readonly Func<Task>? _onSuccess;
-        private readonly Func<Task>? _onFailure;
-        private CommandInvoker<IStep>? _stepInvoker;
+        private readonly Func<Task>? _onResult;
         private StepAction _stepAction;
         private int? _stepToMove;
         private int? _delay;
-        private StepResult _previousStepResult; //: Probably unnecessary
 
-        public StepResult PreviousStepResult => _previousStepResult; //: Figure out a way for this to be grabbed from outside of this class.
+        //: public static StepResult PreviousStepResult => _previousStepResult; //: Figure out a way for this to be grabbed from outside of this class.
         //: PROBABLY accomplished by getting the current State of the user, which should contain the step result from the previous one as well
         CancellationToken IStep.Token => _token;
         StepResult IStep.StepResult => _stepResult;
@@ -31,35 +28,18 @@ namespace FluentCommands.CommandTypes.Steps
         /// <summary>In milliseconds.</summary>
         int? IStep.Delay => _delay;
         int? IStep.StepToMove => _stepToMove;
-        Func<Task>? IStep.OnSuccess => _onSuccess;
-        Func<Task>? IStep.OnFailure => _onFailure;
-        CommandInvoker<IStep>? IStep.Invoker => _stepInvoker;
+        Func<Task>? IStep.OnResult => _onResult;
 
         private Step(StepResult result) => _stepResult = result;
         private Step(Func<Task> action, StepResult result)
         {
-            switch (result)
-            {
-                case StepResult.Failure:
-                    _onFailure = action; _stepResult = result;
-                    break;
-                case StepResult.Success:
-                    _onSuccess = action; _stepResult = result;
-                    break;
-            }
+            _onResult = action;
+            _stepResult = result;
         }
         private Step(Func<Task> action, StepResult result, CancellationToken token)
         {
-            switch (result)
-            {
-                case StepResult.Failure:
-                    _onFailure = action; _stepResult = result;
-                    break;
-                case StepResult.Success:
-                    _onSuccess = action; _stepResult = result;
-                    break;
-            }
-
+            _onResult = action; 
+            _stepResult = result;
             _token = token;
         }
 
@@ -71,7 +51,6 @@ namespace FluentCommands.CommandTypes.Steps
         internal IStep SetTo_Move(int stepNumber, int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
         internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Move; return this; }
         internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Move; _delay = delay; return this; }
-        void IStep.SetInvoker(CommandInvoker<IStep> invoker) => _stepInvoker = invoker;
 
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).

@@ -16,12 +16,10 @@ namespace FluentCommands.CommandTypes
     internal class ChosenInlineResultCommand : Command
     {
         internal CommandDelegate<ChosenInlineResultEventArgs>? Invoke {  get; }
-        internal CommandDelegate<ChosenInlineResultEventArgs, IStep>? Invoke_ReturnStep { get; }
 
         internal ChosenInlineResultCommand(CommandBaseBuilder commandBase, MethodInfo method, Type module) : base(commandBase, module)
         {
-            if (AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs, IStep>(method, out var c_step)) Invoke_ReturnStep = c_step;
-            else if (AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs>(method, out var c)) Invoke = c;
+            if (AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs>(method, out var c)) Invoke = c;
             else throw new ArgumentException();
         }
     }

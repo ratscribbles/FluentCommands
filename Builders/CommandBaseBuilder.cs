@@ -10,6 +10,7 @@ using FluentCommands.CommandTypes;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using FluentCommands.Attributes;
+using FluentCommands.CommandTypes.Steps;
 
 namespace FluentCommands.Builders
 {
@@ -32,8 +33,7 @@ namespace FluentCommands.Builders
         internal IKeyboardButton? InButton { get; private set; } = null;
         /// <summary>Gets the <see cref="KeyboardBuilder"/> for this <see cref="Command"/></summary>
         internal KeyboardBuilder? KeyboardInfo { get; private set; } = null;
-        /// <summary>Gets the <see cref="Attributes.Permissions"/> for this <see cref="Command"/>.</summary>
-        internal Permissions Permissions { get; private set; }
+
 
         /// <summary>
         /// Instantiates a new <see cref="CommandBaseBuilder"/>, which will be used to construct a <see cref="Command"/> for this Module.
@@ -191,7 +191,28 @@ namespace FluentCommands.Builders
         //! Add to this if additional -attribute- functionality is needed later. Do not modify the constructor or other methods.
         ////
 
-        internal void SetPermissions(Permissions p) => Permissions = p;
+        #endregion
+
+        //* This is for new features, to help separate them from the original implementation. *//
+        #region Extensibility Support
+        //
+        #region Properties
+        internal Permissions Permissions { get; private set; }
+        internal StepContainer? StepInfo { get; private set; }
+        #endregion
+        //
+        #region Methods
+        internal void Set_Permissions(PermissionsAttribute? p) => Permissions = p?.Permissions ?? Permissions.None;
+        internal void Set_Step(StepAttribute? step)
+        {
+            if(step is { })
+            {
+                if (StepInfo is null) StepInfo = new StepContainer();
+            }
+            StepInfo = step;
+        }
+        #endregion
+        //
         #endregion
     }
 }

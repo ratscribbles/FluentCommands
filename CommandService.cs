@@ -336,28 +336,27 @@ namespace FluentCommands
                     var module = method.DeclaringType ?? throw new CommandOnBuildingException("Error getting the DeclaringType (module) of a method while command building. (Returned null.)");
                     if (!tempCommands.ContainsKey(module)) tempCommands[module] = new Dictionary<ReadOnlyMemory<char>, Command>(CommandNameComparer.Default);
 
-                    var commandAttributeName = method.GetCustomAttribute<CommandAttribute>()?.Name ?? throw new CommandOnBuildingException($"Error determining the Command Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)");
-                    var commandPermissions = method.GetCustomAttribute<PermissionsAttribute>()?.Permissions;
-                    var modulePermissions = module.GetCustomAttribute<PermissionsAttribute>()?.Permissions;
-                    var chainAttribute = method.GetCustomAttribute<StepAttribute>() ?? null;
-
-
-                    Permissions permissions; // Command Permissions > Module Permissions > No Permissions
-                    if (commandPermissions.HasValue) permissions = commandPermissions.Value;
-                    else
-                    {
-                        if (modulePermissions.HasValue) permissions = modulePermissions.Value;
-                        else permissions = Permissions.None;
-                    }
+                    (
+                        CommandAttribute Command,
+                        PermissionsAttribute? Permissions,
+                        StepAttribute? Step
+                    //? Add as needed...
+                    ) attribs = (
+                        method.GetCustomAttribute<CommandAttribute>() ?? throw new CommandOnBuildingException($"Error determining the Command Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)"),
+                        method.GetCustomAttribute<PermissionsAttribute>() ?? module.GetCustomAttribute<PermissionsAttribute>(),
+                        method.GetCustomAttribute<StepAttribute>()
+                    //? Add as needed...
+                    );
 
                     CommandBaseBuilder thisCommandBase;
-                    if(_tempModules[module].ModuleCommandBases.ContainsKey(commandAttributeName)) thisCommandBase = _tempModules[module].ModuleCommandBases[commandAttributeName];
-                    else thisCommandBase = new CommandBaseBuilder(commandAttributeName); //: save this event for logging. maybe make it throw if config says to throw
+                    if (_tempModules[module].ModuleCommandBases.TryGetValue(attribs.Command.Name, out var dictCommandBase)) thisCommandBase = dictCommandBase;
+                    else thisCommandBase = new CommandBaseBuilder(attribs.Command.Name); //: save this event for logging. maybe make it throw if config says to throw
 
                     //! Setters. Add to this if additional functionality needs to be created later.
-                    thisCommandBase.SetPermissions(permissions);
+                    thisCommandBase.Set_Permissions(attribs.Permissions);
+                    if (attribs.Step is { } && attribs.Step.StepNum != 0) if ( thisCommandBase.{ thisCommandBase.Set_Step(attribs.Step); continue; }
                     ////
-
+                    
                     TryAddCommand(thisCommandBase);
 
                     // Local function; attempts to add the Command to the dictionary. Throws on failure.
@@ -366,13 +365,13 @@ namespace FluentCommands
                         foreach (var alias in commandBase.InAliases) AuxiliaryMethods.CheckCommandNameValidity(commandBase.Name, true, alias);
 
                         var @params = method.GetParameters();
-                        var length = @params.Length;
+                        var length = @params.Length; // Update support.
 
                         // Checks the incoming method for signature validity; throws if not valid.
                         if (!method.IsStatic
-                          && (method.ReturnType == typeof(Task) || method.ReturnType == typeof(Task<Message>))
+                          && method.ReturnType == typeof(Task)
                           && length > 1
-                          && (_telegramEventArgs.Contains(@params[1].ParameterType)))
+                          && _telegramEventArgs.Contains(@params[1].ParameterType))
                         {
                             if(length == 2)
                             {
@@ -398,18 +397,9 @@ namespace FluentCommands
                                         throw new CommandOnBuildingException($"Unknown error occurred while building the {commandBase.Name} command (no command type detected). If you encounter this error, please submit a bug report (it should never happen).");
                                 }
                             }
-                            else if(length == 3 && @params[3].ParameterType == typeof(ChainResult<>))
+                            else if(length == 3 /* && @params[3].ParameterType == typeof(SomeType) */)
                             {
-                                var chainType = @params[3].ParameterType.GenericTypeArguments.First();
-                                var wow = typeof(ChainCommand<>).MakeGenericType(chainType);
-                                var instance = Activator.CreateInstance(wow, commandBase, method, module);
-
-                                if (instance is null) throw new CommandOnBuildingException($"Command failed to build. (Attempt to add command chain resulted in a null command.)");
-
-                                var newCommand = instance as Command;
-
-                                if (newCommand is null) throw new CommandOnBuildingException($"Unknown error occurred while building the {commandBase.Name} Chain (no command type detected). If you encounter this error, please submit a bug report (it should never happen).");
-                                else tempCommands[module][commandAttributeName.AsMemory()] = newCommand;
+                                // This conditional is an example of how to set up different method signatures in the future, if updates require different checks.
                             }
                         }
                         else throw new CommandOnBuildingException($"Command {commandAttributeName}: method had invalid signature.");
@@ -749,7 +739,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.Invoke_ReturnStep is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.Invoke_ReturnStep(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
@@ -759,7 +749,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.Invoke_ReturnStep is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.Invoke_ReturnStep(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;
@@ -769,7 +759,7 @@ namespace FluentCommands
 
                             if (c is null || args is null) goto default;
 
-                            if (c.Invoke_ReturnStep is { }) await c.InvokeWithMenuItem(client, args);
+                            if (c.Invoke_ReturnStep is { }) await c.Invoke_ReturnStep(client, args);
                             else if (c.Invoke is { }) await c.Invoke(client, args);
                         }
                         return;

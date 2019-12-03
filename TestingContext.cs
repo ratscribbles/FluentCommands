@@ -41,16 +41,11 @@ namespace FluentCommands
             await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
         }
 
-        public async Task<(Menu, ChainResult<int>)> woweee(TelegramBotClient client, MessageEventArgs e)
-        {
-            return (MenuItem.As().Animation().Source("").Done(), 0);
-        }
-
-        [Command("e")]
-        [Step(-1)]
-        public async Task<IStep> ppepepe(TelegramBotClient client, MessageEventArgs e)
-        {
-            await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
-        }
+        //[Command("e")]
+        //[Step(-1)]
+        //public async Task<IStep> ppepepe(TelegramBotClient client, MessageEventArgs e)
+        //{
+        //    await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+        //}
     }
 }

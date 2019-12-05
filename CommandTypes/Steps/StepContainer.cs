@@ -11,7 +11,7 @@ namespace FluentCommands.CommandTypes.Steps
     internal class StepContainer
     {
 #nullable disable
-        private readonly Dictionary<int, CommandInvoker<IStep>> _invokers = new Dictionary<int, CommandInvoker<IStep>> { { 0, null } };
+        private readonly IReadOnlyDictionary<int, CommandInvoker<IStep>> _invokers = new Dictionary<int, CommandInvoker<IStep>> { { 0, null } };
         // private readonly Dictionary<int, Step?> _stepData = new Dictionary<int, Step?> { { 0, null } }; 
         //: no need for this i think. the return is what has the data; you cant save steps preemptively (because the data is supplied on the result of the Task, not anything beforehand)
 
@@ -32,26 +32,45 @@ namespace FluentCommands.CommandTypes.Steps
                 else return _invokers[key];
             }
         }
-#nullable enable
 
         /// <summary>
         /// Note: StepData and DebugStepData index 0 should have no value (null); it'll never be accessed.
-        /// </summary>
-        internal StepContainer() { }
-
-        /// <summary>
-        /// Adds a <see cref="StepAttribute"/> method to the current <see cref="Command"/>'s internal <see cref="StepContainer"/>.
-        /// </summary>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="CommandOnBuildingException"></exception>
-        internal void Set_StepInvoker(StepAttribute stepAttribute, MethodInfo method)
+        /// </summary>
+        internal StepContainer(IEnumerable<MethodInfo> methods)
         {
-            var num = stepAttribute.StepNum;
-            if (num == 0) throw new ArgumentException("This exception should never happen. If you encounter it, please contact the creator of this library. (Step number was 0, which is an invalid StepKey to be added to Commands.)");
-            if (_invokers.ContainsKey(num)) throw new CommandOnBuildingException("Duplicate Step detected for this Command.");
+            var dict = new Dictionary<int, CommandInvoker<IStep>> { { 0, null } };
 
-            _invokers.Add(num, new CommandInvoker<IStep>(method));
+            string stepsExceptions = "";
+            bool firstExceptionIteration = true;
+            foreach (var m in methods)
+            {
+                var commandAttribute = m.GetCustomAttribute<CommandAttribute>() ?? throw new Exception("This exception should never happen. If you encounter it, please contact the creator of this library or put in a bug report. (Command Attribute was null while building StepContainer.)");
+                var stepAttribute = m.GetCustomAttribute<StepAttribute>() ?? throw new Exception("This exception should never happen. If you encounter it, please contact the creator of this library or put in a bug report. (Step Attribute was null while building StepContainer.)");
+                var num = stepAttribute.StepNum;
+
+                if (num == 0) continue; // does not count as an iteration of this loop; it's excluded for the purposes of the iteration check
+                if (_invokers.ContainsKey(num)) throw new CommandOnBuildingException("Duplicate Step detected for this Command.");
+
+                CommandInvoker<IStep> invoker;
+                try { invoker = new CommandInvoker<IStep>(m); }
+                catch(ArgumentException) 
+                {
+                    if (firstExceptionIteration) stepsExceptions += $"Step {num}";
+                    else stepsExceptions += $", Step {num}";
+                    firstExceptionIteration = false;
+                    continue;
+                }
+
+                dict.Add(num, invoker);
+            }
+
+            if (stepsExceptions != "") throw new ArgumentException($"{stepsExceptions} had invalid method signature(s).");
+
+            _invokers = dict;
         }
+#nullable enable    
 
     }
 }

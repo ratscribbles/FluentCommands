@@ -1,19 +1,22 @@
-﻿using FluentCommands.CommandTypes.Steps;
+﻿using FluentCommands.CommandTypes;
+using FluentCommands.CommandTypes.Steps;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FluentCommands.Cache
 {
     public class StepState : FluentState
     {
-        public override bool IsDefault
+        public override bool IsDefault  
         {
             get
             {
                 return PreviousStepAction == StepAction.None
                     && PreviousStepResult == StepResult.None
                     && CurrentStepNumber == 0
+                    && PreviousStepNumber == 0
                     && CommandStepInfo.IsEmpty;
             }
         }
@@ -21,14 +24,30 @@ namespace FluentCommands.Cache
         public StepAction PreviousStepAction { get; private set; } = StepAction.None;
         public StepResult PreviousStepResult { get; private set; } = StepResult.None;
         public int CurrentStepNumber { get; private set; } = 0;
+        public int PreviousStepNumber { get; private set; } = 0;
 
-        internal StepState() { }
 
         /// <summary>Creates a new <see cref="StepState"/> for the parent <see cref="UserState"/>.
         /// <para>If the <see cref="Command"/> does not have a <see cref="StepContainer"/>, <see cref="IsDefault"/> is true, and it will be assumed the user is not currently in a command with steps.</para></summary>
-        internal StepState(Command c)
+        public StepState() { }
+
+        internal async Task Update(ICommand c, IStep s)
         {
-            if (c.StepInfo is { }) CommandStepInfo = new CommandStepInfo(c.Name, c.StepInfo.Count, c.StepInfo.TotalCount);
+            await Task.Run(() =>
+            {
+                if(IsDefault && c.StepInfo is { }) CommandStepInfo = new CommandStepInfo(c.Name, c.StepInfo.Count, c.StepInfo.TotalCount);
+                PreviousStepResult = s.StepResult;
+                switch (s.StepAction)
+                {
+                    case StepAction.Move: Move(s.StepToMove); break;
+                    case StepAction.Next: Next(); break;
+                    case StepAction.Redo: Redo(); break;
+                    case StepAction.Restart: Restart(); break;
+                    case StepAction.Undo: Undo(); break;
+                    case StepAction.None:
+                    default: ToDefault(); break;
+                }
+            }).ConfigureAwait(false);
         }
 
         private void ToDefault()
@@ -37,33 +56,39 @@ namespace FluentCommands.Cache
             PreviousStepAction = StepAction.None;
             PreviousStepResult = StepResult.None;
             CurrentStepNumber = 0;
+            PreviousStepNumber = 0;
         }
 
-        internal void Next()
+        private void Next()
         {
+            PreviousStepAction = StepAction.Next;
+            PreviousStepNumber = CurrentStepNumber;
             CurrentStepNumber++;
-            PreviousStepAction = StepAction.Move;
-            if (CurrentStepNumber > CommandStepInfo.CurrentCommandStepCount) ToDefault();
+            if (CurrentStepNumber > CommandStepInfo.CurrentCommandStepCount.Positive) ToDefault();
         }
-        internal void Undo()
+        private void Undo()
         {
-            CurrentStepNumber--;
+            var tempCurrent = CurrentStepNumber;
+            CurrentStepNumber = PreviousStepNumber;
+            PreviousStepNumber = tempCurrent;
             PreviousStepAction = StepAction.Undo;
-            if (CurrentStepNumber < CommandStepInfo.CurrentCommandStepCount) throw new Exception(); //: shouldn't happen, handle this another way
         }
-        internal void Move(int num)
+        private void Move(int num)
         {
             PreviousStepAction = StepAction.Move;
+            PreviousStepNumber = CurrentStepNumber;
             CurrentStepNumber = num;
         }
-        internal void Redo()
+        private void Redo()
         {
             PreviousStepAction = StepAction.Redo;
+            PreviousStepNumber = CurrentStepNumber;
         }
-        internal void ReturnToStart()
+        private void Restart()
         {
+            PreviousStepAction = StepAction.Restart;
+            PreviousStepNumber = CurrentStepNumber;
             CurrentStepNumber = 0;
-            PreviousStepAction = StepAction.Move;
         }
     }
 }

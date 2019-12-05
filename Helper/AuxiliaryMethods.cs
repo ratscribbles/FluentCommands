@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FluentCommands.Builders;
+using FluentCommands.CommandTypes;
 using FluentCommands.Exceptions;
 using Telegram.Bot.Args;
 
@@ -137,12 +138,8 @@ namespace FluentCommands.Helper
         internal static bool TryConvertDelegate<TArgs>(MethodInfo method, [NotNullWhen(true)] out CommandDelegate<TArgs>? c) where TArgs : EventArgs
         {
             if (method is null) { c = null; return false; }
-            var returnType = method.ReturnType;
-            c = method switch
-            {
-                var _ when returnType == typeof(Task) => (CommandDelegate<TArgs>)Delegate.CreateDelegate(typeof(CommandDelegate<TArgs>), null, method),
-                _ => null
-            };
+
+            c = (CommandDelegate<TArgs>)Delegate.CreateDelegate(typeof(CommandDelegate<TArgs>), null, method);
 
             if (c is null) return false;
             else return true;
@@ -151,12 +148,8 @@ namespace FluentCommands.Helper
         internal static bool TryConvertDelegate<TArgs, TReturn>(MethodInfo method, [NotNullWhen(true)] out CommandDelegate<TArgs, TReturn>? c) where TArgs : EventArgs
         {
             if (method is null) { c = null; return false; }
-            var returnType = method.ReturnType;
-            c = method switch
-            {
-                var _ when returnType == typeof(Task<TReturn>) => (CommandDelegate<TArgs, TReturn>)Delegate.CreateDelegate(typeof(CommandDelegate<TArgs, TReturn>), null, method),
-                _ => null
-            };
+            
+            c = (CommandDelegate<TArgs, TReturn>)Delegate.CreateDelegate(typeof(CommandDelegate<TArgs, TReturn>), null, method);
 
             if (c is null) return false;
             else return true;

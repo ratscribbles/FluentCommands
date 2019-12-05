@@ -1,6 +1,8 @@
-﻿using FluentCommands.Helper;
+﻿using FluentCommands.Attributes;
+using FluentCommands.Helper;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using Telegram.Bot.Args;
@@ -40,12 +42,18 @@ namespace FluentCommands.CommandTypes
         {
             get
             {
-                if (_callbackQuery is { }) return _callbackQuery;
-                else if (_chosenInlineResult is { }) return _chosenInlineResult;
-                else if(_inlineQuery is { }) return _inlineQuery;
-                else if(_message is { }) return _message;
-                else if(_update is { }) return _update;
-                else throw new ArgumentNullException("No delegate was found. (This exception should NEVER occur. If it does, please contact the creator of the library.)");
+                Type t = DelegateType;
+#nullable disable
+                return t switch
+                {
+                    var _ when t == typeof(CommandDelegate<CallbackQueryEventArgs, TReturn>) => _callbackQuery,
+                    var _ when t == typeof(CommandDelegate<ChosenInlineResultEventArgs, TReturn>) => _chosenInlineResult,
+                    var _ when t == typeof(CommandDelegate<InlineQueryEventArgs, TReturn>) => _inlineQuery,
+                    var _ when t == typeof(CommandDelegate<MessageEventArgs, TReturn>) => _message,
+                    var _ when t == typeof(CommandDelegate<UpdateEventArgs, TReturn>) => _update,
+                    _ => throw new ArgumentNullException("No delegate was found. (This exception should NEVER occur. If it does, please contact the creator of the library.)"),
+                };
+#nullable enable
             }
         }
 
@@ -55,12 +63,31 @@ namespace FluentCommands.CommandTypes
         /// </summary>
         internal CommandInvoker(MethodInfo method)
         {
-            if (AuxiliaryMethods.TryConvertDelegate<CallbackQueryEventArgs, TReturn>(method, out var c1)) { _callbackQuery = c1; DelegateType = typeof(CommandDelegate<CallbackQueryEventArgs, TReturn>); }
-            else if (AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs, TReturn>(method, out var c2)) { _chosenInlineResult = c2; DelegateType = typeof(CommandDelegate<ChosenInlineResultEventArgs, TReturn>); }
-            else if (AuxiliaryMethods.TryConvertDelegate<InlineQueryEventArgs, TReturn>(method, out var c3)) { _inlineQuery = c3; DelegateType = typeof(CommandDelegate<InlineQueryEventArgs, TReturn>); }
-            else if (AuxiliaryMethods.TryConvertDelegate<MessageEventArgs, TReturn>(method, out var c4)) { _message = c4; DelegateType = typeof(CommandDelegate<MessageEventArgs, TReturn>); }
-            else if (AuxiliaryMethods.TryConvertDelegate<UpdateEventArgs, TReturn>(method, out var c5)) { _update = c5; DelegateType = typeof(CommandDelegate<UpdateEventArgs, TReturn>); }
-            else throw new ArgumentException("Failure to convert delegates.");
+            Type t = method.GetParameters()[1].ParameterType;
+            switch (t)
+            {
+                case var _ when t == typeof(CallbackQueryEventArgs):
+                    AuxiliaryMethods.TryConvertDelegate<CallbackQueryEventArgs, TReturn>(method, out var c1);
+                    _callbackQuery = c1; DelegateType = typeof(CommandDelegate<CallbackQueryEventArgs, TReturn>);
+                    break;
+                case var _ when t == typeof(ChosenInlineResultEventArgs):
+                    AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs, TReturn>(method, out var c2);
+                    _chosenInlineResult = c2; DelegateType = typeof(CommandDelegate<ChosenInlineResultEventArgs, TReturn>);
+                    break;
+                case var _ when t == typeof(InlineQueryEventArgs):
+                    AuxiliaryMethods.TryConvertDelegate<InlineQueryEventArgs, TReturn>(method, out var c3);
+                    _inlineQuery = c3; DelegateType = typeof(CommandDelegate<InlineQueryEventArgs, TReturn>);
+                    break;
+                case var _ when t == typeof(MessageEventArgs):
+                    AuxiliaryMethods.TryConvertDelegate<MessageEventArgs, TReturn>(method, out var c4);
+                    _message = c4; DelegateType = typeof(CommandDelegate<MessageEventArgs, TReturn>);
+                    break;
+                case var _ when t == typeof(UpdateEventArgs):
+                    AuxiliaryMethods.TryConvertDelegate<UpdateEventArgs, TReturn>(method, out var c5);
+                    _update = c5; DelegateType = typeof(CommandDelegate<UpdateEventArgs, TReturn>);
+                    break;
+                default: throw new ArgumentException($"Step {method.GetCustomAttribute<StepAttribute>()!.StepNum} had invalid method signature.");
+            }
         }
     }
 }

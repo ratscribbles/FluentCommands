@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace FluentCommands.CommandTypes.Steps
 {
     public enum StepResult { None, Failure, Success }
-    public enum StepAction { None, Move, Redo, Undo }
+    public enum StepAction { None, Next, Move, Redo, Restart, Undo }
 
     public class Step : IStep, IFluentInterface
     {
@@ -17,8 +17,8 @@ namespace FluentCommands.CommandTypes.Steps
         private readonly StepResult _stepResult;
         private readonly Func<Task>? _onResult;
         private StepAction _stepAction;
-        private int? _stepToMove;
-        private int? _delay;
+        private int _stepToMove;
+        private int _delay;
 
         //: public static StepResult PreviousStepResult => _previousStepResult; //: Figure out a way for this to be grabbed from outside of this class.
         //: PROBABLY accomplished by getting the current State of the user, which should contain the step result from the previous one as well
@@ -26,18 +26,47 @@ namespace FluentCommands.CommandTypes.Steps
         StepResult IStep.StepResult => _stepResult;
         StepAction IStep.StepAction => _stepAction;
         /// <summary>In milliseconds.</summary>
-        int? IStep.Delay => _delay;
-        int? IStep.StepToMove => _stepToMove;
+        int IStep.Delay => _delay;
+        int IStep.StepToMove => _stepToMove;
         Func<Task>? IStep.OnResult => _onResult;
 
-        private Step(StepResult result) => _stepResult = result;
+        private Step(StepResult result)
+        {
+            switch (result)
+            {
+                case StepResult.Failure:
+                    _stepAction = StepAction.None;
+                    break;
+                case StepResult.Success:
+                    _stepAction = StepAction.Next;
+                    break;
+            }
+        }
         private Step(Func<Task> action, StepResult result)
         {
+            switch (result)
+            {
+                case StepResult.Failure:
+                    _stepAction = StepAction.None;
+                    break;
+                case StepResult.Success:
+                    _stepAction = StepAction.Next;
+                    break;
+            }
             _onResult = action;
             _stepResult = result;
         }
         private Step(Func<Task> action, StepResult result, CancellationToken token)
         {
+            switch (result)
+            {
+                case StepResult.Failure:
+                    _stepAction = StepAction.None;
+                    break;
+                case StepResult.Success:
+                    _stepAction = StepAction.Next;
+                    break;
+            }
             _onResult = action; 
             _stepResult = result;
             _token = token;
@@ -45,8 +74,8 @@ namespace FluentCommands.CommandTypes.Steps
 
         internal IStep SetTo_Redo() { _stepAction = StepAction.Redo; return this; }
         internal IStep SetTo_Redo(int delay) { _stepAction = StepAction.Redo; _delay = delay; return this; }
-        internal IStep SetTo_Restart() { _stepAction = StepAction.Move; _stepToMove = 0; return this; }
-        internal IStep SetTo_Restart(int delay) { _stepAction = StepAction.Move; _stepToMove = 0; _delay = delay; return this; }
+        internal IStep SetTo_Restart() { _stepAction = StepAction.Restart; return this; }
+        internal IStep SetTo_Restart(int delay) { _stepAction = StepAction.Restart; _delay = delay; return this; }
         internal IStep SetTo_Move(int stepNumber) { _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
         internal IStep SetTo_Move(int stepNumber, int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
         internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Move; return this; }
@@ -54,37 +83,40 @@ namespace FluentCommands.CommandTypes.Steps
 
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).
-        /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> is successful.</para>
+        /// <para>If the next <see cref="Step"/> cannot be found (this step is negative, or the next positive step is not exactly 1 after this step), terminates <see cref="Step"/> navigation as "completed".</para>
+        /// <para>Use the <see cref="Func{T}"/> (<see cref="{TResult}"/> as <see cref="Task"/>) overload of this method to execute code when this <see cref="Step"/> is successful.</para>
         /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Success() => new Step(StepResult.Success);
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).
-        /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> is successful.</para>
+        /// <para>If the next <see cref="Step"/> cannot be found (this step is negative, or the next positive step is not exactly 1 after this step), terminates <see cref="Step"/> navigation as "completed".</para>
+        /// <para>Use the <see cref="Func{T}"/> (<see cref="{TResult}"/> as <see cref="Task"/>) overload of this method to execute code when this <see cref="Step"/> is successful.</para>
         /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Success(Func<Task> onSuccess) => new Step(onSuccess, StepResult.Success);
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).
-        /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> is successful.</para>
+        /// <para>If the next <see cref="Step"/> cannot be found (this step is negative, or the next positive step is not exactly 1 after this step), terminates <see cref="Step"/> navigation as "completed".</para>
+        /// <para>Use the <see cref="Func{T}"/> (<see cref="{TResult}"/> as <see cref="Task"/>) overload of this method to execute code when this <see cref="Step"/> is successful.</para>
         /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Success(Func<Task> onSuccess, CancellationToken token) => new Step(onSuccess, StepResult.Success, token);
         /// <summary>
         /// Marks a <see cref="Step"/> as failed and terminates movement to the next step (by default).
-        /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> fails.</para>
+        /// <para>Use the <see cref="Func{T}"/> (<see cref="{TResult}"/> as <see cref="Task"/>) overload of this method to execute code when this <see cref="Step"/> fails.</para>
         /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Failure() => new Step(StepResult.Failure);
         /// <summary>
         /// Marks a <see cref="Step"/> as failed and terminates movement to the next step (by default).
-        /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> fails.</para>
+        /// <para>Use the <see cref="Func{T}"/> (<see cref="{TResult}"/> as <see cref="Task"/>) overload of this method to execute code when this <see cref="Step"/> fails.</para>
         /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Failure(Func<Task> onFailure) => new Step(onFailure, StepResult.Failure);
         /// <summary>
         /// Marks a <see cref="Step"/> as failed and terminates movement to the next step (by default).
-        /// <para>Use the <see cref="Func{T}"/> overload of this method to execute code when this <see cref="Step"/> fails.</para>
+        /// <para>Use the <see cref="Func{T}"/> (<see cref="{TResult}"/> as <see cref="Task"/>) overload of this method to execute code when this <see cref="Step"/> fails.</para>
         /// <para>To modify the default behavior, use the <see cref="Step"/> extension methods provided on this <see cref="Step"/>.</para>
         /// </summary>
         public static Step Failure(Func<Task> onFailure, CancellationToken token) => new Step(onFailure, StepResult.Failure, token);

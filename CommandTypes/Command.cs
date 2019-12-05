@@ -6,31 +6,38 @@ using System.Text;
 using System.Linq;
 using FluentCommands.Attributes;
 using FluentCommands.Builders;
-using FluentCommands.CommandTypes;
 using Telegram.Bot.Types;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using FluentCommands.CommandTypes.Steps;
 using Telegram.Bot;
+using FluentCommands.Helper;
 
-namespace FluentCommands
+namespace FluentCommands.CommandTypes
 {
     internal delegate Task CommandDelegate<TArgs>(TelegramBotClient c, TArgs e) where TArgs : EventArgs;
     internal delegate Task<TReturn> CommandDelegate<TArgs, TReturn>(TelegramBotClient c, TArgs e) where TArgs : EventArgs;
+    internal enum CommandType { Default, ReplyKeyboard, Step }
     internal enum KeyboardType { None, Inline, Reply, ForceReply, Remove }
-    internal class Command<TArgs>
+    internal sealed class Command<TArgs> : ICommand where TArgs : EventArgs
     {
         internal Type Module { get; }
         internal string Name { get; }
+        internal CommandType CommandType { get; }
         internal string[] Aliases { get; } = Array.Empty<string>();
         internal string Description { get; } = string.Empty;
         internal ParseMode ParseMode { get; } = ParseMode.Default;
         internal IKeyboardButton? Button { get; } = null;
         internal IReplyMarkup? ReplyMarkup { get; } = null;
         internal KeyboardType KeyboardType { get; } = KeyboardType.None;
+        internal CommandDelegate<TArgs> Invoke { get; }
+        Type ICommand.Module => Module;
+        Type ICommand.Args { get; } = typeof(TArgs);
+        string ICommand.Name => Name;
+        CommandType ICommand.CommandType => CommandType;
 
-        private protected Command(CommandBaseBuilder commandBase, Type module)
+        internal Command(CommandBaseBuilder commandBase, MethodInfo method, Type module)
         {
             Module = module;
             Name = commandBase.Name;
@@ -69,12 +76,17 @@ namespace FluentCommands
                         break;
                 }
             }
+            if (AuxiliaryMethods.TryConvertDelegate<TArgs>(method, out var c)) Invoke = c;
+            else throw new ArgumentException();
 
             //* This is for new features, to help separate them from the original implementation. *//
             #region Extensibility Constructor
             Permissions = commandBase.Permissions;
             StepInfo = commandBase.StepInfo;
             #endregion
+
+            if (commandBase.StepInfo is { }) CommandType = CommandType.Step;
+            else CommandType = CommandType.Default;
         }
 
         //* This is for new features, to help separate them from the original implementation. *//
@@ -82,7 +94,8 @@ namespace FluentCommands
         //
         #region Properties
         internal Permissions Permissions { get; } = Permissions.None;
-        internal StepContainer? StepInfo { get; } 
+        internal StepContainer? StepInfo { get; }
+        StepContainer? ICommand.StepInfo => StepInfo;
         #endregion
         //
         #endregion

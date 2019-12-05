@@ -11,6 +11,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using FluentCommands.Attributes;
 using FluentCommands.CommandTypes.Steps;
+using System.Reflection;
 
 namespace FluentCommands.Builders
 {
@@ -203,14 +204,7 @@ namespace FluentCommands.Builders
         //
         #region Methods
         internal void Set_Permissions(PermissionsAttribute? p) => Permissions = p?.Permissions ?? Permissions.None;
-        internal void Set_Step(StepAttribute? step)
-        {
-            if(step is { })
-            {
-                if (StepInfo is null) StepInfo = new StepContainer();
-            }
-            StepInfo = step;
-        }
+        internal void Set_Steps(IEnumerable<MethodInfo> methods) => StepInfo = new StepContainer(methods); // Pre-filtered in the CommandService class.
         #endregion
         //
         #endregion

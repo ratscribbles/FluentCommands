@@ -35,17 +35,49 @@ namespace FluentCommands
             await Console.Out.WriteLineAsync("RECEIVED FROM THE MODULE CONTEXT!! POGGERS");
         }
 
+
+
         [Command("e")]
-        public async Task E(TelegramBotClient client, MessageEventArgs e)
+        [Step(5)]
+        public async Task<IStep> B(TelegramBotClient client, MessageEventArgs e)
         {
             await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+            return Step.Success();
+
         }
 
-        //[Command("e")]
-        //[Step(-1)]
-        //public async Task<IStep> ppepepe(TelegramBotClient client, MessageEventArgs e)
-        //{
-        //    await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
-        //}
+        [Command("e")]
+        public async Task<IStep> PwOOP(TelegramBotClient client, MessageEventArgs e)
+        {
+            await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+            return Step.Success();
+        }
+
+        [Command("e")]
+        [Step(5)]
+        public async Task<IStep> C(TelegramBotClient client, MessageEventArgs e)
+        {
+            await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+            return Step.Success();
+
+        }
+
+        [Command("e")]
+        [Step(4)]
+        public async Task<IStep> D(TelegramBotClient client, MessageEventArgs e)
+        {
+            await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+            return Step.Success();
+
+        }
+
+        [Command("e")]
+        [Step(5)]
+        public async Task<IStep> F(TelegramBotClient client, MessageEventArgs e)
+        {
+            await client.SendTextMessageAsync(e.Message.Chat.Id, "test successful");
+            return Step.Success();
+        }
+
     }
 }

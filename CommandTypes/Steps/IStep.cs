@@ -12,8 +12,8 @@ namespace FluentCommands.CommandTypes.Steps
         internal CancellationToken Token { get; }
         internal StepResult StepResult { get; }
         internal StepAction StepAction { get; }
-        internal int? Delay { get; }
-        internal int? StepToMove { get; }
+        internal int Delay { get; }
+        internal int StepToMove { get; }
         internal Func<Task>? OnResult { get; }
     }
 }

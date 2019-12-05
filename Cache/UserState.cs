@@ -6,6 +6,9 @@ namespace FluentCommands.Cache
 {
     public sealed class UserState
     {
-        internal StepState StepState { get; private set; } = FluentState.Default<StepState>();
+        public int UserId { get; }
+        public StepState StepState { get; private set; } = FluentState.Default<StepState>();
+
+        public UserState(int id) => UserId = id;
     }
 }

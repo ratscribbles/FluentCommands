@@ -14,10 +14,10 @@ namespace FluentCommands
         internal Type CommandClass { get; } = typeof(TModule);
 
         /// <summary>
-        /// Builds a <see cref="Command"/> module.
+        /// Builds a <see cref="CommandTypes.Command{TModule}"/> module.
         /// </summary>
         /// <param name="moduleBuilder"></param>
-        protected abstract void OnBuilding(ModuleBuilder moduleBuilder);
+        protected virtual void OnBuilding(ModuleBuilder moduleBuilder) { }
         /// <summary>
         /// Sets the configuration for this <see cref="ModuleBuilder"/>.
         /// </summary>
@@ -25,6 +25,6 @@ namespace FluentCommands
         protected virtual void OnConfiguring(ModuleConfigBuilder config) { }
 
         private protected CommandModule() { }
-        internal CommandModule(Action<ModuleBuilder> onBuilding) { }
+        internal CommandModule(Action<ModuleBuilder> onBuilding) { } // for testing
     }
 }

@@ -1,4 +1,5 @@
 ﻿using FluentCommands.Builders;
+using FluentCommands.Cache;
 using FluentCommands.Exceptions;
 using FluentCommands.Interfaces;
 using FluentCommands.Logging;
@@ -14,6 +15,7 @@ namespace FluentCommands
         private readonly ModuleConfig _config;
         private readonly Lazy<ModuleLogger> _logger;
         private readonly Type _typeStorage;
+        private readonly IFluentDbProvider _dbProvider;
 
         ModuleConfig IReadOnlyModule.Config => _config;
         IFluentLogger IReadOnlyModule.Logger
@@ -33,6 +35,7 @@ namespace FluentCommands
         internal ReadOnlyCommandModule(ModuleBuilder m)
         {
             _config = m.Config;
+            _dbProvider = m.DbProvider;
             _logger = new Lazy<ModuleLogger>(() => new ModuleLogger(m.TypeStorage, m.Config));
             _typeStorage = m.TypeStorage;
 

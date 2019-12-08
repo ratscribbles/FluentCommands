@@ -13,6 +13,7 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using System.Threading.Tasks;
 using FluentCommands.Menus;
+using FluentCommands.Cache;
 
 //[DeploymentItem("Microsoft.VisualStudio.TestPlatform.ObjectModel.dll")]
 //: Test logging event handlers!
@@ -21,6 +22,11 @@ namespace FluentCommands.Tests.Unit
 {
     public class TestModule : CommandModule<TestCommandList>
     {
+        public void testing()
+        {
+            using var db = new TestDbContext();
+            (db as IFluentDbProvider).AddOrUpdateState(new UserState(5));
+        }
         internal Action<ModuleBuilder> BuildingDelegate { get; }
         protected override void OnBuilding(ModuleBuilder moduleBuilder)
         {

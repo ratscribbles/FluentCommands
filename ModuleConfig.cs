@@ -6,6 +6,8 @@ using FluentCommands.Exceptions;
 using FluentCommands.Logging;
 using FluentCommands.Menus;
 using FluentCommands.Helper;
+using FluentCommands.Cache;
+using FluentCommands.DbProviders;
 
 namespace FluentCommands
 {
@@ -16,8 +18,10 @@ namespace FluentCommands
         internal bool BruteForceKeyboardReferences { get; }
         internal bool DeleteCommandAfterCall { get; }
         internal bool LogModuleActivities { get; }
+        internal IFluentDbProvider DbProvider { get; }
         internal FluentLogLevel MaximumLogLevel { get; }
         internal string Prefix { get; private set; }
+        internal int PerUserRateLimitOverride { get; private set; }
         internal LoggingEvent? UseLoggingEventHandler { get; }
         internal Menu DefaultErrorMessage { get; }
         internal MenuMode MenuModeOverride { get; }
@@ -34,6 +38,18 @@ namespace FluentCommands
             UseDefaultErrorMessage = b.UseDefaultErrorMessage;
             UseInternalKeyboardStateHandler = b.UseInternalKeyboardStateHandler;
             UseLoggingEventHandler = b.UseLoggingEventHandler;
+
+            DbProvider = b.DbProviderPreset switch
+            {
+                DbProviderPreset.None => b.CustomDbProvider switch
+                {
+                    { } => b.CustomDbProvider,
+                    _ => throw new CommandOnBuildingException() //: define this
+                },
+                DbProviderPreset.EFCore => new EFCoreDbProvider(),
+                DbProviderPreset.LiteDb => 
+                _ => CommandService.Cache
+            };
         }
 
         //: Put this in the commandservice class as a generic method; have it seek the actual module and then change its prefix here

@@ -1,4 +1,5 @@
 ﻿using FluentCommands.Builders;
+using FluentCommands.Cache;
 using FluentCommands.Logging;
 using System;
 using System.Collections.Generic;
@@ -11,5 +12,6 @@ namespace FluentCommands.Interfaces
         internal ModuleConfig Config { get; }
         internal IFluentLogger Logger { get; }
         internal Type TypeStorage { get; }
+        internal IFluentDbProvider DbProvider { get; }
     }
 }

@@ -23,6 +23,7 @@ using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using FluentCommands.Logging;
 using System.Diagnostics;
+using FluentCommands.Cache;
 
 [assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
@@ -37,12 +38,10 @@ namespace FluentCommands
     {
         private static readonly Lazy<CommandService> _instance = new Lazy<CommandService>(() => new CommandService(_tempCfg));
         private static readonly Lazy<CommandServiceLogger> _logger = new Lazy<CommandServiceLogger>(() => new CommandServiceLogger());
+        private static readonly Lazy<CommandServiceCache> _cache = new Lazy<CommandServiceCache>(() => new CommandServiceCache());
         private static readonly Lazy<EmptyLogger> _emptyLogger = new Lazy<EmptyLogger>(() => new EmptyLogger());
         private static readonly IReadOnlyCollection<Type> _assemblyTypes;
-        private static readonly HashSet<Type> _telegramEventArgs = new HashSet<Type> { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
-        /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId.</para></summary>
-        private static readonly ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>> _botLastMessages = new ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>>();
-        private static readonly ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>> _userLastMessages = new ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>>();
+        private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new HashSet<Type> { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         private static readonly Dictionary<Type, ModuleBuilder> _tempModules = new Dictionary<Type, ModuleBuilder>();
         private static Toggle _lastMessageIsMenu = new Toggle(false);
         private static ToggleOnce _commandServiceStarted = new ToggleOnce(false);
@@ -53,6 +52,7 @@ namespace FluentCommands
         private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> _commands;
         ///////
         private static IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> Commands => _instance.Value._commands;
+        internal static IFluentDbProvider Cache => _cache.Value;
         internal static IReadOnlyDictionary<Type, IReadOnlyModule> Modules => _instance.Value._modules;
         internal static IFluentLogger Logger => _logger.Value;
         internal static IFluentLogger EmptyLogger => _emptyLogger.Value;
@@ -100,13 +100,13 @@ namespace FluentCommands
             Init_2_KeyboardAssembler();
             Init_3_CommandAssembler();
 
-            var tempModules = new Dictionary<Type, IReadOnlyModule>(_tempModules.Count);
-            foreach (var kvp in _tempModules.ToList()) tempModules.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value));
+            var tempModulesToReadOnly = new Dictionary<Type, IReadOnlyModule>(_tempModules.Count);
+            foreach (var kvp in _tempModules.ToList()) tempModulesToReadOnly.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value));
 
             var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>>();
             foreach (var kvp in tempCommands.ToList()) tempCommandsToReadOnly.Add(kvp.Key, kvp.Value);
 
-            _modules = tempModules;
+            _modules = tempModulesToReadOnly;
             _commands = tempCommandsToReadOnly;
 
             void Init_1_ModuleAssembler()
@@ -180,6 +180,8 @@ namespace FluentCommands
                         if (moduleConfigBuilder is null) throw new CommandOnBuildingException(); //: describe in detail
 
                         moduleBuilder.SetConfig(new ModuleConfig(moduleConfigBuilder));
+
+                        UpdateBuilderInTempModules(moduleBuilder, commandClass);
                     }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -378,23 +380,26 @@ namespace FluentCommands
                     throw new DuplicateCommandException(duplicates);
                 }
 
-
+                // Command Assembler
                 foreach (var method in allCommandMethods)
                 {
                     var module = method.DeclaringType ?? throw new CommandOnBuildingException("Error getting the module (DeclaringType) of a method while command building. (Returned null.)");
 
                     if (!tempCommands.ContainsKey(module)) tempCommands[module] = new Dictionary<ReadOnlyMemory<char>, ICommand>(CommandNameComparer.Default);
 
+                    var methodAttributeCollection = method.GetCustomAttributes();
                     (
                         CommandAttribute Command,
                         PermissionsAttribute? Permissions,
+                        RoomTypeAttribute? RoomType,
                         StepAttribute? Step
                     //? Add as needed...
-                    ) 
+                    )
                     attribs = (
-                        method.GetCustomAttribute<CommandAttribute>() ?? throw new CommandOnBuildingException($"Error determining the Command Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)"),
-                        method.GetCustomAttribute<PermissionsAttribute>() ?? module.GetCustomAttribute<PermissionsAttribute>(),
-                        method.GetCustomAttribute<StepAttribute>()
+                        methodAttributeCollection.FirstOrDefault(a => a is CommandAttribute) as CommandAttribute ?? throw new CommandOnBuildingException($"Error determining the Command Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)"),
+                        methodAttributeCollection.FirstOrDefault(a => a is PermissionsAttribute) as PermissionsAttribute ?? module.GetCustomAttribute<PermissionsAttribute>(),
+                        methodAttributeCollection.FirstOrDefault(a => a is RoomTypeAttribute) as RoomTypeAttribute ?? module.GetCustomAttribute<RoomTypeAttribute>(),
+                        methodAttributeCollection.FirstOrDefault(a => a is StepAttribute) as StepAttribute
                     //? Add as needed...
                     );
 
@@ -842,45 +847,67 @@ namespace FluentCommands
                                     {
                                         if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke(client, args);
                                         else; //: error message, log.
-                                        break;
+                                        return;
                                     }
                                 case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
                                     {
                                         if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke(client, args);
                                         else; //: log.
-                                        break;
+                                        return;
                                     }
                                 case var _ when cmd is Command<InlineQueryEventArgs> c:
                                     {
                                         if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke(client, args);
                                         else; //: log.
-                                        break;
+                                        return;
                                     }
                                 case var _ when cmd is Command<MessageEventArgs> c:
                                     {
                                         if (e.TryGetMessageEventArgs(out var args)) await c.Invoke(client, args);
                                         else; //: log.
-                                        break;
+                                        return;
                                     }
                                 case var _ when cmd is Command<UpdateEventArgs> c:
                                     {
                                         if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke(client, args);
                                         else; //: log.  
-                                        break;
+                                        return;
                                     }
                                 default:
                                     //: Perform logging.
                                     return;
                             }
-                        } break;
-                    case CommandType.ReplyKeyboard:
-                        {
-
-                        } break;
+                        } 
                     case CommandType.Step:
                         {
+                            switch (cmd)
+                            {
+                                case var _ when cmd is Command<CallbackQueryEventArgs> c:
+                                    {
 
-                        } break;
+                                        return;
+                                    }
+                                case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
+                                    {
+                                        return;
+                                    }
+                                case var _ when cmd is Command<InlineQueryEventArgs> c:
+                                    {
+                                        return;
+                                    }
+                                case var _ when cmd is Command<MessageEventArgs> c:
+                                    {
+                                        return;
+                                    }
+                                case var _ when cmd is Command<UpdateEventArgs> c:
+                                    {
+                                        return;
+                                    }
+                                default:
+                                    //: Perform logging.
+                                    return;
+                            }
+                        } 
                 }
 
             }

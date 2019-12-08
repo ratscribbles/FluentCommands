@@ -6,6 +6,7 @@ using FluentCommands.Exceptions;
 using FluentCommands.Logging;
 using FluentCommands.Menus;
 using FluentCommands.Helper;
+using FluentCommands.Cache;
 
 namespace FluentCommands
 {
@@ -24,10 +25,13 @@ namespace FluentCommands
         public bool BruteForceKeyboardReferences { get; set; } = false;
         public bool DeleteCommandAfterCall { get; set; } = false;
         public bool LogModuleActivities { get; set; } = false;
+        public DbProviderPreset DbProviderPreset { get; set; } = DbProviderPreset.None;
+        public IFluentDbProvider? CustomDbProvider { get; set; }
         public FluentLogLevel MaximumLogLevel { get; set; } = FluentLogLevel.Fatal;
         public string Prefix { get; set; } = "/";
         public LoggingEvent? UseLoggingEventHandler { get; set; }
         public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
         public MenuMode MenuModeOverride { get; set; } = MenuMode.Default;
+        internal int PerUserRateLimitOverride { get; private set; }
     }
 }

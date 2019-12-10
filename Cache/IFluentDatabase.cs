@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace FluentCommands.Cache
 {
-    public interface IFluentDbProvider
+    public interface IFluentDatabase
     {
         Task AddOrUpdateState(FluentState state);
         Task<FluentState> GetState(int id);

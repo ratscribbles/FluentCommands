@@ -12,6 +12,6 @@ namespace FluentCommands.Interfaces
         internal ModuleConfig Config { get; }
         internal IFluentLogger Logger { get; }
         internal Type TypeStorage { get; }
-        internal IFluentDbProvider DbProvider { get; }
+        internal IFluentDatabase Database { get; }
     }
 }

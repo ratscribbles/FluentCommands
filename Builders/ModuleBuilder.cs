@@ -23,7 +23,6 @@ namespace FluentCommands.Builders
     {
         /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
         private readonly Dictionary<string, CommandBaseBuilder> _moduleCommandBases = new Dictionary<string, CommandBaseBuilder>();
-        private IFluentDbProvider _dbProvider;
 
         /// <summary> Stores the module type when using alternate building form. </summary>
         internal Type TypeStorage { get; }
@@ -31,8 +30,6 @@ namespace FluentCommands.Builders
         private CommandBaseBuilder? CommandStorage { get; set; } = null;
         /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleConfig)"/> to update this.</summary>
         internal ModuleConfig Config { get; private set; } = new ModuleConfig(new ModuleConfigBuilder());
-        /// <summary>The DbProvider used for cache purposes (state management).</summary>
-        internal IFluentDbProvider DbProvider => _dbProvider;
         /// <summary>The internal <see cref="CommandBaseBuilder"/> dictionary for this <see cref="ModuleBuilder"/>. Readonly.</summary>
         internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get { return _moduleCommandBases; } }
 
@@ -58,12 +55,7 @@ namespace FluentCommands.Builders
         /// <param name="t">The class this ModuleBuilder is targeting.</param>
         internal ModuleBuilder(Type t) => TypeStorage = t;
 
-        internal void SetConfig(ModuleConfig cfg)
-        {
-            Config = cfg;
-
-            switch(cfg.DbPro)
-        }
+        internal void SetConfig(ModuleConfig cfg) => Config = cfg;
 
         /// <summary>
         /// Creates a new command for this module.

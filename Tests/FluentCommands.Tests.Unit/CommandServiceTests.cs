@@ -22,11 +22,8 @@ namespace FluentCommands.Tests.Unit
 {
     public class TestModule : CommandModule<TestCommandList>
     {
-        public void testing()
-        {
-            using var db = new TestDbContext();
-            (db as IFluentDbProvider).AddOrUpdateState(new UserState(5));
-        }
+
+
         internal Action<ModuleBuilder> BuildingDelegate { get; }
         protected override void OnBuilding(ModuleBuilder moduleBuilder)
         {
@@ -169,6 +166,16 @@ namespace FluentCommands.Tests.Unit
 
                 CommandService.Start();
             });
+        }
+
+        [Fact]
+        public void testing()
+        {
+            CommandService.Module<TestCommandList>(m =>
+            {
+            });
+
+            CommandService.AddDatabase<TestDbContext>().Start();
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 ﻿using FluentCommands.Cache;
 using FluentCommands.Logging;
+using FluentCommands.Menus;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,34 +10,30 @@ namespace FluentCommands
     public enum DbProviderPreset { None, LiteDb, EFCore }
     internal class CommandServiceConfig
     {
-        internal bool Logging { get; }
-        internal bool UseDefaultRules { get; }
+        internal bool EnableLogging { get; }
+        internal bool UseDefaultHelpMsg { get; }
         internal bool UseDefaultErrorMsg { get; }
-        internal bool UseInternalStateHandlerForReplyKeyboards { get; }
-        internal bool UseGlobalLogging { get; }
-        internal DbProviderPreset DbProvider { get; }
-        internal IFluentDbProvider CustomDbProvider { get; }
-        internal bool CaptureAllLoggingEvents { get; }
-        internal LoggingEvent? UseLoggingEventHandler { get; }
+        internal bool UsingCustomDatabase { get; private set; }
+        internal bool UsingCustomLogger { get; private set; }
         internal FluentLogLevel MaximumLogLevel { get; }
-        internal bool SwallowExceptions { get; }
+        internal bool DontSwallowExceptions { get; }
         internal int PerUserRateLimit { get; } //: make this set-able, and available for the module class
         internal string DefaultPrefix { get; }
         internal MenuMode DefaultMenuMode { get; }
+        public Menu DefaultErrorMessage { get; set; } = MenuItem.As().Text().TextSource("ERROR OCCURRED.").Done();
 
         internal CommandServiceConfig(Builders.CommandServiceConfigBuilder c)
         {
-            CaptureAllLoggingEvents = c.CaptureAllLoggingEvents;
             DefaultMenuMode = c.DefaultMenuMode;
             DefaultPrefix = c.DefaultPrefix;
-            Logging = c.Logging;
+            EnableLogging = c.Logging;
             MaximumLogLevel = c.MaximumLogLevel;
-            SwallowExceptions = c.SwallowExceptions;
+            DontSwallowExceptions = c.SwallowExceptions;
             UseDefaultErrorMsg = c.UseDefaultErrorMsg;
-            UseDefaultRules = c.UseDefaultRules;
-            UseGlobalLogging = c.UseGlobalLogging;
-            UseInternalStateHandlerForReplyKeyboards = c.UseInternalStateHandlerForReplyKeyboards;
-            UseLoggingEventHandler = c.UseLoggingEventHandler;
+            UseDefaultHelpMsg = c.UseDefaultRules;
         }
+
+        internal void UseCustomDatabase() => UsingCustomDatabase = true;
+        internal void UseCustomLogger() => UsingCustomLogger = true;
     }
 }

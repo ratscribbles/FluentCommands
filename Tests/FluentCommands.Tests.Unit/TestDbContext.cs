@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using FluentCommands.Cache;
 using Microsoft.EntityFrameworkCore;
 
 namespace FluentCommands.Tests.Unit
 {
-    class TestDbContext : DbContext, IFluentDbProvider
+    class TestDbContext : DbContext, IFluentDatabase
     {
-        void IFluentDbProvider.AddOrUpdateState(FluentState state)
+        public Task AddOrUpdateState(FluentState state)
         {
             throw new NotImplementedException();
         }
 
-        FluentState IFluentDbProvider.GetState(int id)
+        public Task<FluentState> GetState(int id)
         {
             throw new NotImplementedException();
         }

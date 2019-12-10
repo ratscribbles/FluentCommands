@@ -24,6 +24,7 @@ using System.Collections.ObjectModel;
 using FluentCommands.Logging;
 using System.Diagnostics;
 using FluentCommands.Cache;
+using Microsoft.Extensions.DependencyInjection;
 
 [assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
@@ -32,13 +33,14 @@ namespace FluentCommands
     //: Create methods that share internal cache services with outside dbs (EF core and such)
 
     /// <summary>
-    /// The class responsible for handling the assembly and processing of <see cref="Command"/> objects.
+    /// The class responsible for handling the assembly and processing of Telegram Bot commands.
     /// </summary>
     public sealed class CommandService
     {
+        private static readonly Lazy<IServiceCollection> _services = new Lazy<IServiceCollection>(() => new ServiceCollection());
         private static readonly Lazy<CommandService> _instance = new Lazy<CommandService>(() => new CommandService(_tempCfg));
-        private static readonly Lazy<CommandServiceLogger> _logger = new Lazy<CommandServiceLogger>(() => new CommandServiceLogger());
-        private static readonly Lazy<CommandServiceCache> _cache = new Lazy<CommandServiceCache>(() => new CommandServiceCache());
+        private static readonly Lazy<CommandServiceLogger> _defaultLogger = new Lazy<CommandServiceLogger>(() => new CommandServiceLogger());
+        private static readonly Lazy<CommandServiceCache> _defaultCache = new Lazy<CommandServiceCache>(() => new CommandServiceCache());
         private static readonly Lazy<EmptyLogger> _emptyLogger = new Lazy<EmptyLogger>(() => new EmptyLogger());
         private static readonly IReadOnlyCollection<Type> _assemblyTypes;
         private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new HashSet<Type> { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
@@ -50,12 +52,31 @@ namespace FluentCommands
         private readonly CommandServiceConfig _config;
         private readonly IReadOnlyDictionary<Type, IReadOnlyModule> _modules;
         private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> _commands;
+        private readonly IFluentDatabase? _customDatabase;
+        private readonly IFluentLogger? _customLogger;
         ///////
         private static IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> Commands => _instance.Value._commands;
-        internal static IFluentDbProvider Cache => _cache.Value;
         internal static IReadOnlyDictionary<Type, IReadOnlyModule> Modules => _instance.Value._modules;
-        internal static IFluentLogger Logger => _logger.Value;
-        internal static IFluentLogger EmptyLogger => _emptyLogger.Value;
+        internal static IFluentDatabase Cache
+        {
+            get
+            {
+                if (GlobalConfig.UsingCustomDatabase) return _instance.Value._customDatabase; // Not null if true
+                else return _defaultCache.Value;
+            }
+        }
+        internal static IFluentLogger Logger
+        {
+            get
+            {
+                if (GlobalConfig.EnableLogging)
+                {
+                    if (GlobalConfig.UsingCustomLogger) return _instance.Value._customLogger; // Not null if true
+                    else return _defaultLogger.Value;
+                }
+                else return _emptyLogger.Value;
+            }
+        }
         internal static CommandServiceConfig GlobalConfig => _instance.Value._config;
 
         #region Constructors
@@ -90,7 +111,12 @@ namespace FluentCommands
         {
             _config = new CommandServiceConfig(cfg);
 
-            if (_config.UseLoggingEventHandler is { }) _logger.Value.LoggingEvent += _config.UseLoggingEventHandler;
+            if (_services.IsValueCreated)
+            {
+                var provider = _services.Value.BuildServiceProvider();
+                _customDatabase = provider.GetService<IFluentDatabase>();
+                _customLogger = provider.GetService<IFluentLogger>();
+            }
 
             var tempCommands = new Dictionary<Type, Dictionary<ReadOnlyMemory<char>, ICommand>>();
 
@@ -167,21 +193,13 @@ namespace FluentCommands
                     catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
                     var moduleBuilder = new ModuleBuilder(commandClass);
+                    var moduleConfigBuilder = new ModuleConfigBuilder();
 
                     // Modules! Assemble!
                     try
                     {
-                        ModuleConfigBuilder moduleConfigBuilder = new ModuleConfigBuilder();
-
                         method_OnBuilding.Invoke(moduleContext, new object[] { moduleBuilder });
                         if (moduleBuilder is null) throw new CommandOnBuildingException(); //: describe in detail
-
-                        method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfigBuilder });
-                        if (moduleConfigBuilder is null) throw new CommandOnBuildingException(); //: describe in detail
-
-                        moduleBuilder.SetConfig(new ModuleConfig(moduleConfigBuilder));
-
-                        UpdateBuilderInTempModules(moduleBuilder, commandClass);
                     }
                     catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -190,6 +208,23 @@ namespace FluentCommands
                     catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    try
+                    {
+                        method_OnConfiguring.Invoke(moduleContext, new object[] { moduleConfigBuilder });
+                        if (moduleConfigBuilder is null) throw new CommandOnBuildingException(); //: describe in detail
+                    }
+                    catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetInvocationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (TargetParameterCountException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+                    catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
+
+                    moduleBuilder.SetConfig(new ModuleConfig(moduleConfigBuilder));
+
+                    UpdateBuilderInTempModules(moduleBuilder, commandClass);
 
                     foreach (var commandName in moduleBuilder.ModuleCommandBases.Keys)
                     {
@@ -567,7 +602,7 @@ namespace FluentCommands
         public static void Start() 
         {
             if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect. Please consider checking your code and restarting your application to prevent this warning.").ConfigureAwait(false)); return; }
-            _ = _instance.Value;
+            _ =_instance.Value;
             _commandServiceStarted.Value = true;
         }
 
@@ -580,8 +615,7 @@ namespace FluentCommands
             if (cfg is null) throw new CommandOnBuildingException("CommandServiceConfig was null.");
 
             _tempCfg = cfg;
-            _ = _instance.Value;
-            
+            _ =_instance.Value;
             _commandServiceStarted.Value = true;
         }
 
@@ -601,10 +635,63 @@ namespace FluentCommands
             if (cfg is null) throw new CommandOnBuildingException("CommandServiceConfig was null. Please check your BuildAction delegate and restart your application. If this issue persists, please contact the creator of this library.");
 
             _tempCfg = cfg;
-            _ = _instance.Value;
+            _ =_instance.Value;
             _commandServiceStarted.Value = true;
         }
+
+        public static ICommandServiceInitializer AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger
+            => new CommandServiceStartNavigator().AddLogger<TLoggerImplementation>();
+
+        public static ICommandServiceInitializer AddLogger(IFluentLogger implementationInstance)
+            => new CommandServiceStartNavigator().AddLogger(implementationInstance);
+
+        public static ICommandServiceInitializer AddLogger(Type implementationType)
+            => new CommandServiceStartNavigator().AddLogger(implementationType);
+
+        public static ICommandServiceInitializer AddDatabase<TDatabaseImplementation>() where TDatabaseImplementation : class, IFluentDatabase
+            => new CommandServiceStartNavigator().AddDatabase<TDatabaseImplementation>();
+
+        public static ICommandServiceInitializer AddDatabase(Type implementationType)
+            => new CommandServiceStartNavigator().AddDatabase(implementationType);
+
+        internal class CommandServiceStartNavigator : ICommandServiceInitializer
+        {
+            public ICommandServiceInitializer AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger
+            {
+                _services.Value.AddLogger<TLoggerImplementation>();
+                return this;
+            }
+
+            public ICommandServiceInitializer AddLogger(IFluentLogger implementationInstance)
+            {
+                _services.Value.AddLogger(implementationInstance);
+                return this;
+            }
+
+            public ICommandServiceInitializer AddLogger(Type implementationType)
+            {
+                _services.Value.AddLogger(implementationType);
+                return this;
+            }
+
+            public ICommandServiceInitializer AddDatabase<TDatabaseImplementation>() where TDatabaseImplementation : class, IFluentDatabase
+            {
+                _services.Value.AddDatabase<TDatabaseImplementation>();
+                return this;
+            }
+
+            public ICommandServiceInitializer AddDatabase(Type implementationType)
+            {
+                _services.Value.AddDatabase(implementationType);
+                return this;
+            }
+
+            public void Start() => CommandService.Start();
+            public void Start(CommandServiceConfigBuilder cfg) => CommandService.Start(cfg);
+            public void Start(Action<CommandServiceConfigBuilder> buildAction) => CommandService.Start(buildAction);
+        }
         #endregion
+
 
         #region Module Building Overloads
         /// <summary>
@@ -1101,11 +1188,5 @@ namespace FluentCommands
             return updatedKeyboardBuilder;
         }
         #endregion
-
-        /// <summary>Passes args to the global event used by the <see cref="CommandService"/> Logger.</summary>
-        internal static async Task PassToGlobalEvent(FluentLoggingEventArgs args)
-        {
-            await _logger.Value.GlobalEvent(args).ConfigureAwait(false);
-        }
     }
 }

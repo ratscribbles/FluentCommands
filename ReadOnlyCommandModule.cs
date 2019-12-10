@@ -13,36 +13,40 @@ namespace FluentCommands
     {
         /// <summary>Stored logger for this <see cref="CommandModule{TModule}"/>.</summary>
         private readonly ModuleConfig _config;
-        private readonly Lazy<ModuleLogger> _logger;
         private readonly Type _typeStorage;
-        private readonly IFluentDbProvider _dbProvider;
+        private readonly IFluentLogger _logger;
+        private readonly IFluentDatabase _database;
+        private readonly bool _useModuleLogger;
+        private readonly bool _useModuleDb;
 
         ModuleConfig IReadOnlyModule.Config => _config;
         IFluentLogger IReadOnlyModule.Logger
         {
             get
             {
-                if (_config.LogModuleActivities) return _logger.Value;
-                else
-                {
-                    if (CommandService.GlobalConfig.CaptureAllLoggingEvents) return _logger.Value;
-                    else return CommandService.EmptyLogger;
-                }
+                if (_useModuleLogger) return _logger;
+                else return CommandService.Logger;
             }
         }
+        IFluentDatabase IReadOnlyModule.Database
+        {
+            get
+            {
+                return _database;
+            }
+        }
+
         Type IReadOnlyModule.TypeStorage => _typeStorage;
 
         internal ReadOnlyCommandModule(ModuleBuilder m)
         {
             _config = m.Config;
-            _dbProvider = m.DbProvider;
-            _logger = new Lazy<ModuleLogger>(() => new ModuleLogger(m.TypeStorage, m.Config));
+            //_database = m.DatabaseOverride;
+            //_logger = m.LoggerOverride;
             _typeStorage = m.TypeStorage;
 
             if (_config.LogModuleActivities)
             {
-                if (_config.UseLoggingEventHandler is { }) _logger.Value.LoggingEvent += _config.UseLoggingEventHandler;
-                else throw new InvalidConfigSettingsException($"Module {_typeStorage.FullName} has logging enabled, but it has no event handler set. Please double check your code and make sure to add an event handler in your OnConfiguring method for this module through the UseLoggingEventHandler property.");
             }
         }
     }

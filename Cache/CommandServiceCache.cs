@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Cache
 {
-    internal class CommandServiceCache : IFluentDbProvider
+    internal class CommandServiceCache : IFluentDatabase
     {
         /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId.</para></summary>
         private ConcurrentDictionary<int, ConcurrentDictionary<long, ConcurrentDictionary<int, Message>>> _botLastMessage { get; set; } //: for these two, check if message comes from a private chat (two ppl)

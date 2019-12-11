@@ -7,16 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FluentCommands.Tests.Unit
 {
-    class TestDbContext : DbContext, IFluentDatabase
+    class TestDbContext : IFluentDatabase
     {
         public Task AddOrUpdateState(FluentState state)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
-        public Task<FluentState> GetState(int id)
+        public async Task<FluentState> GetState(int id)
         {
-            throw new NotImplementedException();
+            return await Task.Run(() => { return FluentState.Default<StepState>(); });
         }
     }
 }

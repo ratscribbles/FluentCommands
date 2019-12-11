@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FluentCommands.Cache
 {
-    public class StepState : FluentState
+    public class StepState
     {
-        public override bool IsDefault  
+        public bool IsDefault  
         {
             get
             {
@@ -27,7 +27,7 @@ namespace FluentCommands.Cache
         public int PreviousStepNumber { get; private set; } = 0;
 
 
-        /// <summary>Creates a new <see cref="StepState"/> for the parent <see cref="UserState"/>.
+        /// <summary>Creates a new <see cref="StepState"/> for the parent <see cref="FluentState"/>.
         /// <para>If the <see cref="Command"/> does not have a <see cref="StepContainer"/>, <see cref="IsDefault"/> is true, and it will be assumed the user is not currently in a command with steps.</para></summary>
         public StepState() { }
 

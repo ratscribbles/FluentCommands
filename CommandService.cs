@@ -25,6 +25,8 @@ using FluentCommands.Logging;
 using System.Diagnostics;
 using FluentCommands.Cache;
 using Microsoft.Extensions.DependencyInjection;
+using FluentCommands.CommandTypes.Steps;
+using System.Diagnostics.CodeAnalysis;
 
 [assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
@@ -877,6 +879,10 @@ namespace FluentCommands
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
 
             var logger = module.Logger;
+            var state = await Cache.GetState(e.GetChatId(), e.GetUserId());
+
+            if (state is { StepState: { CommandStepInfo: { IsEmpty: false } } })
+                if (TryGetCommand(state.StepState.CommandStepInfo.CurrentCommandName.AsMemory(), moduleType, out var stepCommand)) await ProcessCommand(stepCommand);
 
             if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out ReadOnlyMemory<char> input)) return;
             var botId = client.BotId;
@@ -896,7 +902,7 @@ namespace FluentCommands
                         if (commandMatch.Groups.Count > 1)
                         {
                             var commandName = commandMatch.Groups[1].Value.AsMemory();
-                            if (Commands.TryGetValue(moduleType, out var moduleDict) && moduleDict.TryGetValue(commandName, out var command)) await ProcessCommand(command);
+                            if (TryGetCommand(commandName, moduleType, out var command)) await ProcessCommand(command);
                         }
                     }
                 }
@@ -971,7 +977,14 @@ namespace FluentCommands
                             {
                                 case var _ when cmd is Command<CallbackQueryEventArgs> c:
                                     {
-
+                                        if (!e.TryGetCallbackQueryEventArgs(out var pee)) return;
+                                        var state = await Cache.GetState(pee.CallbackQuery.Message.Chat.Id, pee.CallbackQuery.From.Id);
+                                        if (state.IsDefault) ;
+                                        var stepstate = state.StepState;
+                                        var lmao = c.StepInfo[stepstate.CurrentStepNumber].Delegate as CommandDelegate<CallbackQueryEventArgs, IStep>;
+                                        var hmm = await lmao(client, pee);
+                                        await stepstate.Update(c, hmm);
+                                        await Cache.AddOrUpdateState(state);
                                         return;
                                     }
                                 case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
@@ -984,6 +997,14 @@ namespace FluentCommands
                                     }
                                 case var _ when cmd is Command<MessageEventArgs> c:
                                     {
+                                        if (!e.TryGetMessageEventArgs(out var pee)) return;
+                                        if (state is null) { await c.Invoke(client, pee); return; }
+                                        if (state.IsDefault) ;
+                                        var stepstate = state.StepState;
+                                        var lmao = c.StepInfo[stepstate.CurrentStepNumber + 1].Delegate as CommandDelegate<MessageEventArgs, IStep>;
+                                        var hmm = await lmao(client, pee);
+                                        await stepstate.Update(c, hmm);
+                                        await Cache.AddOrUpdateState(state);
                                         return;
                                     }
                                 case var _ when cmd is Command<UpdateEventArgs> c:
@@ -1065,6 +1086,13 @@ namespace FluentCommands
             await ProcessInput(typeof(TModule), client, e);
 
             //: this method is probably unnecessary. think about it later
+        }
+
+        private static bool TryGetCommand(ReadOnlyMemory<char> inName, Type moduleType, [NotNullWhen(true)] out ICommand? outCommand)
+        {
+            if (!Commands.TryGetValue(moduleType, out var moduleDict)) { outCommand = null; return false; }
+            if (!moduleDict.TryGetValue(inName, out outCommand)) return false;
+            else return true;
         }
         #endregion
 

@@ -31,6 +31,32 @@ namespace FluentCommands.Helper
             };
         }
 
+        internal static long GetChatId(this TelegramUpdateEventArgs e)
+        {
+            return e switch
+            {
+                { CallbackQueryEventArgs: { } } => e.CallbackQueryEventArgs.GetChatId(),
+                { ChosenInlineResultEventArgs: { } } => e.ChosenInlineResultEventArgs.GetChatId(),
+                { InlineQueryEventArgs: { } } => e.InlineQueryEventArgs.GetChatId(),
+                { MessageEventArgs: { } } => e.MessageEventArgs.GetChatId(),
+                { UpdateEventArgs: { } } => e.UpdateEventArgs.GetChatId(),
+                _ => 0
+            };
+        }
+
+        internal static int GetUserId(this TelegramUpdateEventArgs e)
+        {
+            return e switch
+            {
+                { CallbackQueryEventArgs: { } } => e.CallbackQueryEventArgs.GetUserId(),
+                { ChosenInlineResultEventArgs: { } } => e.ChosenInlineResultEventArgs.GetUserId(),
+                { InlineQueryEventArgs: { } } => e.InlineQueryEventArgs.GetUserId(),
+                { MessageEventArgs: { } } => e.MessageEventArgs.GetUserId(),
+                { UpdateEventArgs: { } } => e.UpdateEventArgs.GetUserId(),
+                _ => 0
+            };
+        }
+
         /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>
         internal static long GetChatId(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Message?.Chat?.Id ?? 0;
         /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found. Returns the sender (User id) for ChosenInlineResult and InlineQuery EventArgs.</summary>

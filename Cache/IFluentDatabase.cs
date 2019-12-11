@@ -8,6 +8,6 @@ namespace FluentCommands.Cache
     public interface IFluentDatabase
     {
         Task AddOrUpdateState(FluentState state);
-        Task<FluentState> GetState(int id);
+        Task<FluentState?> GetState(long chatId, int userId);
     }
 }

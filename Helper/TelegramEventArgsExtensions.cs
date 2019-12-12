@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot.Args;
+using Telegram.Bot.Types;
 
 namespace FluentCommands.Helper
 {
-    internal static class TelegramEventArgsExtensions
+    public static class TelegramEventArgsExtensions
     {
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
         internal static ReadOnlyMemory<char> GetRawInput(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Data.AsMemory() ?? ReadOnlyMemory<char>.Empty;
@@ -31,29 +32,37 @@ namespace FluentCommands.Helper
             };
         }
 
-        internal static long GetChatId(this TelegramUpdateEventArgs e)
+        internal static User? GetUser(this CallbackQueryEventArgs? e) => e?.CallbackQuery?.From;
+        internal static User? GetUser(this ChosenInlineResultEventArgs? e) => e?.ChosenInlineResult?.From;
+        internal static User? GetUser(this InlineQueryEventArgs? e) => e?.InlineQuery?.From;
+        internal static User? GetUser(this MessageEventArgs? e) => e?.Message?.From;
+        internal static User? GetUser(this UpdateEventArgs? e)
         {
-            return e switch
+            var update = e?.Update;
+
+            return update switch
             {
-                { CallbackQueryEventArgs: { } } => e.CallbackQueryEventArgs.GetChatId(),
-                { ChosenInlineResultEventArgs: { } } => e.ChosenInlineResultEventArgs.GetChatId(),
-                { InlineQueryEventArgs: { } } => e.InlineQueryEventArgs.GetChatId(),
-                { MessageEventArgs: { } } => e.MessageEventArgs.GetChatId(),
-                { UpdateEventArgs: { } } => e.UpdateEventArgs.GetChatId(),
-                _ => 0
+                { CallbackQuery: { } } => update.CallbackQuery.From,
+                { ChosenInlineResult: { } } => update.ChosenInlineResult.From,
+                { InlineQuery: { } } => update.InlineQuery.From,
+                { Message: { } } => update.Message.From,
+                null => null,
+                _ => null,
             };
         }
 
-        internal static int GetUserId(this TelegramUpdateEventArgs e)
+        internal static Chat? GetChat(this CallbackQueryEventArgs? e) => e?.CallbackQuery?.Message?.Chat;
+        internal static Chat? GetChat(this MessageEventArgs? e) => e?.Message?.Chat;
+        internal static Chat? GetChat(this UpdateEventArgs? e)
         {
-            return e switch
+            var update = e?.Update;
+
+            return update switch
             {
-                { CallbackQueryEventArgs: { } } => e.CallbackQueryEventArgs.GetUserId(),
-                { ChosenInlineResultEventArgs: { } } => e.ChosenInlineResultEventArgs.GetUserId(),
-                { InlineQueryEventArgs: { } } => e.InlineQueryEventArgs.GetUserId(),
-                { MessageEventArgs: { } } => e.MessageEventArgs.GetUserId(),
-                { UpdateEventArgs: { } } => e.UpdateEventArgs.GetUserId(),
-                _ => 0
+                { CallbackQuery: { } } => update.CallbackQuery?.Message?.Chat,
+                { Message: { } } => update.Message.Chat,
+                null => null,
+                _ => null,
             };
         }
 
@@ -81,15 +90,15 @@ namespace FluentCommands.Helper
             };
         }
 
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        /// <summary>Returns the Chat Id. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
         internal static int GetUserId(this CallbackQueryEventArgs e) { if (!e?.CallbackQuery?.From?.IsBot ?? false) return e?.CallbackQuery?.From?.Id ?? 0; else return 0; }
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        /// <summary>Returns the Chat Id. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
         internal static int GetUserId(this ChosenInlineResultEventArgs e) { if (!e?.ChosenInlineResult?.From?.IsBot ?? false) return e?.ChosenInlineResult?.From?.Id ?? 0; else return 0; }
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        /// <summary>Returns the Chat Id. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
         internal static int GetUserId(this InlineQueryEventArgs e) { if (!e?.InlineQuery?.From?.IsBot ?? false) return e?.InlineQuery?.From?.Id ?? 0; else return 0; }
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        /// <summary>Returns the Chat Id. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
         internal static int GetUserId(this MessageEventArgs e) { if (!e?.Message?.From?.IsBot ?? false) return e?.Message?.From?.Id ?? 0; else return 0; }
-        /// <summary>Returns the Chat Id for <see cref="Command"/> processing. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
+        /// <summary>Returns the Chat Id. Returns 0 if not found, or if a bot (this bot) is the sender.</summary>
         internal static int GetUserId(this UpdateEventArgs e)
         {
             var update = e?.Update;

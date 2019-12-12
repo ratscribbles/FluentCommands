@@ -34,7 +34,7 @@ namespace FluentCommands.Builders
         internal IKeyboardButton? InButton { get; private set; } = null;
         /// <summary>Gets the <see cref="KeyboardBuilder"/> for this <see cref="Command"/></summary>
         internal KeyboardBuilder? KeyboardInfo { get; private set; } = null;
-
+        internal CommandType CommandType { get; private set; }
 
         /// <summary>
         /// Instantiates a new <see cref="CommandBaseBuilder"/>, which will be used to construct a <see cref="Command"/> for this Module.
@@ -187,13 +187,6 @@ namespace FluentCommands.Builders
         }
         #endregion
 
-        #region Setters (for attributes)
-        ////
-        //! Add to this if additional -attribute- functionality is needed later. Do not modify the constructor or other methods.
-        ////
-
-        #endregion
-
         //* This is for new features, to help separate them from the original implementation. *//
         #region Extensibility Support
         //
@@ -204,7 +197,7 @@ namespace FluentCommands.Builders
         //
         #region Methods
         internal void Set_Permissions(PermissionsAttribute? p) => Permissions = p?.Permissions ?? Permissions.None;
-        internal void Set_Steps(IEnumerable<MethodInfo> methods) => StepInfo = new StepContainer(methods); // Pre-filtered in the CommandService class.
+        internal void Set_Steps(IEnumerable<MethodInfo> methods) { StepInfo = new StepContainer(methods); CommandType = CommandType.Step; } // Pre-filtered in the CommandService class.
         #endregion
         //
         #endregion

@@ -45,6 +45,7 @@ namespace FluentCommands.CommandTypes
             Description = commandBase.InDescription;
             ParseMode = commandBase.InParseMode;
             Button = commandBase.InButton;
+            CommandType = commandBase.CommandType;
 
             if (!(commandBase.KeyboardInfo is null))
             {
@@ -76,8 +77,6 @@ namespace FluentCommands.CommandTypes
                         break;
                 }
             }
-            if (AuxiliaryMethods.TryConvertDelegate<TArgs>(method, out var c)) Invoke = c;
-            else throw new ArgumentException();
 
             //* This is for new features, to help separate them from the original implementation. *//
             #region Extensibility Constructor
@@ -85,8 +84,16 @@ namespace FluentCommands.CommandTypes
             StepInfo = commandBase.StepInfo;
             #endregion
 
-            if (commandBase.StepInfo is { }) CommandType = CommandType.Step;
-            else CommandType = CommandType.Default;
+            if (CommandType != CommandType.Default)
+            {
+                // Primary invoker is not used.
+                Invoke = (client, e) => Task.CompletedTask;
+            }
+            else
+            {
+                if (AuxiliaryMethods.TryConvertDelegate<TArgs>(method, out var c)) Invoke = c;
+                else throw new ArgumentException();
+            }
         }
 
         //* This is for new features, to help separate them from the original implementation. *//

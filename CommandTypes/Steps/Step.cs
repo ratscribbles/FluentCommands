@@ -1,10 +1,12 @@
-﻿using FluentCommands.Interfaces;
+﻿using FluentCommands.Cache;
+using FluentCommands.Interfaces;
 using FluentCommands.Menus;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Telegram.Bot.Args;
 
 namespace FluentCommands.CommandTypes.Steps
 {
@@ -35,9 +37,11 @@ namespace FluentCommands.CommandTypes.Steps
             switch (result)
             {
                 case StepResult.Failure:
+                    _stepResult = StepResult.Failure;
                     _stepAction = StepAction.None;
                     break;
                 case StepResult.Success:
+                    _stepResult = StepResult.Success;
                     _stepAction = StepAction.Next;
                     break;
             }
@@ -47,9 +51,11 @@ namespace FluentCommands.CommandTypes.Steps
             switch (result)
             {
                 case StepResult.Failure:
+                    _stepResult = StepResult.Failure;
                     _stepAction = StepAction.None;
                     break;
                 case StepResult.Success:
+                    _stepResult = StepResult.Success;
                     _stepAction = StepAction.Next;
                     break;
             }
@@ -61,9 +67,11 @@ namespace FluentCommands.CommandTypes.Steps
             switch (result)
             {
                 case StepResult.Failure:
+                    _stepResult = StepResult.Failure;
                     _stepAction = StepAction.None;
                     break;
                 case StepResult.Success:
+                    _stepResult = StepResult.Success;
                     _stepAction = StepAction.Next;
                     break;
             }
@@ -78,8 +86,10 @@ namespace FluentCommands.CommandTypes.Steps
         internal IStep SetTo_Restart(int delay) { _stepAction = StepAction.Restart; _delay = delay; return this; }
         internal IStep SetTo_Move(int stepNumber) { _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
         internal IStep SetTo_Move(int stepNumber, int delay) { _delay = delay; _stepAction = StepAction.Move; _stepToMove = stepNumber; return this; }
-        internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Move; return this; }
-        internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Move; _delay = delay; return this; }
+        internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Undo; return this; }
+        internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Undo; _delay = delay; return this; }
+
+        public static async Task<StepState> LastStep(MessageEventArgs e) { return (await CommandService.Cache.GetState(e.Message.Chat.Id, e.Message.From.Id)).StepState; } //: Create overloads for this so that it works with eventargs lmao
 
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).

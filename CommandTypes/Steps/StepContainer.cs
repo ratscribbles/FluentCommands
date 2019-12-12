@@ -10,28 +10,17 @@ namespace FluentCommands.CommandTypes.Steps
 {
     internal class StepContainer
     {
-#nullable disable
-        private readonly IReadOnlyDictionary<int, CommandInvoker<IStep>> _invokers = new Dictionary<int, CommandInvoker<IStep>> { { 0, null } };
-        // private readonly Dictionary<int, Step?> _stepData = new Dictionary<int, Step?> { { 0, null } }; 
-        //: no need for this i think. the return is what has the data; you cant save steps preemptively (because the data is supplied on the result of the Task, not anything beforehand)
+        private readonly IReadOnlyDictionary<int, CommandInvoker<IStep>> _invokers = new Dictionary<int, CommandInvoker<IStep>>();
 
         internal int TotalCount => _invokers.Count;
         internal (int Positive, int Negative) Count => (_invokers.Count(kvp => kvp.Key > 0), _invokers.Count(kvp => kvp.Key < 0));
 
         /// <summary>
         /// Index, when positive, accesses normal steps. Negative indexes access debug steps.
-        /// <para>Key CANNOT be 0; step 0 is the parent command.</para>
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        internal CommandInvoker<IStep> this[int key]
-        {
-            get
-            {
-                if (key == 0) throw new NotSupportedException("Key cannot be 0. Step 0 is the parent command, which must be invoked normally. (If you encounter this error, it was the developer's fault. Please submit a bug report if this exception occurs.)");
-                else return _invokers[key];
-            }
-        }
+        internal CommandInvoker<IStep> this[int key] => _invokers[key];
 
         /// <summary>
         /// Note: StepData and DebugStepData index 0 should have no value (null); it'll never be accessed.
@@ -40,7 +29,7 @@ namespace FluentCommands.CommandTypes.Steps
         /// </summary>
         internal StepContainer(IEnumerable<MethodInfo> methods)
         {
-            var dict = new Dictionary<int, CommandInvoker<IStep>> { { 0, null } };
+            var dict = new Dictionary<int, CommandInvoker<IStep>>();
 
             string stepsExceptions = "";
             bool firstExceptionIteration = true;
@@ -50,7 +39,6 @@ namespace FluentCommands.CommandTypes.Steps
                 var stepAttribute = m.GetCustomAttribute<StepAttribute>() ?? throw new Exception("This exception should never happen. If you encounter it, please contact the creator of this library or put in a bug report. (Step Attribute was null while building StepContainer.)");
                 var num = stepAttribute.StepNum;
 
-                if (num == 0) continue; // does not count as an iteration of this loop; it's excluded for the purposes of the iteration check
                 if (_invokers.ContainsKey(num)) throw new CommandOnBuildingException("Duplicate Step detected for this Command.");
 
                 CommandInvoker<IStep> invoker;
@@ -70,7 +58,5 @@ namespace FluentCommands.CommandTypes.Steps
 
             _invokers = dict;
         }
-#nullable enable    
-
     }
 }

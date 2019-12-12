@@ -31,9 +31,9 @@ namespace FluentCommands.Cache
         /// <para>If the <see cref="Command"/> does not have a <see cref="StepContainer"/>, <see cref="IsDefault"/> is true, and it will be assumed the user is not currently in a command with steps.</para></summary>
         public StepState() { }
 
-        internal async Task Update(ICommand c, IStep s)
+        internal Task Update(ICommand c, IStep s)
         {
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
                 if(IsDefault && c.StepInfo is { }) CommandStepInfo = new CommandStepInfo(c.Name, c.StepInfo.Count, c.StepInfo.TotalCount);
                 PreviousStepResult = s.StepResult;
@@ -47,7 +47,7 @@ namespace FluentCommands.Cache
                     case StepAction.None:
                     default: ToDefault(); break;
                 }
-            }).ConfigureAwait(false);
+            });
         }
 
         private void ToDefault()

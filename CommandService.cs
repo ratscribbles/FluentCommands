@@ -469,9 +469,22 @@ namespace FluentCommands
                         var @params = method.GetParameters();
                         var length = @params.Length; // Update support.
 
+                        // Checks return type for the incoming method. If it fails, it throws.
+                        void CheckReturnType<TReturn>(Type returnType)
+                        {
+                            var invalidReturnType = new CommandOnBuildingException($"{commandInfo} method had invalid return type. (Was type: \"{returnType.Name}\". Expected type: \"{typeof(TReturn).Name}\".)");
+                            if (returnType != typeof(TReturn)) throw invalidReturnType;
+                        }
+
+                        switch (commandBase.CommandType)
+                        {
+                            case CommandType.Default: CheckReturnType<Task>(method.ReturnType); break;
+                            case CommandType.Step: CheckReturnType<Task<IStep>>(method.ReturnType); break;
+                            //? Add as needed.
+                        }
+
                         // Checks the incoming method for signature validity; throws if not valid.
                         if (!method.IsStatic
-                          && method.ReturnType == typeof(Task)
                           && length > 1
                           && _telegramEventArgs.Contains(@params[1].ParameterType))
                         {
@@ -518,15 +531,15 @@ namespace FluentCommands
                             catch (ArgumentNullException e) { throw new CommandOnBuildingException($"An unexpected error occurred while building commmands in module: {module.FullName} (shouldn't ever happen, please submit a bug report if you ecnounter this error):", e); }
                             catch (ArgumentException) { throw new DuplicateCommandException($"{commandInfo} had a duplicate when attempting to add to internal dictionary. Please check to make sure there are no conflicting command names."); }
                         }
+                    }
 
-                        // Adds aliases for the command being added to the dictionary.
-                        void AddAliases(ICommand commandToReference, string[] aliases)
+                    // Adds aliases for the command being added to the dictionary.
+                    void AddAliases(ICommand commandToReference, string[] aliases)
+                    {
+                        foreach (string alias in aliases)
                         {
-                            foreach (string alias in aliases)
-                            {
-                                if (!tempCommands[module].TryGetValue(alias.AsMemory(), out _)) tempCommands[module].Add(alias.AsMemory(), commandToReference);
-                                else throw new DuplicateCommandException($"{commandInfo} had an alias that shared a name with an existing command: {alias}. Please check to make sure there are no conflicting command names.");
-                            }
+                            if (!tempCommands[module].TryGetValue(alias.AsMemory(), out _)) tempCommands[module].Add(alias.AsMemory(), commandToReference);
+                            else throw new DuplicateCommandException($"{commandInfo} had an alias that shared a name with an existing command: {alias}. Please check to make sure there are no conflicting command names.");
                         }
                     }
 
@@ -879,10 +892,14 @@ namespace FluentCommands
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
 
             var logger = module.Logger;
-            var state = await Cache.GetState(e.GetChatId(), e.GetUserId());
+            _ = e.TryGetChatId(out var cId);
+            _ = e.TryGetUserId(out var uId);
+            _ = e.TryGetChat(out var c);
+            _ = e.TryGetUser(out var u);
+            var state = await Cache.GetState(cId, uId) ?? new FluentState(c, u);
 
             if (state is { StepState: { CommandStepInfo: { IsEmpty: false } } })
-                if (TryGetCommand(state.StepState.CommandStepInfo.CurrentCommandName.AsMemory(), moduleType, out var stepCommand)) await ProcessCommand(stepCommand);
+                if (TryGetCommand(state.StepState.CommandStepInfo.CurrentCommandName.AsMemory(), moduleType, out var stepCommand)) { await ProcessCommand(stepCommand); return; }
 
             if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out ReadOnlyMemory<char> input)) return;
             var botId = client.BotId;
@@ -997,14 +1014,47 @@ namespace FluentCommands
                                     }
                                 case var _ when cmd is Command<MessageEventArgs> c:
                                     {
-                                        if (!e.TryGetMessageEventArgs(out var pee)) return;
-                                        if (state is null) { await c.Invoke(client, pee); return; }
-                                        if (state.IsDefault) ;
-                                        var stepstate = state.StepState;
-                                        var lmao = c.StepInfo[stepstate.CurrentStepNumber + 1].Delegate as CommandDelegate<MessageEventArgs, IStep>;
-                                        var hmm = await lmao(client, pee);
-                                        await stepstate.Update(c, hmm);
+                                        if (!e.TryGetMessageEventArgs(out var args)) return;
+
+                                        int stepNum;
+                                        if (state.IsDefault) stepNum = 0;
+                                        else stepNum = state.StepState.CurrentStepNumber;
+
+                                        var invoke = c.StepInfo![stepNum].Delegate as CommandDelegate<MessageEventArgs, IStep>;
+                                        var stepReturn = await invoke(client, args);
+                                        await state.StepState.Update(cmd, stepReturn);
+
+                                        //: create ProcessStepAction local function
+
+                                        if (stepReturn.StepAction == StepAction.Restart)
+                                        {
+                                            invoke = c.StepInfo![0].Delegate as CommandDelegate<MessageEventArgs, IStep>;
+                                            stepReturn = await invoke(client, args);
+                                            await state.StepState.Update(cmd, stepReturn);
+                                        }
+                                        else if (stepReturn.StepAction == StepAction.Redo)
+                                        {
+                                            invoke = c.StepInfo![stepNum --].Delegate as CommandDelegate<MessageEventArgs, IStep>;
+                                            stepReturn = await invoke(client, args);
+                                            await state.StepState.Update(cmd, stepReturn);
+
+                                            //: notes: if you redo the method after it fails, it'll just return with the same exact result.
+                                            //: "redo" may need to be "undo" for the sake of navigation, and "undo" may need to go back even further.
+                                            //: "redo" as it is currently implemented will never work properly due to it being forced to execute in exactly the same way
+                                            //: (the args don't change; there's no way to wait for input in the middle of a command)
+
+                                            //! Undo and Redo may actually share the same function... may want to combine these. check the implemention in the StepState update method
+                                            //! it may also just be the result of a testing error (check the way the messages are implemented)
+                                        }
+                                        else if(stepReturn.StepAction == StepAction.Undo)
+                                        {
+                                            invoke = c.StepInfo![stepNum -2].Delegate as CommandDelegate<MessageEventArgs, IStep>;
+                                            stepReturn = await invoke(client, args);
+                                            await state.StepState.Update(cmd, stepReturn);
+                                        }
+
                                         await Cache.AddOrUpdateState(state);
+
                                         return;
                                     }
                                 case var _ when cmd is Command<UpdateEventArgs> c:

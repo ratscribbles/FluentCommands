@@ -16,6 +16,17 @@ namespace FluentCommands
     public class TestingContext : CommandModule<TestingContext>
     {
         [Command("e")]
+        [Step(-1)]
+        public async Task<IStep> PwiOOP(TelegramBotClient client, MessageEventArgs e)
+        {
+            var lastStep = await Step.LastStep(e);
+            if (lastStep.CurrentStepNumber == 1)
+            {
+                return Step.Success();
+            }
+            else return Step.Failure();
+        }
+        [Command("e")]
         [Step(0)]
         public async Task<IStep> PwOOP(TelegramBotClient client, MessageEventArgs e)
         {
@@ -28,13 +39,14 @@ namespace FluentCommands
         {
             if (e.Message.Text == "pee")
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "1 test successful. enter pee for step success");
-                return Step.Success();
+                return Step.Success(async () =>
+                {
+                    await client.SendTextMessageAsync(e.Message.Chat.Id, "1 test successful. enter pee for step success");
+                });
             }
             else
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "no");
-                return Step.Failure().RedoThisStep();
+                return Step.Failure(async () => { await client.SendTextMessageAsync(e.Message.Chat.Id, "failed. please enter pee for step success."); }).RedoThisStep();
             }
         }
         [Command("e")]
@@ -42,43 +54,56 @@ namespace FluentCommands
         public async Task<IStep> PwOaOP(TelegramBotClient client, MessageEventArgs e)
         {
             var lastStep = await Step.LastStep(e);
-            if(lastStep.PreviousStepAction == StepAction.Next)
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "kaka poopoo");
+            if (lastStep.PreviousStepAction == StepAction.Next) ;
+
+            if (lastStep.PreviousStepResult == StepResult.Failure) await client.SendTextMessageAsync(e.Message.Chat.Id, "im sad");
 
             if (e.Message.Text == "pee")
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "2 test successful. enter pee for step success");
-                return Step.Success();
+                return Step.Success(async () => { await client.SendTextMessageAsync(e.Message.Chat.Id, "2 test successful. enter pee for step success"); });
             }
             else if (e.Message.Text == "go to start")
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "returning to start");
-                return Step.Success().ReturnToStart();
+                return Step.Success(async () => { await client.SendTextMessageAsync(e.Message.Chat.Id, "returning to start"); }).ReturnToStart();
             }
             else if (e.Message.Text == "undo")
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "undoing");
-                return Step.Success().GoToPrevious();
+                return Step.Success(async () => { await client.SendTextMessageAsync(e.Message.Chat.Id, "undoing"); }).GoToPrevious();
             }
             else
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "no");
-                return Step.Failure().RedoThisStep();
+                return Step.Failure(async () => { await client.SendTextMessageAsync(e.Message.Chat.Id, "no"); }).RedoThisStep();
             }
+
+            //: Have users enforce lastStep if they want a different result when revisiting Steps in the past, etc. it should just be a giant switch statement really, lol.
         }
         [Command("e")]
         [Step(3)]
         public async Task<IStep> PwfOOP(TelegramBotClient client, MessageEventArgs e)
         {
-            if (e.Message.Text == "pee")
+            switch (e.Message.Text)
             {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "3 test successful. you did it");
-                return Step.Success();
-            }
-            else
-            {
-                await client.SendTextMessageAsync(e.Message.Chat.Id, "no");
-                return Step.Failure().RedoThisStep();
+                case "pee":
+                    return Step.Success(async () =>
+                    {
+                        await client.SendTextMessageAsync(e.Message.Chat.Id, "3 test successful. you did it");
+                    });
+                case "penis":
+                    return Step.Failure(async () =>
+                    {
+                        for (int i = 0; i < 25; i++)
+                            await Console.Out.WriteLineAsync("PEE");
+
+                        await client.SendTextMessageAsync(e.Message.Chat.Id, "YOU PIECE OF SHIT");
+                        await client.SendTextMessageAsync(e.Message.Chat.Id, "A");
+                        await client.SendTextMessageAsync(e.Message.Chat.Id, "   A");
+                        await client.SendTextMessageAsync(e.Message.Chat.Id, "       A");
+                    });
+                default:
+                    return Step.Failure(async () =>
+                    {
+                        await client.SendTextMessageAsync(e.Message.Chat.Id, "no");
+                    }).RedoThisStep();
             }
         }
 

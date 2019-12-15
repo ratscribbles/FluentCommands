@@ -10,7 +10,7 @@ namespace FluentCommands.CommandTypes.Steps
 {
     internal class StepContainer
     {
-        private readonly IReadOnlyDictionary<int, CommandInvoker<IStep>> _invokers = new Dictionary<int, CommandInvoker<IStep>>();
+        private readonly IReadOnlyDictionary<int, CommandInvoker<IStep>> _invokers;
 
         internal int TotalCount => _invokers.Count;
         internal (int Positive, int Negative) Count => (_invokers.Count(kvp => kvp.Key > 0), _invokers.Count(kvp => kvp.Key < 0));
@@ -38,8 +38,6 @@ namespace FluentCommands.CommandTypes.Steps
                 var commandAttribute = m.GetCustomAttribute<CommandAttribute>() ?? throw new Exception("This exception should never happen. If you encounter it, please contact the creator of this library or put in a bug report. (Command Attribute was null while building StepContainer.)");
                 var stepAttribute = m.GetCustomAttribute<StepAttribute>() ?? throw new Exception("This exception should never happen. If you encounter it, please contact the creator of this library or put in a bug report. (Step Attribute was null while building StepContainer.)");
                 var num = stepAttribute.StepNum;
-
-                if (_invokers.ContainsKey(num)) throw new CommandOnBuildingException("Duplicate Step detected for this Command.");
 
                 CommandInvoker<IStep> invoker;
                 try { invoker = new CommandInvoker<IStep>(m); }

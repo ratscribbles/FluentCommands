@@ -17,8 +17,8 @@ namespace FluentCommands.Cache
         public Task AddOrUpdateState(FluentState state)
             => Task.Run(() => _cache[(state.ChatId, state.UserId)] = state);
 
-        public Task<FluentState?> GetState(long chatId, int userId)
-            => Task.Run(() => { _cache.TryGetValue((chatId, userId), out var state); return state; });
+        public Task<FluentState> GetState(long chatId, int userId)
+            => Task.Run(() => { _cache.TryGetValue((chatId, userId), out var state); return state ?? new FluentState(chatId, userId); });
 
 
         //: Channel implementation (probably unneeded, but kept commented just in case)

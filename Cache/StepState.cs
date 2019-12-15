@@ -2,12 +2,13 @@
 using FluentCommands.CommandTypes.Steps;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace FluentCommands.Cache
 {
-    public class StepState
+    public class StepState : IEquatable<StepState>
     {
         public bool IsDefault  
         {
@@ -35,8 +36,11 @@ namespace FluentCommands.Cache
         {
             return Task.Run(() =>
             {
-                if(IsDefault && c.StepInfo is { }) CommandStepInfo = new CommandStepInfo(c.Name, c.StepInfo.Count, c.StepInfo.TotalCount);
+                if (IsDefault && c.StepInfo is { }) CommandStepInfo = new CommandStepInfo(c.Name, c.StepInfo.Count, c.StepInfo.TotalCount);
                 PreviousStepResult = s.StepResult;
+
+                var tempStepNum = CurrentStepNumber;
+
                 switch (s.StepAction)
                 {
                     case StepAction.Move: Move(s.StepToMove); break;
@@ -45,6 +49,7 @@ namespace FluentCommands.Cache
                     case StepAction.Restart: Restart(); break;
                     case StepAction.Undo: Undo(); break;
                     case StepAction.None:
+                    case StepAction.Stop:
                     default: ToDefault(); break;
                 }
             });
@@ -89,6 +94,36 @@ namespace FluentCommands.Cache
             PreviousStepAction = StepAction.Restart;
             PreviousStepNumber = CurrentStepNumber;
             CurrentStepNumber = 0;
+        }
+
+        public bool Equals([AllowNull] StepState other)
+        {
+            if (other is null) return false;
+            if (IsDefault != other.IsDefault) return false;
+
+            return CommandStepInfo.Equals(other.CommandStepInfo)
+                && PreviousStepAction == other.PreviousStepAction
+                && PreviousStepResult == other.PreviousStepResult
+                && PreviousStepNumber == other.PreviousStepNumber
+                && CurrentStepNumber == other.CurrentStepNumber;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                // Choose large primes to avoid hashing collisions
+                const int HashingBase = (int)2166136261;
+                const int HashingMultiplier = 16777619;
+
+                int hash = HashingBase;
+                hash = (hash * HashingMultiplier) ^ CommandStepInfo.GetHashCode();
+                hash = (hash * HashingMultiplier) ^ PreviousStepAction.GetHashCode();
+                hash = (hash * HashingMultiplier) ^ PreviousStepResult.GetHashCode();
+                hash = (hash * HashingMultiplier) ^ PreviousStepNumber.GetHashCode();
+                hash = (hash * HashingMultiplier) ^ CurrentStepNumber.GetHashCode();
+                return hash;
+            }
         }
     }
 }

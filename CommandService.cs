@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Reflection;
 using FluentCommands.Builders;
 using FluentCommands.CommandTypes;
@@ -17,12 +16,8 @@ using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using Telegram.Bot;
-using Telegram.Bot.Types.InputFiles;
 using System.Runtime.CompilerServices;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using FluentCommands.Logging;
-using System.Diagnostics;
 using FluentCommands.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using FluentCommands.CommandTypes.Steps;
@@ -491,7 +486,7 @@ namespace FluentCommands
                             if(length == 2)
                             {
                                 // Passes the method's EventArgs parameter type.
-                                AddCommand(commandBase, method.GetParameters()[1].ParameterType);
+                                AddCommand(commandBase, @params[1].ParameterType);
                             }
                             else if(length == 3 /* && @params[3].ParameterType == typeof(SomeType) */)
                             {
@@ -548,59 +543,72 @@ namespace FluentCommands
                     (bool Continue, bool _) TrySet_Steps()
                     {
                         bool _ = false; //! a "discard" to allow for the named bool
-
+                        HashSet<Type> supportedStepArgs = new HashSet<Type> { typeof(MessageEventArgs), typeof(CallbackQueryEventArgs) };
                         if (attribs.Step is { })
                         {
-                            var commandMethods = allCommandMethods.Where(m => m.GetCustomAttribute<CommandAttribute>()?.Name == attribs.Command.Name);
-                            var commandMethodsWithStepAttribute = commandMethods.Where(m => m.GetCustomAttribute<StepAttribute>() is { });
-                            var commandMethodsWithStepAttributeInt = commandMethodsWithStepAttribute.Select(m => m.GetCustomAttribute<StepAttribute>()?.StepNum).ToArray();
-
-                            bool hasNoStepZero = !(commandMethodsWithStepAttribute.Any(m => m.GetCustomAttribute<StepAttribute>() is { StepNum: 0 }));
-                            bool hasDuplicateSteps = commandMethodsWithStepAttributeInt.Count() != commandMethodsWithStepAttributeInt.Distinct().Count();
-                            bool hasDuplicateWithNoStepAttribute = commandMethods.Any(m => m.GetCustomAttribute<StepAttribute>() is null);
-                            bool toThrow = hasNoStepZero || hasDuplicateSteps || hasDuplicateWithNoStepAttribute;
-
-                            if (toThrow) goto Throw;
-
                             if (attribs.Step.StepNum == 0)
                             {
+                                bool hasNoStepZero, hasDuplicateSteps, hasDuplicateWithNoStepAttribute, hasInvalidSignatures, toThrow;
+
+                                var commandMethods = allCommandMethods.Where(m => m.GetCustomAttribute<CommandAttribute>()?.Name == attribs.Command.Name);
+                                var commandMethodsWithStepAttribute = commandMethods.Where(m => m.GetCustomAttribute<StepAttribute>() is { });
+                                var commandMethodsWithStepAttributeInt = commandMethodsWithStepAttribute.Select(m => m.GetCustomAttribute<StepAttribute>()?.StepNum).ToArray();
+                                var commandMethodsWithInvalidSignature = commandMethodsWithStepAttribute.Where(m => !supportedStepArgs.Contains(m.GetParameters()[1].ParameterType));
+
+                                hasNoStepZero = !(commandMethodsWithStepAttribute.Any(m => m.GetCustomAttribute<StepAttribute>() is { StepNum: 0 }));
+                                hasDuplicateSteps = commandMethodsWithStepAttributeInt.Count() != commandMethodsWithStepAttributeInt.Distinct().Count();
+                                hasDuplicateWithNoStepAttribute = commandMethods.Any(m => m.GetCustomAttribute<StepAttribute>() is null);
+                                hasInvalidSignatures = commandMethodsWithInvalidSignature.Any();
+                                toThrow = hasNoStepZero || hasDuplicateSteps || hasDuplicateWithNoStepAttribute || hasInvalidSignatures;
+
+                                if (toThrow)
+                                {
+                                    List<Exception> exceptions = new List<Exception>();
+
+                                    if (hasNoStepZero) exceptions.Add(new CommandOnBuildingException($"{commandInfo} has commands marked with the Step Attribute, but does not designate a parent command (a Step Attribute with a value of 0)."));
+                                    if (hasDuplicateSteps)
+                                    {
+                                        // Gets non-distinct step numbers
+                                        //: Make this LINQ more efficient later.
+                                        var commandStepDuplicates = commandMethodsWithStepAttribute
+                                            .GroupBy(m => m.GetCustomAttribute<StepAttribute>()?.StepNum)
+                                            .Where(g => g.Count() > 1)
+                                            .SelectMany(g => g)
+                                            .Select(m => m.GetCustomAttribute<StepAttribute>()?.StepNum)
+                                            .Distinct();
+
+                                        bool oneDuplicate = commandStepDuplicates.Count() == 1;
+                                        string duplicates = oneDuplicate ? "Step " : "Steps ";
+                                        foreach (var num in commandStepDuplicates) { duplicates += $"{num}, "; }
+                                        duplicates += oneDuplicate ? "has a" : "have";
+
+                                        exceptions.Add(new CommandOnBuildingException($"{commandInfo} {duplicates} duplicate step(s) defined with the Step Attribute. Please check to make sure there are no conflicting steps (step numbers must be unique)."));
+                                    }
+                                    if (hasDuplicateWithNoStepAttribute) exceptions.Add(new CommandOnBuildingException($"{commandInfo} has one or more commands are defined with either a Step Attribute, or no Step Attribute. Command Step methods must ALL be marked with Step Attributes. If you did not mean to give this Command Steps, please remove Step Attributes for this Command method."));
+                                    if (hasInvalidSignatures)
+                                    {
+                                        var commandStepsInvalidParameters = commandMethodsWithInvalidSignature
+                                            .Select(m => m.GetCustomAttribute<StepAttribute>()?.StepNum)
+                                            .Distinct();
+
+                                        bool oneDuplicate = commandMethodsWithInvalidSignature.Count() == 1;
+                                        string duplicates = oneDuplicate ? "Step " : "Steps ";
+                                        foreach (var num in commandStepsInvalidParameters) { duplicates += $"{num}, "; }
+
+                                        exceptions.Add(new CommandOnBuildingException($"{commandInfo} {duplicates} step method(s) are defined with the wrong method signature or EventArgs type. FluentCommands currently only supports Telegram Update EventArgs that contain valid Message objects (CallbackQueryEventArgs and MessageEventArgs). If you would like to see this feature expanded, please visit the Github page for this project and submit a ticket."));
+                                    }
+                                    if (exceptions.Count == 1)
+                                        throw exceptions.First();
+                                    else
+                                        throw new CommandOnBuildingException($"There were errors constructing Steps for command \"{attribs.Command.Name}\": ", new AggregateException(exceptions));
+                                }
+
                                 try { thisCommandBase.Set_Steps(commandMethodsWithStepAttribute); }
-                                catch (ArgumentException e) { throw new CommandOnBuildingException($"{commandInfo} had one or more Step methods that were the wrong method signature (must return Task<IStep>): ", e); }
+                                catch (ArgumentException e) { throw new CommandOnBuildingException($"{commandInfo} had one or more Step methods that were the wrong method return type (must return Task<IStep>): ", e); }
 
                                 return (false, _);
                             }
                             else return (true, _);
-
-                            Throw:
-                            // Continue to next iteration if a Step 0 exists for this command (or there's a method with the same command attribute, but no step). Otherwise, throw.
-                            List<Exception> exceptions = new List<Exception>();
-
-                            if(hasNoStepZero) exceptions.Add(new CommandOnBuildingException($"{commandInfo} has commands marked with the Step Attribute, but does not designate a parent command (a Step Attribute with a value of 0)."));
-                            if (hasDuplicateSteps)
-                            {
-                                // Gets non-distinct step numbers
-                                //: Make this LINQ more efficient later.
-                                var commandStepDuplicates = commandMethodsWithStepAttribute
-                                    .GroupBy(m => m.GetCustomAttribute<StepAttribute>()?.StepNum)
-                                    .Where(g => g.Count() > 1)
-                                    .SelectMany(g => g)
-                                    .Select(m => m.GetCustomAttribute<StepAttribute>()?.StepNum)
-                                    .Distinct();
-
-                                bool oneDuplicate = commandStepDuplicates.Count() == 1;
-                                string duplicates = oneDuplicate ? "Step " : "Steps ";
-                                foreach (var num in commandStepDuplicates) { duplicates += $"{num}, "; }
-                                duplicates += oneDuplicate ? "has a" : "have";
-
-                                exceptions.Add(new CommandOnBuildingException($"{commandInfo} {duplicates} duplicate step(s) defined with the Step Attribute. Please check to make sure there are no conflicting steps (step numbers must be unique)."));
-                            }
-                            if (hasDuplicateWithNoStepAttribute) exceptions.Add(new CommandOnBuildingException($"{commandInfo} has one or more commands are defined with either a Step Attribute, or no Step Attribute. Command Step methods must ALL be marked with Step Attributes. If you did not mean to give this Command Steps, please remove Step Attributes for this Command method."));
-
-                            if (exceptions.Count == 1)
-                                throw exceptions.First();
-                            else
-                                throw new CommandOnBuildingException($"There were errors constructing Steps for command \"{attribs.Command.Name}\": ", new AggregateException(exceptions));
-
                         }
                         
                         return (false, _);
@@ -762,144 +770,61 @@ namespace FluentCommands
         #endregion
 
         #region Evaluate/ProcessInput Overloads
-        /// <summary>
-        /// Evaluates the user's message to check and execute a command if a command was issued.
-        /// </summary>
-        /// <typeparam name="TModule"></typeparam>
-        /// <param name="client"></param>
-        /// <param name="e"></param>
-        /// <exception cref="NullReferenceException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="RegexMatchTimeoutException"></exception>
-        /// <exception cref="Exception"></exception>
-        //public static async Task Eval_Oldlogic<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : class
-        //{
-        //    try
-        //    {
-        //        var botId = client.BotId;
-        //        if (!_botLastMessages.ContainsKey(botId)) _botLastMessages.TryAdd(botId, new ConcurrentDictionary<long, Message[]>());
-        //        if (!_messageUserCache.ContainsKey(botId)) _messageUserCache.TryAdd(botId, new Dictionary<long, Message>());
-
-        //        var messageChatId = e.Message.Chat.Id;
-        //        if (!_botLastMessages[botId].ContainsKey(messageChatId)) _botLastMessages[botId].TryAdd(messageChatId, new Message[] { });
-        //        if (!_messageUserCache[botId].ContainsKey(messageChatId)) _messageUserCache[botId].TryAdd(messageChatId, new Message());
-
-        //        //! last message received by bot (will be user)
-
-
-        //        var rawInput = e.Message.Text ?? throw new ArgumentNullException();
-        //        var thisConfig = _tempModules[typeof(TModule)].Config;
-        //        var prefix = thisConfig.Prefix ?? throw new ArgumentNullException();
-        //        try
-        //        {
-        //            if (rawInput.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                string input = rawInput.Substring(prefix.Length);
-        //                var commandMatch = FluentRegex.CheckCommand.Match(input);
-
-        //                if (!commandMatch.Success) return;
-        //                else
-        //                {
-        //                    // This message *should* be a user attempting to interact with the bot; add it to the cache.
-        //                    if (!e.Message.From.IsBot) _messageUserCache[botId][messageChatId] = e.Message;
-
-        //                    var thisCommandName = commandMatch.Groups[1].Value;
-        //                    var thisCommand = Commands[typeof(TModule)][thisCommandName];
-
-        //                    await ProcessCommand(thisCommand);
-        //                }
-        //            }
-        //        }
-        //        catch (ArgumentNullException) { return; } // Catch, default error message?, Log it, re-throw.
-        //        catch (ArgumentException) { return; } // Catch, Log it, re-throw.
-        //        catch (RegexMatchTimeoutException) { return; } // Catch, Log it, re-throw.
-        //    }
-        //    catch (NullReferenceException ex) { return; } // Catch, Log it, re-throw.
-        //    catch (ArgumentNullException ex) { return; } // Catch, Log it, re-throw.
-        //    catch (Exception ex) { return; } // Catch, Log it, re-throw.
-
-        //    async Task ProcessCommand(Command c)
-        //    {
-        //        if (c is MessageCommand)
-        //        {
-        //            var command = c as MessageCommand;
-        //            if (command is { })
-        //            {
-        //                if (command.InvokeWithMenuItem != null)
-        //                {
-        //                    var menu = await command.InvokeWithMenuItem(client, e);
-        //                    //: check keyboards.
-        //                    //await SendMenu<TModule>(menu, command.ReplyMarkup, client, e)
-        //                }
-        //                else if (command.Invoke != null) await command.Invoke(client, e);
-        //            }
-        //        }
-        //        // Do nothing if it's not the right type.
-        //    }
-        //}
-        public static async Task Eval_oldLogic<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : class
-        {
-            if (e.CallbackQuery.Message.MessageId != 0)
-            {
-                if (_lastMessageIsMenu == false) _lastMessageIsMenu.Flip();
-            }
-        }
-
-
         public static async Task Evaluate<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e);
+            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, CallbackQueryEventArgs e) =>
-            await ProcessInput(module, client, e);
+            await ProcessInput(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, ChosenInlineResultEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e);
+            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, ChosenInlineResultEventArgs e) =>
-            await ProcessInput(module, client, e);
+            await ProcessInput(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, InlineQueryEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e);
+            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, InlineQueryEventArgs e) =>
-            await ProcessInput(module, client, e);
+            await ProcessInput(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e);
+            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, MessageEventArgs e) =>
-            await ProcessInput(module, client, e);
+            await ProcessInput(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, UpdateEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e);
+            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, UpdateEventArgs e) =>
-            await ProcessInput(module, client, e);
+            await ProcessInput(module, client, e).ConfigureAwait(false);
 
         /// <summary>
         /// Processes the input for a user's given args from an Evaluate method.
         /// </summary>
         /// <exception cref="NullReferenceException"></exception>
-        /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
-        /// <exception cref="Exception"></exception>
         private static async Task ProcessInput(Type moduleType, TelegramBotClient client, TelegramUpdateEventArgs e)
         {
-            if (!_commandServiceStarted) return; //: Log
+            if (!_commandServiceStarted) return; //? Can't log this; logging requires the service to have been started.
 
-            if (moduleType is null) throw new NullReferenceException("The Module was null."); //: Log?
-            if (client is null) throw new NullReferenceException("The TelegramBotClient was null."); //? Log?
+            if (moduleType is null) throw new NullReferenceException("The Module type was null.");
+            if (client is null) throw new NullReferenceException("The TelegramBotClient was null.");
             if (e is null || e.HasNoArgs) throw new NullReferenceException("The EventArgs was null or contained no valid EventArgs."); //? Log?
-            if (!Modules.TryGetValue(moduleType, out var module)) throw new CommandOnBuildingException(); //: Create a new exception for this case
+            if (!Modules.TryGetValue(moduleType, out var module)) throw new ArgumentException($"There was no module found for the provided type: {moduleType.FullName}"); 
 
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
 
             var logger = module.Logger;
             _ = e.TryGetChatId(out var cId);
             _ = e.TryGetUserId(out var uId);
-            _ = e.TryGetChat(out var c);
-            _ = e.TryGetUser(out var u);
-            var state = await Cache.GetState(cId, uId) ?? new FluentState(c, u);
+            var state = await Cache.GetState(cId, uId).ConfigureAwait(false) ?? new FluentState(cId, uId);
 
+            if (state.CurrentlyAccessed) return; //: Possibly log? Possibly inform the user? Possibly include this as an option in the global config
+            else state.CurrentlyAccessed = true; //: This might not work with outside DBs injected into the framework. Consider temporarily storing user states in a ConcurrentDictionary. Null it out when the state is released. If not null, return. If null, continue. All you need to do is have a valid user id/chat id lookup and it would work without implementing IEquatable
+
+            //? Add to this as needed (for feature updates that rely on the FluentState class)
             if (state is { StepState: { CommandStepInfo: { IsEmpty: false } } })
-                if (TryGetCommand(state.StepState.CommandStepInfo.CurrentCommandName.AsMemory(), moduleType, out var stepCommand)) { await ProcessCommand(stepCommand); return; }
+            {
+                if (TryGetCommand(state.StepState.CommandStepInfo.CurrentCommandName.AsMemory(), moduleType, out var stepCommand)) { await ProcessCommand(stepCommand).ConfigureAwait(false); return; }
+            }
 
             if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out ReadOnlyMemory<char> input)) return;
             var botId = client.BotId;
@@ -919,24 +844,14 @@ namespace FluentCommands
                         if (commandMatch.Groups.Count > 1)
                         {
                             var commandName = commandMatch.Groups[1].Value.AsMemory();
-                            if (TryGetCommand(commandName, moduleType, out var command)) await ProcessCommand(command);
+                            if (TryGetCommand(commandName, moduleType, out var command)) await ProcessCommand(command).ConfigureAwait(false);
                         }
                     }
                 }
             }
             catch (ArgumentNullException) { return; } //: Catch, default error message?, Log it, re-throw.
             catch (ArgumentException) { return; } //: Catch, Log it, re-throw.
-            catch (RegexMatchTimeoutException) { return; } //: Catch, Log it, re-throw.
-
-            //!
-            //!
-            //! YOU NEED TO PERFORM A CHECK TO SEE IF THE COMMAND TYPE AND EVENTARGS TYPE ARE THE SAME "BASE" (eg: MessageCommand matches with MessageEventArgs)
-            //? evaluate what to do in the event this fails either with a global config property or by throwing or by doing nothing. pick one
-            //!
-            //!
-
-
-
+            catch (RegexMatchTimeoutException) { return; } //: Catch, Log it, re-throw? maybe not re-throw
 
             //
             //
@@ -950,124 +865,126 @@ namespace FluentCommands
                 switch (cmd.CommandType)
                 {
                     case CommandType.Default:
+                    {
+                        switch (cmd)
                         {
-                            switch (cmd)
+                            case var _ when cmd is Command<CallbackQueryEventArgs> c:
                             {
-                                case var _ when cmd is Command<CallbackQueryEventArgs> c:
-                                    {
-                                        if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke(client, args);
-                                        else; //: error message, log.
-                                        return;
-                                    }
-                                case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
-                                    {
-                                        if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke(client, args);
-                                        else; //: log.
-                                        return;
-                                    }
-                                case var _ when cmd is Command<InlineQueryEventArgs> c:
-                                    {
-                                        if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke(client, args);
-                                        else; //: log.
-                                        return;
-                                    }
-                                case var _ when cmd is Command<MessageEventArgs> c:
-                                    {
-                                        if (e.TryGetMessageEventArgs(out var args)) await c.Invoke(client, args);
-                                        else; //: log.
-                                        return;
-                                    }
-                                case var _ when cmd is Command<UpdateEventArgs> c:
-                                    {
-                                        if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke(client, args);
-                                        else; //: log.  
-                                        return;
-                                    }
-                                default:
-                                    //: Perform logging.
-                                    return;
+                                if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                else; //: error message, log.
+                                break;
                             }
-                        } 
+                            case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
+                            {
+                                if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                else; //: log.
+                                break;
+                            }
+                            case var _ when cmd is Command<InlineQueryEventArgs> c:
+                            {
+                                if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                else; //: log.
+                                break;
+                            }
+                            case var _ when cmd is Command<MessageEventArgs> c:
+                            {
+                                if (e.TryGetMessageEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                else; //: log.
+                                break;
+                            }
+                            case var _ when cmd is Command<UpdateEventArgs> c:
+                            {
+                                if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                else; //: log.  
+                                break;
+                            }
+                            default:
+                                //: Perform logging.
+                                break;
+                        }
+                        break;
+                    } 
                     case CommandType.Step:
+                    {
+                        switch (cmd)
                         {
-                            switch (cmd)
+                            case var _ when cmd is Command<CallbackQueryEventArgs> c:
                             {
-                                case var _ when cmd is Command<CallbackQueryEventArgs> c:
-                                    {
-                                        if (!e.TryGetCallbackQueryEventArgs(out var pee)) return;
-                                        var state = await Cache.GetState(pee.CallbackQuery.Message.Chat.Id, pee.CallbackQuery.From.Id);
-                                        if (state.IsDefault) ;
-                                        var stepstate = state.StepState;
-                                        var lmao = c.StepInfo[stepstate.CurrentStepNumber].Delegate as CommandDelegate<CallbackQueryEventArgs, IStep>;
-                                        var hmm = await lmao(client, pee);
-                                        await stepstate.Update(c, hmm);
-                                        await Cache.AddOrUpdateState(state);
-                                        return;
-                                    }
-                                case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
-                                    {
-                                        return;
-                                    }
-                                case var _ when cmd is Command<InlineQueryEventArgs> c:
-                                    {
-                                        return;
-                                    }
-                                case var _ when cmd is Command<MessageEventArgs> c:
-                                    {
-                                        if (!e.TryGetMessageEventArgs(out var args)) return;
-
-                                        int stepNum;
-                                        if (state.IsDefault) stepNum = 0;
-                                        else stepNum = state.StepState.CurrentStepNumber;
-
-                                        var invoke = c.StepInfo![stepNum].Delegate as CommandDelegate<MessageEventArgs, IStep>;
-                                        var stepReturn = await invoke(client, args);
-                                        await state.StepState.Update(cmd, stepReturn);
-
-                                        //: create ProcessStepAction local function
-
-                                        if (stepReturn.StepAction == StepAction.Restart)
-                                        {
-                                            invoke = c.StepInfo![0].Delegate as CommandDelegate<MessageEventArgs, IStep>;
-                                            stepReturn = await invoke(client, args);
-                                            await state.StepState.Update(cmd, stepReturn);
-                                        }
-                                        else if (stepReturn.StepAction == StepAction.Redo)
-                                        {
-                                            invoke = c.StepInfo![stepNum --].Delegate as CommandDelegate<MessageEventArgs, IStep>;
-                                            stepReturn = await invoke(client, args);
-                                            await state.StepState.Update(cmd, stepReturn);
-
-                                            //: notes: if you redo the method after it fails, it'll just return with the same exact result.
-                                            //: "redo" may need to be "undo" for the sake of navigation, and "undo" may need to go back even further.
-                                            //: "redo" as it is currently implemented will never work properly due to it being forced to execute in exactly the same way
-                                            //: (the args don't change; there's no way to wait for input in the middle of a command)
-
-                                            //! Undo and Redo may actually share the same function... may want to combine these. check the implemention in the StepState update method
-                                            //! it may also just be the result of a testing error (check the way the messages are implemented)
-                                        }
-                                        else if(stepReturn.StepAction == StepAction.Undo)
-                                        {
-                                            invoke = c.StepInfo![stepNum -2].Delegate as CommandDelegate<MessageEventArgs, IStep>;
-                                            stepReturn = await invoke(client, args);
-                                            await state.StepState.Update(cmd, stepReturn);
-                                        }
-
-                                        await Cache.AddOrUpdateState(state);
-
-                                        return;
-                                    }
-                                case var _ when cmd is Command<UpdateEventArgs> c:
-                                    {
-                                        return;
-                                    }
-                                default:
-                                    //: Perform logging.
-                                    return;
+                                await EvaluateStep(c).ConfigureAwait(false);
+                                break;
                             }
-                        } 
+                            case var _ when cmd is Command<MessageEventArgs> c:
+                            {
+                                await EvaluateStep(c).ConfigureAwait(false);
+                                break;
+                            }
+                            default:
+                            //: Perform logging.
+                            break;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            async Task EvaluateStep<TArgs>(Command<TArgs> c) where TArgs : EventArgs
+            {
+                int stepNum;
+                if (state.IsDefault) stepNum = 0;
+                else stepNum = state.StepState.CurrentStepNumber;
+
+                IStep? stepReturn;
+                var invoke = EvaluateInvoker<IStep>(c.StepInfo![stepNum]?.Delegate);
+                stepReturn = await invoke.ConfigureAwait(false);
+
+                if (stepReturn is null)
+                {
+                    if (c.StepInfo![stepNum] is null) return; //: Log this OR throw an exception? The user may have entered a stepnum that doesnt exist for this command
+                    else return; //: Log this, but it should never happen lol.
                 }
 
+                if (stepReturn.OnResult is { }) await stepReturn.OnResult().ConfigureAwait(false);
+                await state.StepState.Update(c as ICommand, stepReturn).ConfigureAwait(false);
+
+                state.CurrentlyAccessed = false;
+
+                await Cache.AddOrUpdateState(state).ConfigureAwait(false);
+            }
+            // Returns null if it fails to evaluate.
+            async Task<TReturn?> EvaluateInvoker<TReturn>(Delegate? d) where TReturn : class
+            {
+                if (d is null) return null;
+
+                switch (d)
+                {
+                    case CommandDelegate<CallbackQueryEventArgs, TReturn> c: 
+                    {
+                        if (e.TryGetCallbackQueryEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        else return null;
+                    }
+                    case CommandDelegate<ChosenInlineResultEventArgs, TReturn> c: 
+                    {
+                        if (e.TryGetChosenInlineResultEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        else return null;
+                    }
+                    case CommandDelegate<InlineQueryEventArgs, TReturn> c: 
+                    {
+                        if (e.TryGetInlineQueryEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        else return null;
+                    }
+                    case CommandDelegate<MessageEventArgs, TReturn> c:
+                    {
+                        if (e.TryGetMessageEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        else return null;
+                    }
+                    case CommandDelegate<UpdateEventArgs, TReturn> c:
+                    {
+                        if (e.TryGetUpdateEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        else return null;
+                    }
+                    default:
+                        return null;
+                }
             }
         }
 

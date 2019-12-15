@@ -10,8 +10,34 @@ using Telegram.Bot.Args;
 
 namespace FluentCommands.CommandTypes.Steps
 {
-    public enum StepResult { None, Failure, Success }
-    public enum StepAction { None, Next, Move, Redo, Restart, Undo }
+    /// <summary>Represents the result of a <see cref="Step"/> based on the defintion of a <see cref="Command{TArgs}"/> step.</summary>
+    public enum StepResult 
+    { 
+        /// <summary>The default result. Occurs when the user is not currently in a <see cref="Command{TArgs}"/> with steps defined.</summary>
+        None,
+        /// <summary>The result when a <see cref="Step"/> is marked as entering a failed state.<para>The default <see cref="StepAction"/> for <see cref="StepResult.Failure"/> is <see cref="StepAction.Stop"/>.</para></summary>
+        Failure,
+        /// <summary>The result when a <see cref="Step"/> is marked as entering a success state.<para>The default <see cref="StepAction"/> for <see cref="StepResult.Success"/> is <see cref="StepAction.Next"/>.</para></summary>
+        Success
+    }
+    /// <summary>Represents the navigation type for the next <see cref="Step"/> provided to the user.</summary>
+    public enum StepAction
+    {
+        /// <summary>The default result. Occurs when the user is not currently in a <see cref="Command{TArgs}"/> with steps defined.</summary>
+        None,
+        /// <summary>The result when a user is moving to the next positive <see cref="Step"/>.<para>This is the default <see cref="StepAction"/> for <see cref="StepResult.Success"/>.</para></summary>
+        Next,
+        /// <summary>The result when a user is moving to a specified <see cref="Step"/> number.</summary>
+        Move,
+        /// <summary>The result when a user is repeating the last <see cref="Step"/> executed.</summary>
+        Redo,
+        /// <summary>The result when a user is returning to the parent <see cref="Step"/> (labeled step 0).</summary>
+        Restart,
+        /// <summary>The result when a user is terminating <see cref="Step"/> navigation.<para>This is the default <see cref="StepAction"/> for <see cref="StepResult.Failure"/>.</para></summary>
+        Stop,
+        /// <summary>The result when a user is moving to the <see cref="Step"/> before the last <see cref="Step"/> executed by this user.</summary>
+        Undo
+    }
 
     public class Step : IStep, IFluentInterface
     {
@@ -22,8 +48,6 @@ namespace FluentCommands.CommandTypes.Steps
         private int _stepToMove;
         private int _delay;
 
-        //: public static StepResult PreviousStepResult => _previousStepResult; //: Figure out a way for this to be grabbed from outside of this class.
-        //: PROBABLY accomplished by getting the current State of the user, which should contain the step result from the previous one as well
         CancellationToken IStep.Token => _token;
         StepResult IStep.StepResult => _stepResult;
         StepAction IStep.StepAction => _stepAction;
@@ -38,7 +62,7 @@ namespace FluentCommands.CommandTypes.Steps
             {
                 case StepResult.Failure:
                     _stepResult = StepResult.Failure;
-                    _stepAction = StepAction.None;
+                    _stepAction = StepAction.Stop;
                     break;
                 case StepResult.Success:
                     _stepResult = StepResult.Success;
@@ -52,7 +76,7 @@ namespace FluentCommands.CommandTypes.Steps
             {
                 case StepResult.Failure:
                     _stepResult = StepResult.Failure;
-                    _stepAction = StepAction.None;
+                    _stepAction = StepAction.Stop;
                     break;
                 case StepResult.Success:
                     _stepResult = StepResult.Success;
@@ -68,7 +92,7 @@ namespace FluentCommands.CommandTypes.Steps
             {
                 case StepResult.Failure:
                     _stepResult = StepResult.Failure;
-                    _stepAction = StepAction.None;
+                    _stepAction = StepAction.Stop;
                     break;
                 case StepResult.Success:
                     _stepResult = StepResult.Success;
@@ -89,7 +113,8 @@ namespace FluentCommands.CommandTypes.Steps
         internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Undo; return this; }
         internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Undo; _delay = delay; return this; }
 
-        public static async Task<StepState> LastStep(MessageEventArgs e) { return (await CommandService.Cache.GetState(e.Message.Chat.Id, e.Message.From.Id)).StepState; } //: Create overloads for this so that it works with eventargs lmao
+        public static async Task<StepState> LastStep(CallbackQueryEventArgs e) { return (await CommandService.Cache.GetState(e.CallbackQuery.Message.Chat.Id, e.CallbackQuery.From.Id) ?? new FluentState(e.CallbackQuery.Message.Chat, e.CallbackQuery.From)).StepState; } //: Create overloads for this so that it works with eventargs lmao
+        public static async Task<StepState> LastStep(MessageEventArgs e) { return (await CommandService.Cache.GetState(e.Message.Chat.Id, e.Message.From.Id) ?? new FluentState(e.Message.Chat, e.Message.From)).StepState; } //: Create overloads for this so that it works with eventargs lmao
 
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).

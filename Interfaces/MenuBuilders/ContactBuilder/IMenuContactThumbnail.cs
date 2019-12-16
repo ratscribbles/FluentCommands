@@ -4,13 +4,13 @@ using System.Text;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactThumbnail : IFluentInterface, IMenuItem
+    public interface IMenuContactThumbnail : IFluentInterface, IMenu
     {
         /// <summary>
         /// Optional. Additional data about the contact in the form of a vCard, 0-2048 bytes.
         /// </summary>
         /// <param name="vCard"></param>
-        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
-        IMenuItem VCard(string vCard);
+        /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
+        IMenu VCard(string vCard);
     }
 }

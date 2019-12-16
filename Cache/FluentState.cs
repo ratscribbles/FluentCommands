@@ -12,18 +12,16 @@ namespace FluentCommands.Cache
         //internal static TState Default<TState>() where TState : FluentState, new() => new TState();
         public long ChatId { get; }
         public int UserId { get; }
-        public bool IsMe { get; }
         public StepState StepState { get; private set; } = new StepState();
 
         /// <summary>Determines whether or not this user's request is currently being processed.
         /// <para>This property forces an exit of the evaluation of a command if the evaluation is currently in progress.</para></summary>
         internal bool CurrentlyAccessed { get; set; } = false;
 
-        internal FluentState(long chatId, int userId, bool isMe = false)
+        internal FluentState(long chatId, int userId)
         {
             UserId = userId;
             ChatId = chatId;
-            IsMe = isMe;
         }
     }
 }

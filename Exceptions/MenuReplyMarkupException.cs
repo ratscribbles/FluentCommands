@@ -8,7 +8,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace FluentCommands.Exceptions
 {
     /// <summary>
-    /// Thrown when a <see cref="Menus.Menu"/> object has any exceptional issue in building its <see cref="IReplyMarkup"/>.
+    /// Thrown when a <see cref="Menus.MenuItem"/> object has any exceptional issue in building its <see cref="IReplyMarkup"/>.
     /// </summary>
     [Serializable]
     public class MenuReplyMarkupException : Exception, ISerializable, IFluentCommandsException

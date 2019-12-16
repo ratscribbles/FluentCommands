@@ -5,19 +5,19 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.GameBuilder
 {
-    public interface IMenuGameReplyMarkup : IFluentInterface, IMenuItem
+    public interface IMenuGameReplyMarkup : IFluentInterface, IMenu
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="message"></param>
-        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
-        IMenuItem ReplyToMessage(Message message);
+        /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
+        IMenu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
-        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
-        IMenuItem ReplyToMessage(int messageId);
+        /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
+        IMenu ReplyToMessage(int messageId);
     }
 }

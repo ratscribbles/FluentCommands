@@ -12,24 +12,20 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuMediaGroupBuilder, IMenuMediaGroupOptionalBuilder, IMenuMediaGroupDisableNotification,
+    public partial class Menu : IMenuMediaGroupOptionalBuilder, IMenuMediaGroupDisableNotification,
         IMenuMediaGroupReplyMarkup, IKeyboardBuilder<IMenuMediaGroupReplyMarkup>
     {
-        #region Required
-        IMenuMediaGroupOptionalBuilder IMenuMediaGroupBuilder.Source(IEnumerable<IAlbumInputMedia> media) { Media = media; return this; }
-        IMenuMediaGroupOptionalBuilder IMenuMediaGroupBuilder.Source(params IAlbumInputMedia[] media) { Media = media; return this; }
-        #endregion
         #region Optional
         IMenuMediaGroupDisableNotification IMenuMediaGroupOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenuItem IMenuMediaGroupOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuMediaGroupOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuMediaGroupOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuMediaGroupOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
-        IMenuItem IMenuMediaGroupDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuMediaGroupDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuMediaGroupDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuMediaGroupDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuMediaGroupReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuMediaGroupReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuMediaGroupReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuMediaGroupReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuMediaGroupReplyMarkup> IReplyMarkupable<IMenuMediaGroupReplyMarkup>.ReplyMarkup() => this;

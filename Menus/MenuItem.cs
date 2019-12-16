@@ -1,120 +1,291 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using FluentCommands;
+using FluentCommands.Helper;
 using FluentCommands.Interfaces;
-using FluentCommands.Interfaces.MenuBuilders;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
-using System.Threading;
+using Telegram.Bot;
+using Telegram.Bot.Args;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Payments;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Menus
 {
-    internal enum MenuType
+    /// <summary>
+    /// Finalized <see cref="Menus.Menu"/> ready to send to Telegram.
+    /// </summary>
+    [Obsolete("Phasing this out...")]
+    public class MenuItem : IFluentInterface
     {
-        Animation,
-        Audio,
-        Contact,
-        Document,
-        Game,
-        Invoice,
-        MediaGroup,
-        None,
-        Photo,
-        Poll,
-        Sticker,
-        Text,
-        Venue,
-        Video,
-        VideoNote,
-        Voice
-    }
-    public partial class MenuItem : IFluentInterface, IMenuBuilder
-    {
-        //// Telegram Bot Api Properties ///
-        internal string? Address { get; private set; } = default;
-        internal string? Caption { get; private set; } = default;
-        internal string? Currency { get; private set; } = default;
-        internal bool DisableNotification { get; private set; } = default;
-        internal bool DisableWebPagePreview { get; private set; } = default;
-        internal string? Description { get; private set; } = default;
-        internal int Duration { get; private set; } = default;
-        internal string? FirstName { get; private set; } = default;
-        internal string? FourSquareId { get; private set; } = default;
-        internal string? FourSquareType { get; private set; } = default;
-        internal int Height { get; private set; } = default;
-        internal bool IsFlexibile { get; private set; } = default;
-        internal string? LastName { get; private set; } = default;
-        internal float Latitude { get; private set; } = default;
-        internal int Length { get; private set; } = default;
-        internal int LivePeriod { get; private set; } = default;
-        internal float Longitude { get; private set; } = default;
-        internal IEnumerable<IAlbumInputMedia>? Media { get; private set; } = default;
-        internal bool NeedsEmail { get; private set; } = default;
-        internal bool NeedsName { get; private set; } = default;
-        internal bool NeedsPhoneNumber { get; private set; } = default;
-        internal bool NeedsShippingAddress { get; private set; } = default;
-        internal IEnumerable<string>? Options { get; private set; } = default;
-        internal ParseMode ParseMode { get; private set; } = ParseMode.Default;
-        internal string? Payload { get; private set; } = default;
-        internal string? Performer { get; private set; } = default;
-        internal string? PhoneNumber { get; private set; } = default;
-        internal int PhotoHeight { get; private set; } = default;
-        internal int PhotoSize { get; private set; } = default;
-        internal int PhotoWidth { get; private set; } = default;
-        internal string? PhotoUrl { get; private set; } = default;
-        internal IEnumerable<LabeledPrice>? Prices { get; private set; } = default;
-        internal string? ProviderData { get; private set; } = default;
-        internal string? ProviderToken { get; private set; } = default;
-        internal string? Question { get; private set; } = default;
-        internal IReplyMarkup? ReplyMarkup { get; private set; } = default;
-        internal Message? ReplyToMessage { get; private set; } = default;
-        internal string? ShortName { get; private set; } = default;
-        internal InputOnlineFile? Source { get; private set; } = default;
-        internal InputTelegramFile? SourceVideoNote { get; private set; } = default;
-        internal string? StartParameter { get; private set; } = default;
-        internal bool SupportsStreaming { get; private set; } = default;
-        internal string? TextString { get; private set; } = default;
-        internal InputMedia? Thumbnail { get; private set; } = default;
-        internal string? Title { get; private set; } = default;
-        internal CancellationToken Token { get; private set; } = default;
-        internal string? VCard { get; private set; } = default;
-        internal int Width { get; private set; } = default;
-
-        //// MenuItem Exclusive Properties ////
-        internal long SendToThis { get; private set; } = default;
-        internal MenuType MenuType { get; private set; } = MenuType.None;
-        internal ChatAction? ChatAction { get; private set; } = null;
+        internal Menu Menu { get; private set; }
 
         /// <summary>
-        /// This class cannot be instantiated directly. Please use <see cref="As()"/> or <see cref="WithChatAction(ChatAction)"/> static builder methods.
+        /// This class cannot be instantiated directly. Please use <see cref="Menu.As()"/> or <see cref="Menu.WithChatAction(Telegram.Bot.Types.Enums.ChatAction)"/> static builder methods.
         /// </summary>
-        private MenuItem() { }
+        /// <param name="m"></param>
+        internal MenuItem(Menu m) => Menu = m;
 
-        //// Fluent Builders ////
+        //: Probably just make extension methods on the Menu class. better to have MenuExtensions than MenuItem lol
 
-        internal static Menu Empty() => new Menu(new MenuItem());
-        public static IMenuBuilder WithChatAction(ChatAction chatAction) { var m = new MenuItem { ChatAction = chatAction }; return m; }
-        public static IMenuBuilder As() => new MenuItem();
-        public IMenuAnimationBuilder Animation() { MenuType = MenuType.Animation; return this; }
-        public IMenuAudioBuilder Audio() { MenuType = MenuType.Audio; return this; }
-        public IMenuContactBuilder Contact() { MenuType = MenuType.Contact; return this; }
-        public IMenuDocumentBuilder Document() { MenuType = MenuType.Document; return this; }
-        public IMenuGameBuilder Game() { MenuType = MenuType.Game; return this; }
-        public IMenuInvoiceBuilder Invoice() { MenuType = MenuType.Invoice; return this; }
-        public IMenuMediaGroupBuilder MediaGroup() { MenuType = MenuType.MediaGroup; return this; }
-        public IMenuPhotoBuilder Photo() { MenuType = MenuType.Photo; return this; }
-        public IMenuPollBuilder Poll() { MenuType = MenuType.Poll; return this; }
-        public IMenuStickerBuilder Sticker() { MenuType = MenuType.Sticker; return this; }
-        public IMenuTextBuilder Text() { MenuType = MenuType.Text; return this; }
-        public IMenuVenueBuilder Venue() { MenuType = MenuType.Venue; return this; }
-        public IMenuVideoBuilder Video() { MenuType = MenuType.Video; return this; }
-        public IMenuVideoNoteBuilder VideoNote() { MenuType = MenuType.VideoNote; return this; }
-        public IMenuVoiceBuilder Voice() { MenuType = MenuType.Voice; return this; }
-        public Menu Done() => new Menu(this);
-        public Menu DoneAndSendTo(int idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
-        public Menu DoneAndSendTo(long idToSendTo) { SendToThis = idToSendTo; return new Menu(this); }
+        public async Task Send(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.Default) => await Send_Logic(client, e, menuMode);
+
+        //public async Task Send(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, ChosenInlineResultEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, ChosenInlineResultEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, InlineQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, InlineQueryEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, MessageEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, MessageEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+        //public async Task Send(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) =>
+        //    await Send_Logic(client, e, menuMode);
+        //internal async Task Send<TModule>(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
+        //    await Send_Logic(client, e, menuMode, typeof(TModule));
+
+        private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.Default, Type? module = null)
+        {
+            //? should this method be public? aimed at transforming MenuItems into replacements for the weird client methods
+            //: additionally, please fix the signature of this method
+            //? possibly duplicate this method to happen with menu items on their own, and rename this one to be "send menu internal handler" or something
+
+            //! "SEND TO THIS" property should only accept an int or long and no enum
+            //! the aim should be to only provide a SPECIFIC Id to send the menuitem to
+            //! otherwise the default should ALWAYS be the chat id
+
+            //? note, all of these things are purely for MenuItem objects. what happens within the methods that arent the returned MenuItem from the Command method are not of any concern.
+            //? if the user wants to do weird junk, they can. ONLY be concerned about the RETURNED MENUITEM phase of the message sending process.
+
+
+            //: Check if editable before doin anything lol
+
+            var m = Menu;
+            MenuMode mode;
+
+            if (menuMode != MenuMode.Default) mode = menuMode;
+            else 
+            {
+                if (module is { }) mode = CommandService.Modules[module]?.Config?.MenuModeOverride ?? menuMode;
+                else mode = CommandService.GlobalConfig.DefaultMenuMode;
+            }
+
+            long chatId;
+            int replyToMessageId;
+            if(m.SendToChatId == default)
+            {
+                if (!AuxiliaryMethods.TryGetEventArgsChatId(e, out var c_id))
+                {
+                    if (!AuxiliaryMethods.TryGetEventArgsUserId(e, out var u_id)) return; //: Perform logging, check global config to see if it should throw
+                    else chatId = u_id;
+                }
+                else chatId = c_id;
+            }
+            else chatId = m.SendToChatId;
+
+
+            if (m.ReplyToMessage is null) replyToMessageId = 0;
+            else replyToMessageId = m.ReplyToMessage.MessageId;
+
+            switch (mode)
+            {
+                case MenuMode.NoAction:
+                    await NoAction();
+                    break;
+                case MenuMode.EditLastMessage:
+                    //await EditLastMessage();
+                    //!!! FOR REPLYKEYBOARDS, YOU _CANNOT_ EDIT THE REPLYMARKUP. 
+                    //! THE OPTION COULD BE TO EDIT THE INLINEMARKUP OF THE PREVIOUS MESSAGE TO BE EMPTY, AND THEN SEND THE NEW MESSAGE
+                    //! ALTERNATIVELY, THERE COULD BE NO EDIT, BUT THAT SEEMS KINDA BAD
+                    break;
+                case MenuMode.EditOrDeleteLastMessage:
+                    await EditOrDeleteLastMessage();
+                    break;
+                default:
+                    goto case MenuMode.NoAction;
+            }
+            async Task NoAction()
+            {
+                List<Message> messages = new List<Message>();
+
+                //? ** list of types that can only accept inlinekeyboardmarkups: ** //
+                //: game, invoice, 
+
+                switch (m.MenuType)
+                {
+                    case MenuType.Animation:
+                        messages.Add(await client.SendAnimationAsync(chatId, m.Source, m.Duration, m.Width, m.Height, m.Thumbnail, m.Caption, m.ParseMode, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token));
+                        break;
+                    case MenuType.Audio:
+                        messages.Add(await client.SendAudioAsync(chatId, m.Source, m.Caption, m.ParseMode, m.Duration, m.Performer, m.Title, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token, m.Thumbnail));
+                        break;
+                    case MenuType.Contact:
+                        messages.Add(await client.SendContactAsync(chatId, m.PhoneNumber, m.FirstName, m.LastName, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token, m.VCard));
+                        break;
+                    case MenuType.Document:
+                        messages.Add(await client.SendDocumentAsync(chatId, m.Source, m.Caption, m.ParseMode, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token, m.Thumbnail));
+                        break;
+                    case MenuType.Game:
+                        //? How to send reply keyboard lmao
+                        if (m.ReplyMarkup is InlineKeyboardMarkup || m.ReplyMarkup is null) messages.Add(await client.SendGameAsync(chatId, m.ShortName, m.DisableNotification, replyToMessageId, (InlineKeyboardMarkup?)m.ReplyMarkup, m.Token));
+                        else messages.Add(await client.SendGameAsync(chatId, m.ShortName, m.DisableNotification, replyToMessageId, cancellationToken: m.Token)); //? Log this?
+                        break;
+                    case MenuType.Invoice:
+                        if (false /* CommandService._messageUserCache[client.BotId][e.Message.Chat.Id].Chat.Type != Telegram.Bot.Types.Enums.ChatType.Private*/) messages.Add(new Message()); //? throw? log it? idk
+                        else
+                        {
+                            if (m.ReplyMarkup is InlineKeyboardMarkup || m.ReplyMarkup is null)
+                                messages.Add(await client.SendInvoiceAsync((int)chatId, m.Title, m.Description, m.Payload, m.ProviderToken, m.StartParameter, m.Currency, m.Prices, m.ProviderData, m.PhotoUrl, m.PhotoSize, m.PhotoWidth, m.PhotoHeight, m.NeedsName, m.NeedsPhoneNumber, m.NeedsEmail, m.NeedsShippingAddress, m.IsFlexibile, m.DisableNotification, replyToMessageId, (InlineKeyboardMarkup?)m.ReplyMarkup));
+                            else
+                                //: Log this
+                                messages.Add(await client.SendInvoiceAsync((int)chatId, m.Title, m.Description, m.Payload, m.ProviderToken, m.StartParameter, m.Currency, m.Prices, m.ProviderData, m.PhotoUrl, m.PhotoSize, m.PhotoWidth, m.PhotoHeight, m.NeedsName, m.NeedsPhoneNumber, m.NeedsEmail, m.NeedsShippingAddress, m.IsFlexibile, m.DisableNotification, replyToMessageId));
+                        }
+                        break;
+                    case MenuType.MediaGroup:
+                        messages.AddRange(await client.SendMediaGroupAsync(m.Media, chatId, m.DisableNotification, replyToMessageId, m.Token));
+                        break;
+                    case MenuType.Photo:
+                        messages.Add(await client.SendPhotoAsync(chatId, m.Source, m.Caption, m.ParseMode, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token));
+                        break;
+                    case MenuType.Poll:
+                        messages.Add(await client.SendPollAsync(chatId, m.Question, m.Options, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token));
+                        break;
+                    case MenuType.Sticker:
+                        messages.Add(await client.SendStickerAsync(chatId, m.Source, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token));
+                        break;
+                    case MenuType.Text:
+                        messages.Add(await client.SendTextMessageAsync(chatId, m.TextString, m.ParseMode, m.DisableWebPagePreview, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token));
+                        break;
+                    case MenuType.Venue:
+                        messages.Add(await client.SendVenueAsync(chatId, m.Latitude, m.Longitude, m.Title, m.Address, m.FourSquareId, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token, m.FourSquareType));
+                        break;
+                    case MenuType.Video:
+                        messages.Add(await client.SendVideoAsync(chatId, m.Source, m.Duration, m.Width, m.Height, m.Caption, m.ParseMode, m.SupportsStreaming, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token, m.Thumbnail));
+                        break;
+                    case MenuType.VideoNote:
+                        messages.Add(await client.SendVideoNoteAsync(chatId, m.SourceVideoNote, m.Duration, m.Length, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token, m.Thumbnail));
+                        break;
+                    case MenuType.Voice:
+                        messages.Add(await client.SendVoiceAsync(chatId, m.Source, m.Caption, m.ParseMode, m.Duration, m.DisableNotification, replyToMessageId, m.ReplyMarkup, m.Token));
+                        break;
+                    default:
+                        return;
+                }
+
+                CommandService.UpdateBotLastMessages(client, chatId, messages.ToArray());
+            }
+
+            //async Task EditLastMessage()
+            //{
+            //    Message msgToEdit;
+
+            //    switch (m.MenuType)
+            //    {
+            //        case MenuType.Animation:
+            //            msgToEdit = _messageBotCache[client.BotId][e.Message.Chat.Id];
+            //            if(replyMarkup is InlineKeyboardMarkup || replyMarkup is null)
+            //            {
+            //                await client.EditMessageCaptionAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, m.Caption, (InlineKeyboardMarkup)replyMarkup);
+            //                await client.EditMessageMediaAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, new InputMediaAnimation(m.Source.Url), (InlineKeyboardMarkup)replyMarkup, m.Token);
+            //            }
+            //            else
+            //            {
+            //                //? how to send keyboard properly lmao???
+            //                await client.EditMessageMediaAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, new InputMediaAnimation(m.Source.Url), null, m.Token);
+            //                await client.EditMessageCaptionAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, m.Caption, (InlineKeyboardMarkup)replyMarkup);
+            //            }
+            //            break;
+            //        case MenuType.Audio:
+            //            await client.EditMessageMediaAsync();
+            //            await client.EditMessageCaptionAsync();
+            //            break;
+            //        case MenuType.Contact:
+            //            await NoAction();
+            //            break;
+            //        case MenuType.Document:
+            //            await client.EditMessageMediaAsync();
+            //            await client.EditMessageCaptionAsync();
+            //            break;
+            //        case MenuType.Game:
+            //            await client.EditMessageTextAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, )
+            //            break;
+            //        case MenuType.Invoice:
+            //            await NoAction();
+            //            break;
+            //        case MenuType.MediaGroup:
+            //            break;
+            //        case MenuType.Photo:
+            //            await client.EditMessageMediaAsync();
+            //            await client.EditMessageCaptionAsync();
+            //            break;
+            //        case MenuType.Poll:
+            //            await NoAction();
+            //            break;
+            //        case MenuType.Sticker:
+            //            await NoAction();
+            //            break;
+            //        case MenuType.Text:
+            //            await client.EditMessageTextAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, )
+            //            break;
+            //        case MenuType.Venue:
+            //            await NoAction();
+            //            break;
+            //        case MenuType.Video:
+            //            await client.EditMessageMediaAsync();
+            //            await client.EditMessageCaptionAsync();
+            //            break;
+            //        case MenuType.VideoNote:
+            //            await NoAction();
+            //            break;
+            //        case MenuType.Voice:
+            //            await NoAction();
+            //            break;
+            //    }
+            //}
+            async Task EditOrDeleteLastMessage()
+            {
+                switch (m.MenuType)
+                {
+                    case MenuType.Animation:
+                        break;
+                    case MenuType.Audio:
+                        break;
+                    case MenuType.Contact:
+                        break;
+                    case MenuType.Document:
+                        break;
+                    case MenuType.Game:
+                        break;
+                    case MenuType.Invoice:
+                        break;
+                    case MenuType.MediaGroup:
+                        break;
+                    case MenuType.Photo:
+                        break;
+                    case MenuType.Poll:
+                        break;
+                    case MenuType.Sticker:
+                        break;
+                    case MenuType.Text:
+                        break;
+                    case MenuType.Venue:
+                        break;
+                    case MenuType.Video:
+                        break;
+                    case MenuType.VideoNote:
+                        break;
+                    case MenuType.Voice:
+                        break;
+                }
+            }
+        }
     }
 }

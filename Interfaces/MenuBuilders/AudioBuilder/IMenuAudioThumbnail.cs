@@ -4,13 +4,13 @@ using System.Text;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioThumbnail : IFluentInterface, IMenuItem
+    public interface IMenuAudioThumbnail : IFluentInterface, IMenu
     {
         /// <summary>
         /// Optional. Track name.
         /// </summary>
         /// <param name="title"></param>
-        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
-        IMenuItem Title(string title);
+        /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
+        IMenu Title(string title);
     }
 }

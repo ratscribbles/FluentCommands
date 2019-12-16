@@ -12,31 +12,27 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuGameBuilder, IMenuGameOptionalBuilder,
+    public partial class Menu : IMenuGameOptionalBuilder,
         IMenuGameCancellationToken, IMenuGameDisableNotification,
         IMenuGameReplyMarkup, IKeyboardBuilderForceInline<IMenuGameReplyMarkup>
     {
-        #region Required
-        IMenuGameOptionalBuilder IMenuGameBuilder.ShortName(string shortName) { ShortName = shortName; return this; }
-        #endregion
-
         #region Optional
         IMenuGameCancellationToken IMenuGameOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuGameDisableNotification IMenuGameOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenuItem IMenuGameOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuGameOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuGameOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuGameOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
 
         #region Additional Implementation
         IMenuGameDisableNotification IMenuGameCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenuItem IMenuGameCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuGameCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuGameCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuGameCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuGameDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuGameDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuGameDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuGameDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuGameReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuGameReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuGameReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuGameReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
 
         #region Keyboard Implementation

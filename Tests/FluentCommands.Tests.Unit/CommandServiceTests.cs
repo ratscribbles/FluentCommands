@@ -44,11 +44,11 @@ namespace FluentCommands.Tests.Unit
         internal Func<TelegramBotClient, InlineQueryEventArgs, Task> InlineQueryCommandDelegate { get; }
         internal Func<TelegramBotClient, MessageEventArgs, Task> MessageCommandDelegate { get; }
         internal Func<TelegramBotClient, UpdateEventArgs, Task> UpdateCommandDelegate { get; }
-        internal Func<TelegramBotClient, CallbackQueryEventArgs, Task<Menu>> CallbackQueryCommandMenuDelegate { get; }
-        internal Func<TelegramBotClient, ChosenInlineResultEventArgs, Task<Menu>> ChosenInlineResultCommandMenuDelegate { get; }
-        internal Func<TelegramBotClient, InlineQueryEventArgs, Task<Menu>> InlineQueryCommandMenuDelegate { get; }
-        internal Func<TelegramBotClient, MessageEventArgs, Task<Menu>> MessageCommandMenuDelegate { get; }
-        internal Func<TelegramBotClient, UpdateEventArgs, Task<Menu>> UpdateCommandMenuDelegate { get; }
+        internal Func<TelegramBotClient, CallbackQueryEventArgs, Task<MenuItem>> CallbackQueryCommandMenuDelegate { get; }
+        internal Func<TelegramBotClient, ChosenInlineResultEventArgs, Task<MenuItem>> ChosenInlineResultCommandMenuDelegate { get; }
+        internal Func<TelegramBotClient, InlineQueryEventArgs, Task<MenuItem>> InlineQueryCommandMenuDelegate { get; }
+        internal Func<TelegramBotClient, MessageEventArgs, Task<MenuItem>> MessageCommandMenuDelegate { get; }
+        internal Func<TelegramBotClient, UpdateEventArgs, Task<MenuItem>> UpdateCommandMenuDelegate { get; }
         #endregion
 
         #region Ctors
@@ -57,11 +57,11 @@ namespace FluentCommands.Tests.Unit
         internal TestCommandList(Func<TelegramBotClient, InlineQueryEventArgs, Task> f) => InlineQueryCommandDelegate = f;
         internal TestCommandList(Func<TelegramBotClient, MessageEventArgs, Task> f) => MessageCommandDelegate = f;
         internal TestCommandList(Func<TelegramBotClient, UpdateEventArgs, Task> f) => UpdateCommandDelegate = f;
-        internal TestCommandList(Func<TelegramBotClient, CallbackQueryEventArgs, Task<Menu>> f) => CallbackQueryCommandMenuDelegate = f;
-        internal TestCommandList(Func<TelegramBotClient, ChosenInlineResultEventArgs, Task<Menu>> f) => ChosenInlineResultCommandMenuDelegate = f;
-        internal TestCommandList(Func<TelegramBotClient, InlineQueryEventArgs, Task<Menu>> f) => InlineQueryCommandMenuDelegate = f;
-        internal TestCommandList(Func<TelegramBotClient, MessageEventArgs, Task<Menu>> f) => MessageCommandMenuDelegate = f;
-        internal TestCommandList(Func<TelegramBotClient, UpdateEventArgs, Task<Menu>> f) => UpdateCommandMenuDelegate = f;
+        internal TestCommandList(Func<TelegramBotClient, CallbackQueryEventArgs, Task<MenuItem>> f) => CallbackQueryCommandMenuDelegate = f;
+        internal TestCommandList(Func<TelegramBotClient, ChosenInlineResultEventArgs, Task<MenuItem>> f) => ChosenInlineResultCommandMenuDelegate = f;
+        internal TestCommandList(Func<TelegramBotClient, InlineQueryEventArgs, Task<MenuItem>> f) => InlineQueryCommandMenuDelegate = f;
+        internal TestCommandList(Func<TelegramBotClient, MessageEventArgs, Task<MenuItem>> f) => MessageCommandMenuDelegate = f;
+        internal TestCommandList(Func<TelegramBotClient, UpdateEventArgs, Task<MenuItem>> f) => UpdateCommandMenuDelegate = f;
         #endregion
 
         #region Command Method Signature Tests
@@ -81,19 +81,19 @@ namespace FluentCommands.Tests.Unit
         public async Task Test(TelegramBotClient c, UpdateEventArgs e) => await UpdateCommandDelegate(c, e);
 
         [Command("callback_query_menu")]
-        public async Task<Menu> TestMenu(TelegramBotClient c, CallbackQueryEventArgs e) => await CallbackQueryCommandMenuDelegate(c, e);
+        public async Task<MenuItem> TestMenu(TelegramBotClient c, CallbackQueryEventArgs e) => await CallbackQueryCommandMenuDelegate(c, e);
 
         [Command("chosen_inline_result_menu")]
-        public async Task<Menu> TestMenu(TelegramBotClient c, ChosenInlineResultEventArgs e) => await ChosenInlineResultCommandMenuDelegate(c, e);
+        public async Task<MenuItem> TestMenu(TelegramBotClient c, ChosenInlineResultEventArgs e) => await ChosenInlineResultCommandMenuDelegate(c, e);
 
         [Command("inline_query_menu")]
-        public async Task<Menu> TestMenu(TelegramBotClient c, InlineQueryEventArgs e) => await InlineQueryCommandMenuDelegate(c, e);
+        public async Task<MenuItem> TestMenu(TelegramBotClient c, InlineQueryEventArgs e) => await InlineQueryCommandMenuDelegate(c, e);
 
         [Command("message_menu")]
-        public async Task<Menu> TestMenu(TelegramBotClient c, MessageEventArgs e) => await MessageCommandMenuDelegate(c, e);
+        public async Task<MenuItem> TestMenu(TelegramBotClient c, MessageEventArgs e) => await MessageCommandMenuDelegate(c, e);
 
         [Command("update_menu")]
-        public async Task<Menu> TestMenu(TelegramBotClient c, UpdateEventArgs e) => await UpdateCommandMenuDelegate(c, e);
+        public async Task<MenuItem> TestMenu(TelegramBotClient c, UpdateEventArgs e) => await UpdateCommandMenuDelegate(c, e);
         #endregion
 
     }

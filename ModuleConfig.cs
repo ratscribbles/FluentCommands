@@ -7,6 +7,7 @@ using FluentCommands.Logging;
 using FluentCommands.Menus;
 using FluentCommands.Helper;
 using FluentCommands.Cache;
+using FluentCommands.Interfaces.MenuBuilders;
 
 namespace FluentCommands
 {
@@ -18,11 +19,12 @@ namespace FluentCommands
         internal bool DeleteCommandAfterCall { get; }
         internal bool LogModuleActivities { get; }
         internal FluentLogLevel MaximumLogLevel { get; }
-        internal string Prefix { get; private set; }
+        internal string Prefix { get; private set; } = "/";
         internal int PerUserRateLimitOverride { get; private set; }
-        internal Menu DefaultErrorMessage { get; }
-        internal MenuMode MenuModeOverride { get; }
+        internal IMenu DefaultErrorMessage { get; } = Menu.Text("ERROR!!! LMAO"); //: Modify this to be more professional. Later.
+        internal MenuMode? MenuModeOverride { get; }
 
+        internal ModuleConfig() { }
         internal ModuleConfig(ModuleConfigBuilder b)
         {
             BruteForceKeyboardReferences = b.BruteForceKeyboardReferences;
@@ -52,5 +54,6 @@ namespace FluentCommands
 
             Prefix = newPrefix;
         }
+
     }
 }

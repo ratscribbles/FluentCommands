@@ -11,31 +11,30 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuPollBuilder, IMenuPollBuilderQuestion, IMenuPollOptionalBuilder,
+    public partial class Menu : IMenuPollBuilderQuestion, IMenuPollOptionalBuilder,
         IMenuPollCancellationToken, IMenuPollDisableNotification,
         IMenuPollReplyMarkup, IKeyboardBuilder<IMenuPollReplyMarkup>
     {
         #region Required
-        IMenuPollBuilderQuestion IMenuPollBuilder.Question(string question) { Question = question; return this; }
         IMenuPollOptionalBuilder IMenuPollBuilderQuestion.Options(params string[] options) { Options = options; return this; }
         IMenuPollOptionalBuilder IMenuPollBuilderQuestion.Options(IEnumerable<string> options) { Options = options; return this; }
         #endregion
         #region Optional
         IMenuPollCancellationToken IMenuPollOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuPollDisableNotification IMenuPollOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenuItem IMenuPollOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuPollOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuPollOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuPollOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuPollDisableNotification IMenuPollCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenuItem IMenuPollCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuPollCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuPollCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuPollCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuPollDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuPollDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuPollDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuPollDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuPollReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuPollReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuPollReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuPollReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuPollReplyMarkup> IReplyMarkupable<IMenuPollReplyMarkup>.ReplyMarkup() => this;

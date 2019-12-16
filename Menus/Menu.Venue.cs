@@ -12,14 +12,12 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuVenueBuilder, IMenuVenueBuilderLatitude, IMenuVenueBuilderLongitude, IMenuVenueBuilderTitle, IMenuVenueOptionalBuilder,
+    public partial class Menu : IMenuVenueBuilderLatLong, IMenuVenueBuilderTitle, IMenuVenueOptionalBuilder,
         IMenuVenueCancellationToken, IMenuVenueDisableNotification, IMenuVenueFourSquareId, IMenuVenueFourSquareType,
         IMenuVenueReplyMarkup, IKeyboardBuilder<IMenuVenueReplyMarkup>
     {
         #region Required
-        IMenuVenueBuilderLatitude IMenuVenueBuilder.Latitude(float latitude) { Latitude = latitude; return this; }
-        IMenuVenueBuilderLongitude IMenuVenueBuilderLatitude.Longitude(float longitude) { Longitude = longitude; return this; }
-        IMenuVenueBuilderTitle IMenuVenueBuilderLongitude.Title(string title) { Title = title; return this; }
+        IMenuVenueBuilderTitle IMenuVenueBuilderLatLong.Title(string title) { Title = title; return this; }
         IMenuVenueOptionalBuilder IMenuVenueBuilderTitle.Address(string address) { Address = address; return this; }
         #endregion
         #region Required
@@ -27,30 +25,30 @@ namespace FluentCommands.Menus
         IMenuVenueDisableNotification IMenuVenueOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuVenueFourSquareId IMenuVenueOptionalBuilder.FourSquareId(string fourSquareId) { FourSquareId = fourSquareId; return this; }
         IMenuVenueFourSquareType IMenuVenueOptionalBuilder.FourSquareType(string fourSquareType) { FourSquareType = fourSquareType; return this; }
-        IMenuItem IMenuVenueOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuVenueOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuVenueOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuVenueOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuVenueDisableNotification IMenuVenueCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuVenueFourSquareId IMenuVenueCancellationToken.FourSquareId(string fourSquareId) { FourSquareId = fourSquareId; return this; }
         IMenuVenueFourSquareType IMenuVenueCancellationToken.FourSquareType(string fourSquareType) { FourSquareType = fourSquareType; return this; }
-        IMenuItem IMenuVenueCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuVenueCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuVenueCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuVenueCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuVenueFourSquareId IMenuVenueDisableNotification.FourSquareId(string fourSquareId) { FourSquareId = fourSquareId; return this; }
         IMenuVenueFourSquareType IMenuVenueDisableNotification.FourSquareType(string fourSquareType) { FourSquareType = fourSquareType; return this; }
-        IMenuItem IMenuVenueDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuVenueDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuVenueDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuVenueDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuVenueFourSquareType IMenuVenueFourSquareId.FourSquareType(string fourSquareType) { FourSquareType = fourSquareType; return this; }
-        IMenuItem IMenuVenueFourSquareId.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuVenueFourSquareId.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuVenueFourSquareId.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuVenueFourSquareId.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuVenueFourSquareType.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuVenueFourSquareType.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuVenueFourSquareType.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuVenueFourSquareType.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuVenueReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuVenueReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuVenueReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuVenueReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuVenueReplyMarkup> IReplyMarkupable<IMenuVenueReplyMarkup>.ReplyMarkup() => this;

@@ -13,42 +13,39 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuTextBuilder, IMenuTextOptionalBuilder,
+    public partial class Menu : IMenuTextOptionalBuilder,
         IMenuTextCancellationToken, IMenuTextDisableNotification, IMenuTextDisableWebPagePreview, IMenuTextParseMode,
         IMenuTextReplyMarkup, IKeyboardBuilder<IMenuTextReplyMarkup>
     {
-        #region Required
-        IMenuTextOptionalBuilder IMenuTextBuilder.TextSource(string text) { TextString = text; return this; }
-        #endregion
         #region Optional
         IMenuTextCancellationToken IMenuTextOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuTextDisableNotification IMenuTextOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuTextDisableWebPagePreview IMenuTextOptionalBuilder.DisableWebPagePreview(bool disableWebPagePreview) { DisableWebPagePreview = disableWebPagePreview; return this; }
         IMenuTextParseMode IMenuTextOptionalBuilder.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenuItem IMenuTextOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuTextOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuTextOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuTextOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuTextDisableNotification IMenuTextCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuTextDisableWebPagePreview IMenuTextCancellationToken.DisableWebPagePreview(bool disableWebPagePreview) { DisableWebPagePreview = disableWebPagePreview; return this; }
         IMenuTextParseMode IMenuTextCancellationToken.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenuItem IMenuTextCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuTextCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuTextCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuTextCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuTextDisableWebPagePreview IMenuTextDisableNotification.DisableWebPagePreview(bool disableWebPagePreview) { DisableWebPagePreview = disableWebPagePreview; return this; }
         IMenuTextParseMode IMenuTextDisableNotification.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenuItem IMenuTextDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuTextDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuTextDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuTextDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuTextParseMode IMenuTextDisableWebPagePreview.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenuItem IMenuTextDisableWebPagePreview.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuTextDisableWebPagePreview.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuTextDisableWebPagePreview.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuTextDisableWebPagePreview.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuTextParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuTextParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuTextParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuTextParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenuItem IMenuTextReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenuItem IMenuTextReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        IMenu IMenuTextReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        IMenu IMenuTextReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuTextReplyMarkup> IReplyMarkupable<IMenuTextReplyMarkup>.ReplyMarkup() => this;

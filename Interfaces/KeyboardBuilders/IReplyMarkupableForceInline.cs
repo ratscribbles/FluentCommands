@@ -8,14 +8,14 @@ namespace FluentCommands.Interfaces.KeyboardBuilders
     public interface IReplyMarkupableForceInline<TBuilder> where TBuilder : class, IFluentInterface
     {
         /// <summary>
-        /// Constructs an <see cref="IKeyboardBuilder{TBuilder}"/> for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Constructs an <see cref="IKeyboardBuilder{TBuilder}"/> for this <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
         /// <returns>Returns this <see cref="TBuilder"/>, removing this option from the fluent builder.</returns>
         IKeyboardBuilderForceInline<TBuilder> ReplyMarkup();
         /// <summary>
-        /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Adds an <see cref="InlineKeyboardMarkup"/> to the <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
-        /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/> or <see cref="Menus.Menu"/>.</param>
+        /// <param name="markup">The <see cref="InlineKeyboardMarkup"/> for this future <see cref="Command"/> or <see cref="Menus.MenuItem"/>.</param>
         /// <returns>Returns this <see cref="TBuilder"/>, removing this option from the fluent builder.</returns>
         TBuilder ReplyMarkup(InlineKeyboardMarkup markup);
     }

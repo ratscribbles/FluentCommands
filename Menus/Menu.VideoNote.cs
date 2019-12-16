@@ -14,16 +14,10 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuVideoNoteBuilder, IMenuVideoNoteOptionalBuilder,
+    public partial class Menu : IMenuVideoNoteOptionalBuilder,
         IMenuVideoNoteCancellationToken, IMenuVideoNoteDisableNotification, IMenuVideoNoteDuration, IMenuVideoNoteLength, IMenuVideoNoteReplyToMessage,
         IMenuVideoNoteReplyMarkup, IKeyboardBuilder<IMenuVideoNoteReplyMarkup>
     {
-        #region Required
-        IMenuVideoNoteOptionalBuilder IMenuVideoNoteBuilder.Source(string fileId) { SourceVideoNote = fileId; return this; }
-        IMenuVideoNoteOptionalBuilder IMenuVideoNoteBuilder.Source(Stream content) { SourceVideoNote = content; return this; }
-        IMenuVideoNoteOptionalBuilder IMenuVideoNoteBuilder.Source(Stream content, string fileName) { SourceVideoNote = new InputTelegramFile(content, fileName); return this; }
-        IMenuVideoNoteOptionalBuilder IMenuVideoNoteBuilder.Source(InputTelegramFile videoNote) { SourceVideoNote = videoNote; return this; }
-        #endregion
         #region Optional
         IMenuVideoNoteCancellationToken IMenuVideoNoteOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuVideoNoteDisableNotification IMenuVideoNoteOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
@@ -31,9 +25,9 @@ namespace FluentCommands.Menus
         IMenuVideoNoteLength IMenuVideoNoteOptionalBuilder.Length(int length) { Length = length; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenuItem IMenuVideoNoteOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         #endregion
         #region Additional Implementation
         IMenuVideoNoteDisableNotification IMenuVideoNoteCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
@@ -41,40 +35,40 @@ namespace FluentCommands.Menus
         IMenuVideoNoteLength IMenuVideoNoteCancellationToken.Length(int length) { Length = length; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenuItem IMenuVideoNoteCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuVideoNoteDuration IMenuVideoNoteDisableNotification.Duration(int duration) { Duration = duration; return this; }
         IMenuVideoNoteLength IMenuVideoNoteDisableNotification.Length(int length) { Length = length; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenuItem IMenuVideoNoteDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuVideoNoteLength IMenuVideoNoteDuration.Length(int length) { Length = length; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteDuration.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteDuration.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenuItem IMenuVideoNoteDuration.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteDuration.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteDuration.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteDuration.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteDuration.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteDuration.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuVideoNoteReplyToMessage IMenuVideoNoteLength.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteLength.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenuItem IMenuVideoNoteLength.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteLength.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteLength.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteLength.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteLength.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteLength.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuVideoNoteReplyToMessage IMenuVideoNoteReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoNoteReplyToMessage IMenuVideoNoteReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenuItem IMenuVideoNoteReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
-        IMenuItem IMenuVideoNoteReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenuItem IMenuVideoNoteReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenuItem IMenuVideoNoteReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        IMenu IMenuVideoNoteReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
+        IMenu IMenuVideoNoteReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        IMenu IMenuVideoNoteReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuVideoNoteReplyMarkup> IReplyMarkupable<IMenuVideoNoteReplyMarkup>.ReplyMarkup() => this;

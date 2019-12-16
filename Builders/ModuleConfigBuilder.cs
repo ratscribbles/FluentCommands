@@ -7,17 +7,10 @@ using FluentCommands.Logging;
 using FluentCommands.Menus;
 using FluentCommands.Helper;
 using FluentCommands.Cache;
+using FluentCommands.Interfaces.MenuBuilders;
 
 namespace FluentCommands
 {
-    public enum MenuMode
-    {
-        Default,
-        NoAction,
-        EditLastMessage,
-        EditOrDeleteLastMessage,
-    }
-
     public class ModuleConfigBuilder
     {
         public bool UseInternalKeyboardStateHandler { get; set; } = false;
@@ -27,8 +20,8 @@ namespace FluentCommands
         public bool LogModuleActivities { get; set; } = false;
         public FluentLogLevel MaximumLogLevelOverride { get; set; } = FluentLogLevel.Fatal;
         public string Prefix { get; set; } = "/";
-        public Menu? DefaultErrorMessageOverride { get; set; } = null;
-        public MenuMode MenuModeOverride { get; set; } = MenuMode.Default;
+        public IMenu? DefaultErrorMessageOverride { get; set; } = null;
+        public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
         internal int PerUserRateLimitOverride { get; private set; }
         
         internal IFluentDatabase? CustomDatabase { get; private set; }
@@ -38,5 +31,7 @@ namespace FluentCommands
 
         public void AddDatabase(IFluentDatabase db) { CustomDatabase = db; UsingCustomDatabaseOverride = true; }
         public void AddLogger(IFluentLogger l) { CustomLogger = l; UsingCustomLoggerOverride = true; }
+
+        internal ModuleConfig Build() => new ModuleConfig(this);
     }
 }

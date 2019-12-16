@@ -66,7 +66,7 @@ namespace FluentCommands
         {
             get
             {
-                if (GlobalConfig.EnableLogging)
+                if (GlobalConfig.DisableLogging)
                 {
                     if (GlobalConfig.UsingCustomLogger) return _instance.Value._customLogger; // Not null if true
                     else return _defaultLogger.Value;
@@ -771,29 +771,29 @@ namespace FluentCommands
 
         #region Evaluate/ProcessInput Overloads
         public static async Task Evaluate<TModule>(TelegramBotClient client, CallbackQueryEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
+            await Evaluate_Internal(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, CallbackQueryEventArgs e) =>
-            await ProcessInput(module, client, e).ConfigureAwait(false);
+            await Evaluate_Internal(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, ChosenInlineResultEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
+            await Evaluate_Internal(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, ChosenInlineResultEventArgs e) =>
-            await ProcessInput(module, client, e).ConfigureAwait(false);
+            await Evaluate_Internal(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, InlineQueryEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
+            await Evaluate_Internal(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, InlineQueryEventArgs e) =>
-            await ProcessInput(module, client, e).ConfigureAwait(false);
+            await Evaluate_Internal(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, MessageEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
+            await Evaluate_Internal(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, MessageEventArgs e) =>
-            await ProcessInput(module, client, e).ConfigureAwait(false);
+            await Evaluate_Internal(module, client, e).ConfigureAwait(false);
 
         public static async Task Evaluate<TModule>(TelegramBotClient client, UpdateEventArgs e) where TModule : CommandModule<TModule> =>
-            await ProcessInput(typeof(TModule), client, e).ConfigureAwait(false);
+            await Evaluate_Internal(typeof(TModule), client, e).ConfigureAwait(false);
         public static async Task Evaluate(Type module, TelegramBotClient client, UpdateEventArgs e) =>
-            await ProcessInput(module, client, e).ConfigureAwait(false);
+            await Evaluate_Internal(module, client, e).ConfigureAwait(false);
 
         /// <summary>
         /// Processes the input for a user's given args from an Evaluate method.
@@ -801,7 +801,7 @@ namespace FluentCommands
         /// <exception cref="NullReferenceException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="RegexMatchTimeoutException"></exception>
-        private static async Task ProcessInput(Type moduleType, TelegramBotClient client, TelegramUpdateEventArgs e)
+        private static async Task Evaluate_Internal(Type moduleType, TelegramBotClient client, TelegramUpdateEventArgs e)
         {
             if (!_commandServiceStarted) return; //? Can't log this; logging requires the service to have been started.
 
@@ -815,7 +815,7 @@ namespace FluentCommands
             var logger = module.Logger;
             _ = e.TryGetChatId(out var cId);
             _ = e.TryGetUserId(out var uId);
-            var state = await Cache.GetState(cId, uId).ConfigureAwait(false) ?? new FluentState(cId, uId);
+            var state = await Cache.GetState(cId, uId).ConfigureAwait(false);
 
             if (state.CurrentlyAccessed) return; //: Possibly log? Possibly inform the user? Possibly include this as an option in the global config
             else state.CurrentlyAccessed = true; //: This might not work with outside DBs injected into the framework. Consider temporarily storing user states in a ConcurrentDictionary. Null it out when the state is released. If not null, return. If null, continue. All you need to do is have a valid user id/chat id lookup and it would work without implementing IEquatable
@@ -853,13 +853,7 @@ namespace FluentCommands
             catch (ArgumentException) { return; } //: Catch, Log it, re-throw.
             catch (RegexMatchTimeoutException) { return; } //: Catch, Log it, re-throw? maybe not re-throw
 
-            //
-            //
-            //! issue: step 0 cant return a step... it's the first thing to be invoked. it cant have a success/fail; only subsequent steps can. fix this.
-            //
-            //
-            //
-
+            // Processes the Command<TArgs> based on the type of its TArgs.
             async Task ProcessCommand(ICommand cmd)
             {
                 switch (cmd.CommandType)
@@ -926,7 +920,7 @@ namespace FluentCommands
                     }
                 }
             }
-
+            // If the Command has a StepInfo, attempts to evaluate the Command as a Step-Command.
             async Task EvaluateStep<TArgs>(Command<TArgs> c) where TArgs : EventArgs
             {
                 int stepNum;
@@ -1050,7 +1044,7 @@ namespace FluentCommands
         #region Helper Methods
         public async Task CallCommand<TModule>(TelegramBotClient client, TelegramUpdateEventArgs e, string commandName) where TModule : CommandModule<TModule>
         {
-            await ProcessInput(typeof(TModule), client, e);
+            await Evaluate_Internal(typeof(TModule), client, e);
 
             //: this method is probably unnecessary. think about it later
         }

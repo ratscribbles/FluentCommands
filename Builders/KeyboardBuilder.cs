@@ -13,7 +13,7 @@ using FluentCommands.KeyboardTypes;
 namespace FluentCommands.Builders
 {
     /// <summary>
-    /// Parent builder of <see cref="InlineKeyboardBuilder"/> and <see cref="ReplyKeyboardBuilder"/>. Stores keyboard information provided to a <see cref="Command"/> or <see cref="Menus.Menu"/> object.
+    /// Parent builder of <see cref="InlineKeyboardBuilder"/> and <see cref="ReplyKeyboardBuilder"/>. Stores keyboard information provided to a <see cref="Command"/> or <see cref="Menus.MenuItem"/> object.
     /// </summary>
     public class KeyboardBuilder : IInlineKeyboardBuilder, IReplyKeyboardBuilder, IFluentInterface
     {
@@ -28,11 +28,11 @@ namespace FluentCommands.Builders
         /// </summary>
         internal List<KeyboardButton[]> ReplyRows { get; private set; } = new List<KeyboardButton[]>();
         /// <summary>
-        /// Gets the <see cref="ReplyKeyboardRemove"/> to be used for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Gets the <see cref="ReplyKeyboardRemove"/> to be used for this <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
         internal ReplyKeyboardRemove? ReplyRemove { get; private set; } = null;
         /// <summary>
-        /// Gets the <see cref="ForceReplyMarkup"/> to be used for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Gets the <see cref="ForceReplyMarkup"/> to be used for this <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
         internal ForceReplyMarkup? ForceReply { get; private set; } = null;
         /// <summary>
@@ -62,12 +62,12 @@ namespace FluentCommands.Builders
         }
 
         /// <summary>
-        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
         internal KeyboardBuilder() { }
 
         /// <summary>
-        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
         /// <param name="forceReplyMarkup"></param>
         /// <param name="selective"></param>
@@ -78,7 +78,7 @@ namespace FluentCommands.Builders
         }
 
         /// <summary>
-        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.Menu"/>.
+        /// Instantiates a new <see cref="KeyboardBuilder"/>. Contains information to construct an <see cref="IKeyboardBuilder{TBuilder}"/> of the correct type for this <see cref="Command"/> or <see cref="Menus.MenuItem"/>.
         /// </summary>
         /// <param name="replyKeyboardRemove"></param>
         /// <param name="selective"></param>

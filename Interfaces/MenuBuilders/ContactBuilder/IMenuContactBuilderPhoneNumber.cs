@@ -10,7 +10,7 @@ namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
         /// Required. Contact's first name.
         /// </summary>
         /// <param name="firstName"></param>
-        /// <returns>Returns this <see cref="Menus.MenuItem"/> to continue fluently building its parameters.</returns>
+        /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
         IMenuContactOptionalBuilder FirstName(string firstName);
     }
 }

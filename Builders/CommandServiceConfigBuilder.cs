@@ -15,7 +15,7 @@ namespace FluentCommands.Builders
         public bool UseInternalStateHandlerForReplyKeyboards { get; set; }
         public bool UseGlobalLogging { get; set; }
         public bool CaptureAllLoggingEvents { get; set; }
-        public bool SwallowExceptions { get; set; } = false;
+        public bool SwallowCriticalExceptions { get; set; } = false;
         public FluentLogLevel MaximumLogLevel { get; set; } = FluentLogLevel.Fatal;
         public string DefaultPrefix { get; set; } = "/";
         public MenuMode DefaultMenuMode { get; set; } = MenuMode.NoAction;

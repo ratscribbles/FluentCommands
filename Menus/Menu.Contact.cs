@@ -13,12 +13,11 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuContactBuilder, IMenuContactBuilderPhoneNumber, IMenuContactOptionalBuilder,
+    public partial class Menu : IMenuContactBuilderPhoneNumber, IMenuContactOptionalBuilder,
         IMenuContactCancellationToken, IMenuContactDisableNotification, IMenuContactLastName, IMenuContactReplyToMessage, IMenuContactThumbnail,
         IMenuContactReplyMarkup, IKeyboardBuilder<IMenuContactReplyMarkup>
     {
         #region Required
-        IMenuContactBuilderPhoneNumber IMenuContactBuilder.PhoneNumber(string phoneNumber) { PhoneNumber = phoneNumber; return this; }
         IMenuContactOptionalBuilder IMenuContactBuilderPhoneNumber.FirstName(string firstName) { FirstName = firstName; return this; }
         #endregion
 
@@ -31,7 +30,7 @@ namespace FluentCommands.Menus
         IMenuContactThumbnail IMenuContactOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuContactOptionalBuilder.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactOptionalBuilder.VCard(string vCard) { VCard = vCard; return this; }
         #endregion
 
         #region Additional Implementation
@@ -42,7 +41,7 @@ namespace FluentCommands.Menus
         IMenuContactThumbnail IMenuContactCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuContactCancellationToken.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactCancellationToken.VCard(string vCard) { VCard = vCard; return this; }
         ////
         IMenuContactLastName IMenuContactDisableNotification.LastName(string lastName) { LastName = lastName; return this; }
         IMenuContactReplyToMessage IMenuContactDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
@@ -50,28 +49,28 @@ namespace FluentCommands.Menus
         IMenuContactThumbnail IMenuContactDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuContactDisableNotification.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactDisableNotification.VCard(string vCard) { VCard = vCard; return this; }
         ////
         IMenuContactReplyToMessage IMenuContactLastName.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuContactReplyToMessage IMenuContactLastName.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         IMenuContactThumbnail IMenuContactLastName.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactLastName.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactLastName.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuContactLastName.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactLastName.VCard(string vCard) { VCard = vCard; return this; }
         ////
         IMenuContactReplyToMessage IMenuContactReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuContactReplyToMessage IMenuContactReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         IMenuContactThumbnail IMenuContactReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuContactReplyMarkup.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactReplyMarkup.VCard(string vCard) { VCard = vCard; return this; }
         ////
         IMenuContactThumbnail IMenuContactReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuContactThumbnail IMenuContactReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuContactThumbnail IMenuContactReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuContactReplyToMessage.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactReplyToMessage.VCard(string vCard) { VCard = vCard; return this; }
         ////
-        IMenuItem IMenuContactThumbnail.VCard(string vCard) { VCard = vCard; return this; }
+        IMenu IMenuContactThumbnail.VCard(string vCard) { VCard = vCard; return this; }
         #endregion
 
         #region Keyboard Implementation

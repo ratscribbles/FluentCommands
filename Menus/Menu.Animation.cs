@@ -15,17 +15,10 @@ using FluentCommands.Builders;
 
 namespace FluentCommands.Menus
 {
-    public partial class MenuItem : IMenuAnimationBuilder, IMenuAnimationOptionalBuilder,
+    public partial class Menu : IMenuAnimationOptionalBuilder,
         IMenuAnimationCancellationToken, IMenuAnimationCaption, IMenuAnimationDisableNotification, IMenuAnimationDuration, IMenuAnimationHeight, IMenuAnimationParseMode, IMenuAnimationReplyToMessage, IMenuAnimationThumbnail,
         IMenuAnimationReplyMarkup, IKeyboardBuilder<IMenuAnimationReplyMarkup>
     {
-        #region Required
-        IMenuAnimationOptionalBuilder IMenuAnimationBuilder.Source(string source) { Source = new InputOnlineFile(source); return this; }
-        IMenuAnimationOptionalBuilder IMenuAnimationBuilder.Source(Stream content) { Source = new InputOnlineFile(content); return this; }
-        IMenuAnimationOptionalBuilder IMenuAnimationBuilder.Source(Stream content, string fileName) { Source = new InputOnlineFile(content, fileName); return this; }
-        IMenuAnimationOptionalBuilder IMenuAnimationBuilder.Source(InputOnlineFile animation) { Source = animation; return this; }
-        #endregion
-
         #region Optional
         IMenuAnimationCancellationToken IMenuAnimationOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuAnimationCaption IMenuAnimationOptionalBuilder.Caption(string caption) { Caption = caption; return this; }
@@ -38,7 +31,7 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationOptionalBuilder.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationOptionalBuilder.Width(int width) { Width = width; return this; }
         #endregion
 
         #region Additional Implementations
@@ -52,7 +45,7 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationCancellationToken.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationCancellationToken.Width(int width) { Width = width; return this; }
         ////
         IMenuAnimationDisableNotification IMenuAnimationCaption.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuAnimationDuration IMenuAnimationCaption.Duration(int duration) { Duration = duration; return this; }
@@ -63,7 +56,7 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationCaption.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationCaption.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationCaption.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationCaption.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationCaption.Width(int width) { Width = width; return this; }
         ////
         IMenuAnimationDuration IMenuAnimationDisableNotification.Duration(int duration) { Duration = duration; return this; }
         IMenuAnimationHeight IMenuAnimationDisableNotification.Height(int height) { Height = height; return this; }
@@ -73,7 +66,7 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationDisableNotification.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationDisableNotification.Width(int width) { Width = width; return this; }
         ////
         IMenuAnimationHeight IMenuAnimationDuration.Height(int height) { Height = height; return this; }
         IMenuAnimationParseMode IMenuAnimationDuration.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
@@ -82,7 +75,7 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationDuration.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationDuration.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationDuration.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationDuration.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationDuration.Width(int width) { Width = width; return this; }
         ////
         IMenuAnimationParseMode IMenuAnimationHeight.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
         IMenuAnimationReplyToMessage IMenuAnimationHeight.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
@@ -90,28 +83,28 @@ namespace FluentCommands.Menus
         IMenuAnimationThumbnail IMenuAnimationHeight.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationHeight.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationHeight.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationHeight.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationHeight.Width(int width) { Width = width; return this; }
         ////
         IMenuAnimationReplyToMessage IMenuAnimationParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuAnimationReplyToMessage IMenuAnimationParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         IMenuAnimationThumbnail IMenuAnimationParseMode.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationParseMode.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationParseMode.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationParseMode.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationParseMode.Width(int width) { Width = width; return this; }
         ////
         IMenuAnimationReplyToMessage IMenuAnimationReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuAnimationReplyToMessage IMenuAnimationReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationReplyMarkup.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationReplyMarkup.Width(int width) { Width = width; return this; }
         ///
         IMenuAnimationThumbnail IMenuAnimationReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuAnimationThumbnail IMenuAnimationReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenuItem IMenuAnimationReplyToMessage.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationReplyToMessage.Width(int width) { Width = width; return this; }
         ////
-        IMenuItem IMenuAnimationThumbnail.Width(int width) { Width = width; return this; }
+        IMenu IMenuAnimationThumbnail.Width(int width) { Width = width; return this; }
         #endregion
 
         #region Keyboard Implementation

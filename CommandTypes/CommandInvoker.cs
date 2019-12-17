@@ -1,5 +1,5 @@
 ﻿using FluentCommands.Attributes;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

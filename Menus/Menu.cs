@@ -28,7 +28,7 @@ using FluentCommands.Interfaces.MenuBuilders.VoiceBuilder;
 using FluentCommands.Interfaces.MenuBuilders;
 using System.Threading.Tasks;
 using Telegram.Bot;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using FluentCommands.Exceptions;
 
 namespace FluentCommands.Menus
@@ -168,7 +168,7 @@ namespace FluentCommands.Menus
                         goto case MenuMode.NoAction; //: Should never happen. Log if so.
                 }
             }
-            catch(Exception ex) { } //: log, log, log (log all of the possible exceptions)
+            catch (Exception ex) { } //: log, log, log (log all of the possible exceptions)
 
             await CommandService.Cache.UpdateLastMessage(client, chatId, messages.ToArray()).ConfigureAwait(false);
 
@@ -203,7 +203,7 @@ namespace FluentCommands.Menus
                             if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
                                 messages.Add(await client.SendInvoiceAsync((int)chatId, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId, (InlineKeyboardMarkup?)ReplyMarkup));
                             else
-                                //: Log this
+                                //: Log this or throw
                                 messages.Add(await client.SendInvoiceAsync((int)chatId, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId));
                         }
                         break;
@@ -244,12 +244,11 @@ namespace FluentCommands.Menus
 
             async Task EditLastMessage()
             {
-                Message msgToEdit;
+                var m = CommandService.Cache.GetMessages(client, chatId, userId);
 
                 switch (MenuType)
                 {
                     case MenuType.Animation:
-                        msgToEdit = _messageBotCache[client.BotId][e.Message.Chat.Id];
                         if (replyMarkup is InlineKeyboardMarkup || replyMarkup is null)
                         {
                             await client.EditMessageCaptionAsync(msgToEdit.Chat.Id, msgToEdit.MessageId, Caption, (InlineKeyboardMarkup)replyMarkup);

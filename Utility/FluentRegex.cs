@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace FluentCommands.Helper
+namespace FluentCommands.Utility
 {
     /// <summary>
     /// A container for reused Regex patterns within the FluentCommands library.

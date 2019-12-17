@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FluentCommands;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using FluentCommands.Interfaces;
 using Telegram.Bot;
 using Telegram.Bot.Args;

@@ -10,8 +10,8 @@ namespace FluentCommands.Cache
     public interface IFluentDatabase
     {
         Task AddOrUpdateState(FluentState state);
-        Task<FluentState> GetState(long chatId, int userId);
-        Task UpdateLastMessage(TelegramBotClient client, long chatId, Message[] messages);
-        Task<IReadOnlyCollection<Message>?> GetMessages(TelegramBotClient client, long chatId);
+        Task<FluentState> GetState(int botId, long chatId, int userId);
+        Task UpdateLastMessage(int botId, long chatId, int userId, Message[] messages);
+        Task<IReadOnlyCollection<Message>?> GetMessages(int botId, long chatId, int userId);
     }
 }

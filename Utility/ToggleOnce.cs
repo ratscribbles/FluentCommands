@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FluentCommands.Helper
+namespace FluentCommands.Utility
 {
     internal struct ToggleOnce
     {

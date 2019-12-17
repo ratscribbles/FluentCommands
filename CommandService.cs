@@ -11,7 +11,7 @@ using FluentCommands.Interfaces;
 using FluentCommands.Attributes;
 using FluentCommands.Exceptions;
 using FluentCommands.Menus;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
@@ -42,7 +42,7 @@ namespace FluentCommands
         private static readonly IReadOnlyCollection<Type> _assemblyTypes;
         private static readonly IReadOnlyCollection<Type> _telegramEventArgs = new HashSet<Type> { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         private static readonly Dictionary<Type, ModuleBuilder> _tempModules = new Dictionary<Type, ModuleBuilder>();
-        private static Toggle _lastMessageIsMenu = new Toggle(false);
+        private static Toggle _lastMessageIsMenu = new Toggle(false); //: Probably delete
         private static ToggleOnce _commandServiceStarted = new ToggleOnce(false);
         private static CommandServiceConfigBuilder _tempCfg = new CommandServiceConfigBuilder();
         ///////
@@ -58,7 +58,7 @@ namespace FluentCommands
         {
             get
             {
-                if (GlobalConfig.UsingCustomDatabase) return _instance.Value._customDatabase; // Not null if true
+                if (GlobalConfig.UsingCustomDatabase) return _instance.Value._customDatabase!; // Not null if true
                 else return _defaultCache.Value;
             }
         }
@@ -68,7 +68,7 @@ namespace FluentCommands
             {
                 if (GlobalConfig.DisableLogging)
                 {
-                    if (GlobalConfig.UsingCustomLogger) return _instance.Value._customLogger; // Not null if true
+                    if (GlobalConfig.UsingCustomLogger) return _instance.Value._customLogger!; // Not null if true
                     else return _defaultLogger.Value;
                 }
                 else return _emptyLogger.Value;
@@ -714,7 +714,6 @@ namespace FluentCommands
             public void Start(Action<CommandServiceConfigBuilder> buildAction) => CommandService.Start(buildAction);
         }
         #endregion
-
 
         #region Module Building Overloads
         /// <summary>

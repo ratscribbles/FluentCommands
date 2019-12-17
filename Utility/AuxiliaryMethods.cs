@@ -11,7 +11,7 @@ using FluentCommands.CommandTypes;
 using FluentCommands.Exceptions;
 using Telegram.Bot.Args;
 
-namespace FluentCommands.Helper
+namespace FluentCommands.Utility
 {
     internal static class AuxiliaryMethods
     {

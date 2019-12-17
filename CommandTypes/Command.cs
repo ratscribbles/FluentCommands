@@ -12,7 +12,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using FluentCommands.CommandTypes.Steps;
 using Telegram.Bot;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using FluentCommands.Menus;
 
 namespace FluentCommands.CommandTypes

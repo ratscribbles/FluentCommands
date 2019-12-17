@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using FluentCommands.Exceptions;
 using FluentCommands.Logging;
 using FluentCommands.Menus;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using FluentCommands.Cache;
 using FluentCommands.Interfaces.MenuBuilders;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using FluentCommands.Exceptions;
 
 namespace FluentCommands.Attributes

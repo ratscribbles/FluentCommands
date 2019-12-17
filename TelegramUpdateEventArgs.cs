@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Telegram.Bot.Args;
-using FluentCommands.Helper;
+using FluentCommands.Utility;
 using Telegram.Bot.Types;
 
 namespace FluentCommands

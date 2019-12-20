@@ -6,13 +6,15 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using System.Threading.Tasks;
+using Telegram.Bot;
+using Telegram.Bot.Args;
 
 namespace FluentCommands.Interfaces.MenuBuilders
 {
     /// <summary>
     /// Represents a valid <see cref="Menu"/> object that can be sent to a <see cref="Chat"/> or <see cref="User"/> on Telegram.
     /// </summary>
-    public interface IMenu
+    public interface IMenu : IFluentInterface
     {
         /// <summary>
         /// Allows you specify where to send this <see cref="Menu"/>.
@@ -28,7 +30,7 @@ namespace FluentCommands.Interfaces.MenuBuilders
         /// <exception cref="ContactRequestException"></exception>
         /// <exception cref="InvalidUserIdException"></exception>
         /// <exception cref="UserNotFoundException"></exception>
-        Task Send(int idToSendTo, ChatAction? chatAction = null, int duration = 0);
+        //Task Send(int idToSendTo, ChatAction? chatAction = null, int duration = 0);
 
         /// <summary>
         /// Allows you specify where to send this <see cref="Menu"/>.
@@ -44,6 +46,12 @@ namespace FluentCommands.Interfaces.MenuBuilders
         /// <exception cref="ContactRequestException"></exception>
         /// <exception cref="InvalidUserIdException"></exception>
         /// <exception cref="UserNotFoundException"></exception>
-        Task Send(long idToSendTo, ChatAction? chatAction = null, int duration = 0);
+        //Task Send(long idToSendTo, ChatAction? chatAction = null, int duration = 0);
+
+        Task Send(TelegramBotClient client, MessageEventArgs e, ChatAction? chatAction = null, int duration = 0);
+
+        Task Send(TelegramBotClient client, InlineQueryEventArgs e, ChatAction? chatAction = null, int duration = 0);
+        Task Send(TelegramBotClient client, ChosenInlineResultEventArgs e, ChatAction? chatAction = null, int duration = 0);
+
     }
 }

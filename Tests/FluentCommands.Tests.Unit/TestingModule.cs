@@ -11,15 +11,15 @@ using FluentCommands.Logging;
 using FluentCommands.Menus;
 using FluentCommands.CommandTypes.Steps;
 
-namespace FluentCommands
+namespace FluentCommands.Tests.Unit
 {
-    public class TestingContext : CommandModule<TestingContext>
+    public class TestingModule : CommandModule<TestingModule>
     {
         [Command("e")]
         [Step(-1)]
         public async Task<IStep> PwiOOP(TelegramBotClient client, MessageEventArgs e)
         {
-            var lastStep = await Step.LastStep(e);
+            var lastStep = await Step.LastStep(client, e);
             if (lastStep.CurrentStepNumber == 1)
             {
                 return Step.Success();
@@ -53,7 +53,7 @@ namespace FluentCommands
         [Step(2)]
         public async Task<IStep> PwOaOP(TelegramBotClient client, MessageEventArgs e)
         {
-            var lastStep = await Step.LastStep(e);
+            var lastStep = await Step.LastStep(client, e);
             if (lastStep.PreviousStepAction == StepAction.Next) ;
 
             if (lastStep.PreviousStepResult == StepResult.Failure) await client.SendTextMessageAsync(e.Message.Chat.Id, "im sad");

@@ -4,7 +4,7 @@ using System.Text;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 
-namespace FluentCommands.Utility
+namespace FluentCommands.Extensions
 {
     public static class TelegramEventArgsExtensions
     {

@@ -11,6 +11,7 @@ using FluentCommands.CommandTypes;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using FluentCommands.Logging;
 using FluentCommands.Cache;
+using Telegram.Bot;
 
 namespace FluentCommands.Builders
 {
@@ -27,9 +28,9 @@ namespace FluentCommands.Builders
         /// <summary> Stores the module type when using alternate building form. </summary>
         internal Type TypeStorage { get; }
         /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
-        private CommandBaseBuilder? CommandStorage { get; set; } = null;
+        private CommandBaseBuilder? CommandStorage { get; set; }
         /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleConfig)"/> to update this.</summary>
-        internal ModuleConfig Config { get; private set; } = new ModuleConfig(new ModuleConfigBuilder());
+        internal ModuleConfigBuilder ConfigBuilder { get; private set; } = new ModuleConfigBuilder();
         /// <summary>The internal <see cref="CommandBaseBuilder"/> dictionary for this <see cref="ModuleBuilder"/>. Readonly.</summary>
         internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get { return _moduleCommandBases; } }
 
@@ -55,8 +56,12 @@ namespace FluentCommands.Builders
         /// <param name="t">The class this ModuleBuilder is targeting.</param>
         internal ModuleBuilder(Type t) => TypeStorage = t;
 
-        internal void SetConfig(ModuleConfig cfg) => Config = cfg;
+        internal void SetConfig(ModuleConfigBuilder cfg) => ConfigBuilder = cfg;
 
+        internal ModuleConfig BuildConfig() => ConfigBuilder.BuildConfig();
+        internal TelegramBotClient? BuildClient() => ConfigBuilder.BuildClient();
+
+        #region Builder Implementation
         /// <summary>
         /// Creates a new command for this module.
         /// </summary>
@@ -189,7 +194,7 @@ namespace FluentCommands.Builders
             UpdateBuilder(CommandStorage);
             return this;
         }
-
+        //: Add descs
         public ICommandBaseOfModuleKeyboard ForceReply(bool selective = false)
         {
             CommandStorage!.ForceReply(selective);
@@ -204,5 +209,6 @@ namespace FluentCommands.Builders
             if (!(c is null)) this[c.Name] = c;
             if (!(TypeStorage is null)) CommandService.UpdateBuilderInTempModules(this, TypeStorage);
         }
+        #endregion
     }
 }

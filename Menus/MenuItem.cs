@@ -29,7 +29,7 @@ namespace FluentCommands.Menus
 
         //: Probably just make extension methods on the Menu class. better to have MenuExtensions than MenuItem lol
 
-        public async Task Send(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.Default) => await Send_Logic(client, e, menuMode);
+        public async Task Send(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.NoAction) => await Send_Logic(client, e, menuMode);
 
         //public async Task Send(TelegramBotClient client, CallbackQueryEventArgs e, MenuMode menuMode = MenuMode.Default) =>
         //    await Send_Logic(client, e, menuMode);
@@ -52,7 +52,7 @@ namespace FluentCommands.Menus
         //internal async Task Send<TModule>(TelegramBotClient client, UpdateEventArgs e, MenuMode menuMode = MenuMode.Default) where TModule : CommandModule<TModule> =>
         //    await Send_Logic(client, e, menuMode, typeof(TModule));
 
-        private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.Default, Type? module = null)
+        private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs e, MenuMode menuMode = MenuMode.NoAction, Type? module = null)
         {
             //? should this method be public? aimed at transforming MenuItems into replacements for the weird client methods
             //: additionally, please fix the signature of this method
@@ -71,7 +71,7 @@ namespace FluentCommands.Menus
             var m = Menu;
             MenuMode mode;
 
-            if (menuMode != MenuMode.Default) mode = menuMode;
+            if (menuMode != MenuMode.NoAction) mode = menuMode;
             else 
             {
                 if (module is { }) mode = CommandService.Modules[module]?.Config?.MenuModeOverride ?? menuMode;

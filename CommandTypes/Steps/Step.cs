@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Telegram.Bot;
 using Telegram.Bot.Args;
 
 namespace FluentCommands.CommandTypes.Steps
@@ -113,8 +114,8 @@ namespace FluentCommands.CommandTypes.Steps
         internal IStep SetTo_GotoPrevious() { _stepAction = StepAction.Undo; return this; }
         internal IStep SetTo_GotoPrevious(int delay) { _stepAction = StepAction.Undo; _delay = delay; return this; }
 
-        public static async Task<StepState> LastStep(CallbackQueryEventArgs e) { return (await CommandService.Cache.GetState(e.CallbackQuery.Message.Chat.Id, e.CallbackQuery.From.Id) ?? new FluentState(e.CallbackQuery.Message.Chat, e.CallbackQuery.From)).StepState; } //: Create overloads for this so that it works with eventargs lmao
-        public static async Task<StepState> LastStep(MessageEventArgs e) { return (await CommandService.Cache.GetState(e.Message.Chat.Id, e.Message.From.Id) ?? new FluentState(e.Message.Chat, e.Message.From)).StepState; } //: Create overloads for this so that it works with eventargs lmao
+        public static async Task<StepState> LastStep(TelegramBotClient client, CallbackQueryEventArgs e) { return (await CommandService.Cache.GetState(client.BotId, e.CallbackQuery.Message.Chat.Id, e.CallbackQuery.From.Id)).StepState; }  //: Create overloads for this so that it works with eventargs lmao
+        public static async Task<StepState> LastStep(TelegramBotClient client, MessageEventArgs e) { return (await CommandService.Cache.GetState(client.BotId, e.Message.Chat.Id, e.Message.From.Id)).StepState; } //: Create overloads for this so that it works with eventargs lmao
 
         /// <summary>
         /// Marks a <see cref="Step"/> as successful and moves to the next <see cref="Step"/> (by default).

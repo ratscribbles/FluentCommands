@@ -4,11 +4,15 @@ using FluentCommands.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Telegram.Bot;
 
 namespace FluentCommands
 {
     public interface ICommandServiceInitializer
     {
+        ICommandServiceInitializer AddClient(string token);
+        ICommandServiceInitializer AddClient(ClientBuilder clientBuilder);
+        ICommandServiceInitializer AddClient(TelegramBotClient client);
         ICommandServiceInitializer AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger;
         ICommandServiceInitializer AddLogger(IFluentLogger implementationInstance);
         ICommandServiceInitializer AddLogger(Type implementationType);

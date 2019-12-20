@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <nullable>enable</nullable>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <ApplicationIcon />
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +20,7 @@
     <None Remove="bottoken.txt" />
     <None Remove="fu4hwpg0.ioc~" />
     <None Remove="Interfaces\ve-DCCD.tmp" />
+    <None Remove="jjjew1gt.vlu~" />
     <None Remove="nkpjelfy.ny1~" />
     <None Remove="token.txt" />
     <None Remove="zid5brs1.1zx~" />

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using FluentCommands.Utility;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
@@ -8,6 +10,62 @@ namespace FluentCommands.Extensions
 {
     public static class TelegramEventArgsExtensions
     {
+        //: descriptions.
+        public static bool TryGetArgs(this CallbackQueryEventArgs e, [NotNull] out IReadOnlyCollection<string> args)
+        {
+            var match = FluentRegex.CheckCommand.Match(e?.CallbackQuery?.Data ?? "");
+            if (match.Success) { args = match.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries); return true; }
+            else { args = Array.Empty<string>(); return false; }
+        }
+
+        //: NEEDS TO BE TESTED
+        public static bool TryGetArgs(this ChosenInlineResultEventArgs e, [NotNull] out IReadOnlyCollection<string> args)
+        {
+            var match = FluentRegex.CheckCommand.Match(e?.ChosenInlineResult?.Query ?? "");
+            if (match.Success) { args = match.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries); return true; }
+            else { args = Array.Empty<string>(); return false; }
+        }
+        //: ALSO NEEDS TO BE TESTED. CREATE A NEW REGEX TO DETECT QUERIES
+        public static bool TryGetArgs(this InlineQueryEventArgs e, [NotNull] out IReadOnlyCollection<string> args)
+        {
+            var match = FluentRegex.CheckCommand.Match(e?.InlineQuery?.Query ?? "");
+            if (match.Success) { args = match.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries); return true; }
+            else { args = Array.Empty<string>(); return false; }
+        }
+        public static bool TryGetArgs(this MessageEventArgs e, [NotNull] out IReadOnlyCollection<string> args)
+        {
+            var match = FluentRegex.CheckCommand.Match(e?.Message?.Text ?? "");
+            if (match.Success) { args = match.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries); return true; }
+            else { args = Array.Empty<string>(); return false; }
+        }
+        public static bool TryGetArgs(this UpdateEventArgs e, [NotNull] out IReadOnlyCollection<string> args)
+        {
+            bool result;
+            switch (e.Update)
+            {
+                case var u when e is { Update: { CallbackQuery: { Data: { } } } }:
+                    result = u.CallbackQuery.Data.TryGetArgs_Internal(out args);
+                    return result;
+                case var u when e is { Update: { ChosenInlineResult: { Query: { } } } }:
+                    result = u.ChosenInlineResult.Query.TryGetArgs_Internal(out args);
+                    return result;
+                case var u when e is { Update: { InlineQuery: { Query: { } } } }:
+                    result = u.InlineQuery.Query.TryGetArgs_Internal(out args);
+                    return result;
+                case var u when e is { Update: { Message: { Text: { } } } }:
+                    result = u.Message.Text.TryGetArgs_Internal(out args);
+                    return result;
+                default:
+                    args = Array.Empty<string>();
+                    return false;
+            }
+        }
+        private static bool TryGetArgs_Internal(this string data, out IReadOnlyCollection<string> args)
+        {
+            var match = FluentRegex.CheckCommand.Match(data);
+            if (match.Success) { args = match.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries); return true; }
+            else { args = Array.Empty<string>(); return false; }
+        }
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>
         internal static ReadOnlyMemory<char> GetRawInput(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Data.AsMemory() ?? ReadOnlyMemory<char>.Empty;
         /// <summary>Returns the raw string input for <see cref="Command"/> processing. Returns empty string if not found.</summary>

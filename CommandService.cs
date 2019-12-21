@@ -23,6 +23,7 @@ using FluentCommands.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using FluentCommands.CommandTypes.Steps;
 using System.Diagnostics.CodeAnalysis;
+using Telegram.Bot.Types.Enums;
 
 //[assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
@@ -78,7 +79,7 @@ namespace FluentCommands
         }
         internal static CommandServiceConfig GlobalConfig => _instance.Value._config;
 
-        //: desc
+        //: desc, explain that no type definition gets the default client 
         public static TelegramBotClient? Client()
             => _instance.Value._client;
         public static TelegramBotClient? Client(Type module)
@@ -122,9 +123,15 @@ namespace FluentCommands
             if (_services.IsValueCreated)
             {
                 var provider = _services.Value.BuildServiceProvider();
-                _client = provider.GetService<TelegramBotClient>();
-                _customDatabase = provider.GetService<IFluentDatabase>();
-                _customLogger = provider.GetService<IFluentLogger>();
+                _client = provider.GetServices<TelegramBotClient>().FirstOrDefault();
+                _customDatabase = provider.GetServices<IFluentDatabase>().FirstOrDefault();
+                _customLogger = provider.GetServices<IFluentLogger>().FirstOrDefault();
+
+
+
+                //: allow for specification of updatetype, cancellation token in startreceiving
+
+                _client.StartReceiving(Array.Empty<UpdateType>());
             }
 
             var tempCommands = new Dictionary<Type, Dictionary<ReadOnlyMemory<char>, ICommand>>();
@@ -673,165 +680,42 @@ namespace FluentCommands
             _ =_instance.Value;
             _commandServiceStarted.Value = true;
         }
-
-        //: documentation...
-        public static ICommandServiceInitializer AddClient(string token)
-            => new CommandServiceStartNavigator().AddClient(token);
-
-        public static ICommandServiceInitializer AddClient(ClientBuilder clientBuilder)
-            => new CommandServiceStartNavigator().AddClient(clientBuilder);
-
-        public static ICommandServiceInitializer AddClient(TelegramBotClient client)
-            => new CommandServiceStartNavigator().AddClient(client);
-
-        public static ICommandServiceInitializer AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger
-            => new CommandServiceStartNavigator().AddLogger<TLoggerImplementation>();
-
-        public static ICommandServiceInitializer AddLogger(IFluentLogger implementationInstance)
-            => new CommandServiceStartNavigator().AddLogger(implementationInstance);
-
-        public static ICommandServiceInitializer AddLogger(Type implementationType)
-            => new CommandServiceStartNavigator().AddLogger(implementationType);
-
-        public static ICommandServiceInitializer AddDatabase<TDatabaseImplementation>() where TDatabaseImplementation : class, IFluentDatabase
-            => new CommandServiceStartNavigator().AddDatabase<TDatabaseImplementation>();
-
-        public static ICommandServiceInitializer AddDatabase(Type implementationType)
-            => new CommandServiceStartNavigator().AddDatabase(implementationType);
-
-        internal class CommandServiceStartNavigator : ICommandServiceInitializer, IFluentInterface
-        {
-            //: documentation
-            public ICommandServiceInitializer AddClient(string token)
-            {
-                _services.Value.AddClient(token);
-                return this;
-            }
-
-            public ICommandServiceInitializer AddClient(ClientBuilder clientBuilder)
-            {
-                _services.Value.AddClient(clientBuilder);
-                return this;
-            }
-
-            public ICommandServiceInitializer AddClient(TelegramBotClient client)
-            {
-                _services.Value.AddClient(client);
-                return this;
-            }
-
-            public ICommandServiceInitializer AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger
-            {
-                _services.Value.AddLogger<TLoggerImplementation>();
-                return this;
-            }
-
-            public ICommandServiceInitializer AddLogger(IFluentLogger implementationInstance)
-            {
-                _services.Value.AddLogger(implementationInstance);
-                return this;
-            }
-
-            public ICommandServiceInitializer AddLogger(Type implementationType)
-            {
-                _services.Value.AddLogger(implementationType);
-                return this;
-            }
-
-            public ICommandServiceInitializer AddDatabase<TDatabaseImplementation>() where TDatabaseImplementation : class, IFluentDatabase
-            {
-                _services.Value.AddDatabase<TDatabaseImplementation>();
-                return this;
-            }
-
-            public ICommandServiceInitializer AddDatabase(Type implementationType)
-            {
-                _services.Value.AddDatabase(implementationType);
-                return this;
-            }
-
-            public void Start() => CommandService.Start();
-            public void Start(CommandServiceConfigBuilder cfg) => CommandService.Start(cfg);
-            public void Start(Action<CommandServiceConfigBuilder> buildAction) => CommandService.Start(buildAction);
-
-            internal CommandServiceStartNavigator() { }
-        }
-        #endregion
-
-        #region Module Building Overloads
-        /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>  
-        /// <typeparam name="TModule">The class that contains the commands the <see cref="ModuleBuilder"/> is being built for.</typeparam>
-        /// <param name="buildAction">The "build action" is an <see cref="Action"/> that allows the user to configure the builder object—an alternate format to construct the <see cref="ModuleBuilder"/>.</param>
-        public static void Module<TModule>(Action<IModuleBuilder> buildAction) where TModule : class
-        {
-            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
-            //? method of the program class, and the actual command implementations in a separate class
-
-            var moduleType = typeof(TModule);
-            var module = new ModuleBuilder(moduleType);
-
-            buildAction(module);
-
-            if (!_tempModules.ContainsKey(moduleType)) _tempModules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.FullName ?? "NULL"}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-        }
-
-        /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>
-        /// <typeparam name="TModule">The class that contains the commands being built.</typeparam>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
-        public static IModuleBuilder Module<TModule>() where TModule : class
-        {
-            //? This method should stay generic for the purposes of quick bots that only need a small model in the main 
-            //? method of the program class, and the actual command implementations in a separate class
-
-            var moduleType = typeof(TModule);
-            var module = new ModuleBuilder(moduleType);
-            if (!_tempModules.ContainsKey(moduleType)) _tempModules.Add(moduleType, module);
-            else throw new CommandOnBuildingException($"This module, {moduleType.FullName ?? "NULL"}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-            return _tempModules[moduleType];
-        }
-
-        /// <summary>
-        /// Builds a <see cref="Command"/> module.
-        /// <para>Provided type is the class that contains the commands being built.</para>
-        /// </summary>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> to continue the fluent building process.</returns>
-        public static IModuleBuilder Module(Type module)
-        {
-            var moduleModule = new ModuleBuilder(module);
-            if (!_tempModules.ContainsKey(module)) _tempModules.Add(module, moduleModule);
-            else throw new CommandOnBuildingException($"This module, {module.FullName ?? "NULL"}, appears to be a duplicate of another module with the same class type. You may only have one ModuleBuilder per class.");
-            return _tempModules[module];
-        }
         #endregion
 
         #region Evaluate/ProcessInput Overloads
-        public static async Task Evaluate<TModule>(CallbackQueryEventArgs e, TelegramBotClient? clientOverride = null) where TModule : CommandModule<TModule>
+        //: Warn user that if there's a client provided for the module, they'll receive events as well. BOLD that they should only be using these methods if they're an advanced user
+        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, CallbackQueryEventArgs e) where TModule : CommandModule<TModule>
             => await Evaluate_Internal(typeof(TModule), e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate<TModule>(ChosenInlineResultEventArgs e, TelegramBotClient? clientOverride = null) where TModule : CommandModule<TModule>
+        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, ChosenInlineResultEventArgs e) where TModule : CommandModule<TModule>
             => await Evaluate_Internal(typeof(TModule), e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate<TModule>(InlineQueryEventArgs e, TelegramBotClient? clientOverride = null) where TModule : CommandModule<TModule>
+        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, InlineQueryEventArgs e) where TModule : CommandModule<TModule>
             => await Evaluate_Internal(typeof(TModule), e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate<TModule>(MessageEventArgs e, TelegramBotClient? clientOverride = null) where TModule : CommandModule<TModule>
+        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, MessageEventArgs e) where TModule : CommandModule<TModule>
             => await Evaluate_Internal(typeof(TModule), e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate<TModule>(UpdateEventArgs e, TelegramBotClient? clientOverride = null) where TModule : CommandModule<TModule>
+        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, UpdateEventArgs e) where TModule : CommandModule<TModule>
             => await Evaluate_Internal(typeof(TModule), e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate(Type commandModule, CallbackQueryEventArgs e, TelegramBotClient? clientOverride = null)
+        public static async Task Evaluate(TelegramBotClient clientOverride, CallbackQueryEventArgs e, Type commandModule)
             => await Evaluate_Internal(commandModule, e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate(Type commandModule, ChosenInlineResultEventArgs e, TelegramBotClient? clientOverride = null)
+        public static async Task Evaluate(TelegramBotClient clientOverride, ChosenInlineResultEventArgs e, Type commandModule)
             => await Evaluate_Internal(commandModule, e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate(Type commandModule, InlineQueryEventArgs e, TelegramBotClient? clientOverride = null)
+        public static async Task Evaluate(TelegramBotClient clientOverride, InlineQueryEventArgs e, Type commandModule)
             => await Evaluate_Internal(commandModule, e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate(Type commandModule, MessageEventArgs e, TelegramBotClient? clientOverride = null)
+        public static async Task Evaluate(TelegramBotClient clientOverride, MessageEventArgs e, Type commandModule)
             => await Evaluate_Internal(commandModule, e, clientOverride).ConfigureAwait(false);
-        public static async Task Evaluate(Type commandModule, UpdateEventArgs e, TelegramBotClient? clientOverride = null)
+        public static async Task Evaluate(TelegramBotClient clientOverride, UpdateEventArgs e, Type commandModule)
             => await Evaluate_Internal(commandModule, e, clientOverride).ConfigureAwait(false);
+
+        //! These are for internal eventhandler purposes only. Clients will automatically be evaluating with these methods.
+        internal static async Task Evaluate<TModule>(CallbackQueryEventArgs e) where TModule : CommandModule<TModule>
+            => await Evaluate_Internal(typeof(TModule), e).ConfigureAwait(false);
+        internal static async Task Evaluate<TModule>(ChosenInlineResultEventArgs e) where TModule : CommandModule<TModule>
+            => await Evaluate_Internal(typeof(TModule), e).ConfigureAwait(false);
+        internal static async Task Evaluate<TModule>(InlineQueryEventArgs e) where TModule : CommandModule<TModule>
+            => await Evaluate_Internal(typeof(TModule), e).ConfigureAwait(false);
+        internal static async Task Evaluate<TModule>(MessageEventArgs e) where TModule : CommandModule<TModule>
+            => await Evaluate_Internal(typeof(TModule), e).ConfigureAwait(false);
+        internal static async Task Evaluate<TModule>(UpdateEventArgs e) where TModule : CommandModule<TModule>
+            => await Evaluate_Internal(typeof(TModule), e).ConfigureAwait(false);
 
         /// <summary>
         /// Processes the input for a user's given args from an Evaluate method.
@@ -844,16 +728,16 @@ namespace FluentCommands
             if (!_commandServiceStarted) return; //? Can't log this; logging requires the service to have been started.
 
             if (moduleType is null) throw new NullReferenceException("The Module type was null.");
-            if (!Modules.TryGetValue(moduleType, out var module)) throw new ArgumentException($"There was no module found for the provided type: {moduleType.FullName}");
-            var noClient = new NullReferenceException("Could not find a suitable TelegramBotClient to evaluate with (client was null). Please register a TelegramBotClient with the AddClient method in either the CommandService, or in your command module's OnConfiguring method.");
+            if (!Modules.TryGetValue(moduleType, out var module)) throw new ArgumentException($"There was no module found for the provided type: {moduleType.FullName}.");
+            var noClient = new NullReferenceException("Could not find a suitable TelegramBotClient to evaluate with. (Did you mean to provide a Client Override to the method?) Please register a TelegramBotClient with the AddClient method in either the CommandService, or in your command module's OnConfiguring method.");
             if (client is null) client = module.UseClient ? (module.Client ?? throw noClient) : InternalClient is { } ? InternalClient : throw noClient;
-            if (e is null || e.HasNoArgs) throw new NullReferenceException("The EventArgs was null or contained no valid EventArgs.");
+            if (e is null || e.HasNoArgs) throw new NullReferenceException("The EventArgs was null or invalid. (The evaluate method only supports 5 EventArgs: CallbackQuery, ChosenInlineResult, InlineQuery, Message, and Update EventArgs.)");
 
             //: When redoing the exceptions here, make sure to reflect them both in this method's XML summary as well as the ones that use this method to function
             var logger = module.Logger;
-            _ = e.TryGetChatId(out var cId);
-            _ = e.TryGetUserId(out var uId);
-            var state = await Cache.GetState(client.BotId, cId, uId).ConfigureAwait(false);
+            _ = e.TryGetChat(out var chat);
+            _ = e.TryGetUser(out var user);
+            var state = await Cache.GetState(client.BotId, chat?.Id ?? 0, user?.Id ?? 0).ConfigureAwait(false);
 
             if (state.CurrentlyAccessed) return; //: Possibly log? Possibly inform the user? Possibly include this as an option in the global config
             else state.CurrentlyAccessed = true; //: This might not work with outside DBs injected into the framework. Consider temporarily storing user states in a ConcurrentDictionary. Null it out when the state is released. If not null, return. If null, continue. All you need to do is have a valid user id/chat id lookup and it would work without implementing IEquatable
@@ -869,23 +753,35 @@ namespace FluentCommands
             var config = module.Config;
             var prefix = config.Prefix; //! Not AsMemory() due to the possibility of this string changing elsewhere during execution
 
-            try
+            ICommand? command;
+            if (MemoryExtensions.StartsWith(input.Span, prefix, StringComparison.OrdinalIgnoreCase))
             {
-                if (MemoryExtensions.StartsWith(input.Span, prefix, StringComparison.OrdinalIgnoreCase))
+                input = input.Slice(prefix.Length);
+
+                var commandMatch = FluentRegex.CheckCommand.Match(input.Span.ToString());
+
+                if (commandMatch.Success)
                 {
-                    input = input.Slice(prefix.Length);
-
-                    var commandMatch = FluentRegex.CheckCommand.Match(input.Span.ToString());
-
-                    if (commandMatch.Success)
+                    if (commandMatch.Groups.Count > 1)
                     {
-                        if (commandMatch.Groups.Count > 1)
+                        var commandName = commandMatch.Groups[1].Value.AsMemory();
+                        if (!TryGetCommand(commandName, moduleType, out command))
                         {
-                            var commandName = commandMatch.Groups[1].Value.AsMemory();
-                            if (TryGetCommand(commandName, moduleType, out var command)) await ProcessCommand(command).ConfigureAwait(false);
+                            await Logger.Info($"{user?.ToFluentLogger() ?? "Unknown user"}");
+                            return;
+                            //: improve this lol im going to sleep
+
                         }
                     }
+                    else return; //: log
                 }
+                else return; //: log
+            }
+            else return; //: log
+
+            try
+            {
+                await ProcessCommand(command).ConfigureAwait(false);
             }
             catch (ArgumentNullException) { return; } //: Catch, default error message?, Log it, re-throw.
             catch (ArgumentException) { return; } //: Catch, Log it, re-throw.
@@ -1019,74 +915,10 @@ namespace FluentCommands
                 }
             }
         }
-
-        #endregion
-
-        #region BotLastMessages Methods
-        /// <summary>
-        /// Returns the last <see cref="Message"/>(s) sent by this <see cref="TelegramBotClient"/> for the <see cref="Chat"/> instance indicated by this <see cref="EventArgs"/>. 
-        /// <para>Returns a collection with a length of 1 except for albums. Returns an empty collection if not found.</para>
-        /// </summary>
-        /// <param name="client">The <see cref="TelegramBotClient"/> that sent the <see cref="Message"/> being retrieved in this method.</param>
-        /// <param name="e">The <see cref="UpdateEventArgs"/> being used to locate the last <see cref="Message"/>.</param>
-        /// <returns>Returns the last <see cref="Message"/> objects sent by the bot in this <see cref="Chat"/> instance as an <see cref="IReadOnlyCollection{Message}"/>.</returns>
-        public static IReadOnlyCollection<Message> BotLastMessages(TelegramBotClient client, TelegramUpdateEventArgs e)
-        {
-            //long chatId;
-            //if (AuxiliaryMethods.TryGetEventArgsChatId(e, out long c_id)) chatId = c_id;
-            //else if (AuxiliaryMethods.TryGetEventArgsUserId(e, out int u_id)) chatId = u_id;
-            //else throw new Exception();
-
-            //bool success;
-            //byte attempts = 0;
-            //Message[]? m;
-            //do
-            //{
-            //    success = _botLastMessages[client.BotId].TryGetValue(chatId, out m);
-            //    attempts++;
-            //} 
-            //while (!success && attempts < 10);
-
-            //if (m is null) m = new Message[] { };
-
-            return new Message[0];
-        }
-
-        /// <summary>
-        /// Attempts to update the internal cache of the bot's last message(s).
-        /// <para>Clears the history of all last messages, and adds the new one(s). Adds an empty collection if it fails.</para>
-        /// </summary>
-        internal static void UpdateBotLastMessages(TelegramBotClient client, long chatId, params Message[] messages)
-        {
-            //bool success;
-            //byte attempts = 0;
-            //try
-            //{
-            //    _botLastMessages[client.BotId].TryRemove(chatId, out _);
-
-            //    do
-            //    {
-            //        success = _botLastMessages[client.BotId].TryAdd(chatId, messages);
-            //        attempts++;
-            //    } 
-            //    while (!success && attempts < 10);
-
-            //    if (!success && attempts == 10) _botLastMessages[client.BotId].TryAdd(chatId, new Message[] { });
-            //}
-            //catch (ArgumentNullException e) { return; } //: log it, check global cfg if should throw
-            //catch (OverflowException e) { return; } //: log it, check global cfg if should throw
-        }
-
         #endregion
 
         #region Helper Methods
-        public async Task CallCommand<TModule>(TelegramBotClient client, TelegramUpdateEventArgs e, string commandName) where TModule : CommandModule<TModule>
-        {
-            await Evaluate_Internal(typeof(TModule), client, e);
-
-            //: this method is probably unnecessary. think about it later
-        }
-
+        /// <summary>Attempts to get the command from the command dictionary.</summary>
         private static bool TryGetCommand(ReadOnlyMemory<char> inName, Type moduleType, [NotNullWhen(true)] out ICommand? outCommand)
         {
             if (!Commands.TryGetValue(moduleType, out var moduleDict)) { outCommand = null; return false; }

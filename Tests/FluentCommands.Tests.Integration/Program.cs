@@ -6,6 +6,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Args;
 using System.Threading.Tasks;
+using FluentCommands;
 using FluentCommands.Menus;
 using FluentCommands.CommandTypes.Steps;
 using FluentCommands.Interfaces.KeyboardBuilders;
@@ -14,17 +15,22 @@ using FluentCommands.Logging;
 using FluentCommands.CommandTypes;
 using Telegram.Bot.Types.InlineQueryResults;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace FluentCommands.Tests.Integration
 {
     class Program
     {
-        private static readonly string _token = System.IO.File.ReadAllText(@"E:\Dropbox\FluentCommands\bottoken.txt");
-        private static readonly string _token2 = System.IO.File.ReadAllText(@"E:\Dropbox\FluentCommands\bottoken2.txt");
-        private static readonly string _token3 = System.IO.File.ReadAllText(@"E:\Dropbox\FluentCommands\bottoken3.txt");
-        public static TelegramBotClient Client = new TelegramBotClient(_token);
-        public static TelegramBotClient Client2 = new TelegramBotClient(_token2);
-        public static TelegramBotClient Client3 = new TelegramBotClient(_token3);
+        private static readonly string _token = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo.txt").ElementAt(0);
+        private static readonly string _token2 = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo2.txt").ElementAt(0);
+        private static readonly string _token3 = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo3.txt").ElementAt(0);
+        public static readonly TelegramBotClient Client = new TelegramBotClient(_token);
+        public static readonly TelegramBotClient Client2 = new TelegramBotClient(_token2);
+        public static readonly TelegramBotClient Client3 = new TelegramBotClient(_token3);
+        public static readonly int Client1_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo.txt").ElementAt(1));
+        public static readonly int Client2_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo2.txt").ElementAt(1));
+        public static readonly int Client3_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo3.txt").ElementAt(1));
+
         public static Message? msg = null;
 
         static async Task Main(string[] args)
@@ -35,7 +41,13 @@ namespace FluentCommands.Tests.Integration
                 c.Logging = true;
                 c.MaximumLogLevel = FluentLogLevel.Debug;
                 c.CaptureAllLoggingEvents = true;
+                c.AddClient(Client);
+                c.AddDatabase();
+                c.AddLogger();
+                c.UseDefaultErrorMsg = true;
             });
+
+
             Client.OnUpdate += Bot_OnUpdate;
             Client.OnMessage += Bot_OnMessage;
             Client.OnInlineQuery += Bot_OnInline;
@@ -46,20 +58,16 @@ namespace FluentCommands.Tests.Integration
             Client3.StartReceiving(Array.Empty<UpdateType>());
 
             Console.WriteLine();
-
+            Com
             Console.ReadLine();
             Client.StopReceiving();
         }
 
         static async void Bot_OnMessage(object? sender, MessageEventArgs e)
         {
-            //await CommandService.Evaluate<TestingContext>(Client, e);
-            //:await MenuItem.As()
-            //    .Text()
-            //    .TextSource("") //: Cant be empty. make sure to check!!
-            //    //: Done and send to should CALL the send logic or remame send to just define the client and eventargs
-            //    //: OR have it be a single Done method (no "and send to") and have SendTo do all the work with the ID and such
-            //    .DoneAndSendTo(0).Send(Client, e);
+
+            await CommandService.Evaluate<TestModule>(e);
+
             if (e.Message.Text == "joj")
             {
                 await Client.SendTextMessageAsync(e.Message.Chat.Id, "BIG TEST");

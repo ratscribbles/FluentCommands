@@ -24,7 +24,7 @@ namespace FluentCommands
         /// <param name="moduleBuilderConfig"></param>
         protected virtual void OnConfiguring(ModuleConfigBuilder config) { }
 
-        private protected CommandModule() { }
+        protected CommandModule() { }
         internal CommandModule(Action<ModuleBuilder> onBuilding) { } // for testing
     }
 }

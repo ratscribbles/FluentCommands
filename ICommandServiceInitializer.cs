@@ -10,16 +10,13 @@ namespace FluentCommands
 {
     public interface ICommandServiceInitializer
     {
-        ICommandServiceInitializer AddClient(string token);
-        ICommandServiceInitializer AddClient(ClientBuilder clientBuilder);
-        ICommandServiceInitializer AddClient(TelegramBotClient client);
-        ICommandServiceInitializer AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger;
-        ICommandServiceInitializer AddLogger(IFluentLogger implementationInstance);
-        ICommandServiceInitializer AddLogger(Type implementationType);
-        ICommandServiceInitializer AddDatabase<TDatabaseImplementation>() where TDatabaseImplementation : class, IFluentDatabase;
-        ICommandServiceInitializer AddDatabase(Type implementationType);
-        void Start();
-        void Start(CommandServiceConfigBuilder cfg);
-        void Start(Action<CommandServiceConfigBuilder> buildAction);
+        ICommandServiceInitializer WithClient(string token);
+        ICommandServiceInitializer WithClient(ClientBuilder clientBuilder);
+        ICommandServiceInitializer WithClient(TelegramBotClient client);
+        ICommandServiceInitializer WithLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger;
+        ICommandServiceInitializer WithLogger(IFluentLogger implementationInstance);
+        ICommandServiceInitializer WithLogger(Type implementationType);
+        ICommandServiceInitializer WithDatabase<TDatabaseImplementation>() where TDatabaseImplementation : class, IFluentDatabase;
+        ICommandServiceInitializer WithDatabase(Type implementationType);
     }
 }

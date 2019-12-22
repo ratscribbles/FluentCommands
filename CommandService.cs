@@ -50,7 +50,7 @@ namespace FluentCommands
         private readonly CommandServiceConfig _config;
         private readonly IReadOnlyDictionary<Type, IReadOnlyModule> _modules;
         private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> _commands;
-        private readonly IFluentCache? _customDatabase;
+        private readonly IFluentCache? _customCache;
         private readonly IFluentLogger? _customLogger;
         private readonly TelegramBotClient? _client;
         ///////
@@ -61,7 +61,7 @@ namespace FluentCommands
         {
             get
             {
-                if (GlobalConfig.UsingCustomDatabase) return _instance.Value._customDatabase!; // Not null if true
+                if (GlobalConfig.UsingCustomDatabase) return _instance.Value._customCache!; // Not null if true
                 else return _defaultCache.Value;
             }
         }
@@ -132,44 +132,45 @@ namespace FluentCommands
             _config = cfg.BuildConfig();
             //: make sure to assign these: _client; _customDatabase; _customLogger;
 
-            IEnumerable<TelegramBotClient> clients;
-            IEnumerable<IFluentCache> caches;
-            IEnumerable<IFluentLogger> loggers;
+            // Is true if the CfgBuilder added services.
             if (_services.IsValueCreated)
             {
                 var provider = _services.Value.GetServices().BuildServiceProvider();
-                clients = provider.GetServices<TelegramBotClient>();
-                caches = provider.GetServices<IFluentCache>();
-                loggers = provider.GetServices<IFluentLogger>();
+                _client = provider.GetService<TelegramBotClient>();
+                _customCache = provider.GetService<IFluentCache>();
+                _customLogger = provider.GetService<IFluentLogger>();
+                _services.Value.GetServices().Clear();
 
                 //: allow for specification of updatetype, cancellation token in startreceiving
 
-                //_client.StartReceiving(Array.Empty<UpdateType>());
-            }
-            else
-            {
-                clients = Array.Empty<TelegramBotClient>();
-                caches = Array.Empty<IFluentCache>();
-                loggers = Array.Empty<IFluentLogger>();
             }
 
             var tempCommands = new Dictionary<Type, Dictionary<ReadOnlyMemory<char>, ICommand>>();
-            var eventHandlerActions = new Dictionary<Type, Action<TelegramBotClient>>();
-
+            var tempServicesCollection = new Dictionary<Type, (TelegramBotClient client, IFluentCache cache, IFluentLogger logger)>();
             //: create an object that stores logging "events" and pops em at the end. mayb.
-            
+
             Init_1_ModuleAssembler();
             Init_2_KeyboardAssembler();
             Init_3_CommandAssembler();
 
             var tempModulesToReadOnly = new Dictionary<Type, IReadOnlyModule>(_tempModules.Count);
-            foreach (var kvp in _tempModules.ToList()) tempModulesToReadOnly.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value));
+            foreach (var kvp in _tempModules.ToList())
+            {
+                var (client, cache, logger) = tempServicesCollection[kvp.Key];
+                tempModulesToReadOnly.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value, client, cache, logger));
+            }
 
             var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>>(tempCommands.Count);
             foreach (var kvp in tempCommands.ToList()) tempCommandsToReadOnly.Add(kvp.Key, kvp.Value);
 
             _modules = tempModulesToReadOnly;
             _commands = tempCommandsToReadOnly;
+
+            _client?.StartReceiving(Array.Empty<UpdateType>());
+            foreach(var key in _modules.Keys)
+            {
+                _modules[key].Client?.StartReceiving(Array.Empty<UpdateType>());
+            }
 
             void Init_1_ModuleAssembler()
             {
@@ -262,7 +263,7 @@ namespace FluentCommands
                     catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
-                    eventHandlerActions.Add(commandClass, (TelegramBotClient client) =>
+                    Action<TelegramBotClient?> setHandlers = (client) =>
                     {
                         try
                         {
@@ -276,7 +277,7 @@ namespace FluentCommands
                         catch (MethodAccessException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                         catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                         catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
-                    });
+                    };
 
                     moduleBuilder.SetConfig(moduleConfigBuilder);
 
@@ -286,6 +287,20 @@ namespace FluentCommands
                     {
                         AuxiliaryMethods.CheckCommandNameValidity(commandName);
                     }
+
+                    // Get services added in the ModuleConfigBuilder
+                    var provider = _services.Value.GetServices().BuildServiceProvider();
+                    var client = provider.GetService<TelegramBotClient>();
+                    var cache = provider.GetService<IFluentCache>();
+                    var logger = provider.GetService<IFluentLogger>();
+
+                    // Subscribe to the client if it exists. Global client if not. Not at all if not.
+                    //: Be sure to re-write these conditionals based on the configs
+                    setHandlers(client is { } ? client : _client is { } ? _client : null);
+
+                    tempServicesCollection.Add(moduleBuilder.TypeStorage, (client, cache, logger));
+
+                    _services.Value.GetServices().Clear();
                 }
             }
             void Init_2_KeyboardAssembler() 

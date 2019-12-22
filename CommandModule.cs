@@ -38,6 +38,8 @@ namespace FluentCommands
 
         internal void RegisterHandlers(TelegramBotClient client)
         {
+            if (client is null) return;
+
             client.OnCallbackQuery += OnCallbackQuery;
             client.OnCallbackQuery += Evaluate_OnCallbackQuery;
             client.OnInlineResultChosen += OnChosenInlineResult;

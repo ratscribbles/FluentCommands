@@ -21,15 +21,15 @@ namespace FluentCommands.Tests.Integration
 {
     class Program
     {
-        private static readonly string _token = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo.txt").ElementAt(0);
-        private static readonly string _token2 = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo2.txt").ElementAt(0);
-        private static readonly string _token3 = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo3.txt").ElementAt(0);
+        private static readonly string _token = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinf1.txt").ElementAt(0);
+        private static readonly string _token2 = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinf2.txt").ElementAt(0);
+        private static readonly string _token3 = System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinf3.txt").ElementAt(0);
         public static readonly TelegramBotClient Client = new TelegramBotClient(_token);
         public static readonly TelegramBotClient Client2 = new TelegramBotClient(_token2);
         public static readonly TelegramBotClient Client3 = new TelegramBotClient(_token3);
-        public static readonly int Client1_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo.txt").ElementAt(1));
-        public static readonly int Client2_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo2.txt").ElementAt(1));
-        public static readonly int Client3_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinfo3.txt").ElementAt(1));
+        public static readonly int Client1_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinf1.txt").ElementAt(1));
+        public static readonly int Client2_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinf2.txt").ElementAt(1));
+        public static readonly int Client3_Id = int.Parse(System.IO.File.ReadLines(@"E:\Dropbox\FluentCommands\botinf3.txt").ElementAt(1));
 
         public static Message? msg = null;
 
@@ -44,18 +44,18 @@ namespace FluentCommands.Tests.Integration
                 c.UseDefaultErrorMsg = true;
             });
 
-            Client.OnUpdate += Bot_OnUpdate;
-            Client.OnMessage += Bot_OnMessage;
-            Client.OnInlineQuery += Bot_OnInline;
-            Client.OnInlineResultChosen += Bot_OnChosen;
+            //Client.OnUpdate += Bot_OnUpdate;
+            //Client.OnMessage += Bot_OnMessage;
+            //Client.OnInlineQuery += Bot_OnInline;
+            //Client.OnInlineResultChosen += Bot_OnChosen;
 
-            Client.StartReceiving(Array.Empty<UpdateType>());
-            Client2.StartReceiving(Array.Empty<UpdateType>());
-            Client3.StartReceiving(Array.Empty<UpdateType>());
+            //Client.StartReceiving(Array.Empty<UpdateType>());
+            //Client2.StartReceiving(Array.Empty<UpdateType>());
+            //Client3.StartReceiving(Array.Empty<UpdateType>());
 
             Console.WriteLine();
             Console.ReadLine();
-            Client.StopReceiving();
+            //Client.StopReceiving();
         }
 
         static async void Bot_OnMessage(object? sender, MessageEventArgs e)

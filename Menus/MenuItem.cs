@@ -180,7 +180,7 @@ namespace FluentCommands.Menus
                         return;
                 }
 
-                CommandService.UpdateBotLastMessages(client, chatId, messages.ToArray());
+                //: CommandService.UpdateBotLastMessages(client, chatId, messages.ToArray());
             }
 
             //async Task EditLastMessage()

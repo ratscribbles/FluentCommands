@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Cache
 {
-    public interface IFluentDatabase
+    public interface IFluentCache
     {
         Task AddOrUpdateState(FluentState state);
         Task<FluentState> GetState(int botId, long chatId, int userId);

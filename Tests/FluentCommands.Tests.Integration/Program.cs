@@ -35,18 +35,14 @@ namespace FluentCommands.Tests.Integration
 
         static async Task Main(string[] args)
         {
-            Console.Clear();
             CommandService.Start(c =>
             {
                 c.Logging = true;
                 c.MaximumLogLevel = FluentLogLevel.Debug;
                 c.CaptureAllLoggingEvents = true;
                 c.AddClient(Client);
-                c.AddDatabase();
-                c.AddLogger();
                 c.UseDefaultErrorMsg = true;
             });
-
 
             Client.OnUpdate += Bot_OnUpdate;
             Client.OnMessage += Bot_OnMessage;
@@ -58,7 +54,6 @@ namespace FluentCommands.Tests.Integration
             Client3.StartReceiving(Array.Empty<UpdateType>());
 
             Console.WriteLine();
-            Com
             Console.ReadLine();
             Client.StopReceiving();
         }
@@ -66,7 +61,6 @@ namespace FluentCommands.Tests.Integration
         static async void Bot_OnMessage(object? sender, MessageEventArgs e)
         {
 
-            await CommandService.Evaluate<TestModule>(e);
 
             if (e.Message.Text == "joj")
             {

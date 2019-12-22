@@ -9,7 +9,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Cache
 {
-    internal class CommandServiceCache : IFluentDatabase
+    internal class CommandServiceCache : IFluentCache
     {
         /// <summary>Last message(s) sent by the bot.<para>int is botId, long is chatId.</para></summary>
         //! if the user is the bot's id, that state means any user can interact with the state

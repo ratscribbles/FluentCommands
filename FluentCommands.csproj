@@ -17,6 +17,9 @@
   <ItemGroup>
     <None Remove=".gitattributes" />
     <None Remove=".gitignore" />
+    <None Remove="botinf1.txt" />
+    <None Remove="botinf2.txt" />
+    <None Remove="botinf3.txt" />
     <None Remove="bottoken.txt" />
     <None Remove="fu4hwpg0.ioc~" />
     <None Remove="Interfaces\ve-DCCD.tmp" />

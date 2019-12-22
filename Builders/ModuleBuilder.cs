@@ -30,7 +30,7 @@ namespace FluentCommands.Builders
         /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
         private CommandBaseBuilder? CommandStorage { get; set; }
         /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleConfig)"/> to update this.</summary>
-        internal ModuleConfigBuilder ConfigBuilder { get; private set; } = new ModuleConfigBuilder();
+        internal ModuleConfigBuilder? ConfigBuilder { get; private set; }
         /// <summary>The internal <see cref="CommandBaseBuilder"/> dictionary for this <see cref="ModuleBuilder"/>. Readonly.</summary>
         internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get { return _moduleCommandBases; } }
 
@@ -58,8 +58,7 @@ namespace FluentCommands.Builders
 
         internal void SetConfig(ModuleConfigBuilder cfg) => ConfigBuilder = cfg;
 
-        internal ModuleConfig BuildConfig() => ConfigBuilder.BuildConfig();
-        internal TelegramBotClient? BuildClient() => ConfigBuilder.BuildClient();
+        internal ModuleConfig BuildConfig() => ConfigBuilder!.BuildConfig();
 
         #region Builder Implementation
         /// <summary>

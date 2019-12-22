@@ -10,8 +10,9 @@
 *.userosscache
 *.sln.docstates
 
-bottoken.txt
-TestProgram.cs
+botinf1.txt
+botinf2.txt
+botinf3.txt
 AnalyzerNotes.cs
 
 # User-specific files (MonoDevelop/Xamarin Studio)

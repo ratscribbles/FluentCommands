@@ -9,47 +9,46 @@ using Telegram.Bot;
 
 namespace FluentCommands.Extensions
 {
-    public static class CommandServiceServiceCollectionExtensions
+    internal static class CommandServiceServiceCollectionExtensions
     {
-        //: Definitions
-        public static IServiceCollection AddClient(this IServiceCollection c, string token)
+        internal static IServiceCollection AddClient(this IServiceCollection c, string token)
         {
             c.AddSingleton(new TelegramBotClient(token));
             return c;
         }
-        public static IServiceCollection AddClient(this IServiceCollection c, ClientBuilder clientBuilder)
+        internal static IServiceCollection AddClient(this IServiceCollection c, ClientBuilder clientBuilder)
         {
             c.AddSingleton(clientBuilder.Build());
             return c;
         }
-        public static IServiceCollection AddClient(this IServiceCollection c, TelegramBotClient client)
+        internal static IServiceCollection AddClient(this IServiceCollection c, TelegramBotClient client)
         {
             c.AddSingleton(client);
             return c;
         }
-        public static IServiceCollection AddDatabase<TDatabaseImplementation>(this IServiceCollection c) where TDatabaseImplementation : class, IFluentDatabase
+        internal static IServiceCollection AddCache<TDatabaseImplementation>(this IServiceCollection c) where TDatabaseImplementation : class, IFluentCache
         {
-            c.AddTransient<IFluentDatabase, TDatabaseImplementation>();
+            c.AddTransient<IFluentCache, TDatabaseImplementation>();
             return c;
         }
 
-        public static IServiceCollection AddDatabase(this IServiceCollection c, Type implementationType)
+        internal static IServiceCollection AddCache(this IServiceCollection c, Type implementationType)
         {
-            c.AddTransient(typeof(IFluentDatabase), implementationType);
+            c.AddTransient(typeof(IFluentCache), implementationType);
             return c;
         }
-        public static IServiceCollection AddLogger<TLoggerImplementation>(this IServiceCollection c) where TLoggerImplementation : class, IFluentLogger
+        internal static IServiceCollection AddLogger<TLoggerImplementation>(this IServiceCollection c) where TLoggerImplementation : class, IFluentLogger
         {
             c.AddSingleton<IFluentLogger, TLoggerImplementation>();
             return c;
         }
 
-        public static IServiceCollection AddLogger(this IServiceCollection c, IFluentLogger implementationInstance)
+        internal static IServiceCollection AddLogger(this IServiceCollection c, IFluentLogger implementationInstance)
         {
             c.AddSingleton(implementationInstance);
             return c;
         }
-        public static IServiceCollection AddLogger(this IServiceCollection c, Type implementationType)
+        internal static IServiceCollection AddLogger(this IServiceCollection c, Type implementationType)
         {
             c.AddSingleton(typeof(IFluentLogger), implementationType);
             return c;

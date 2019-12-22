@@ -10,11 +10,13 @@ using FluentCommands.Cache;
 using FluentCommands.Interfaces.MenuBuilders;
 using Telegram.Bot;
 using FluentCommands.Builders;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentCommands
 {
     public class ModuleConfigBuilder
     {
+        internal Type ModuleType { get; }
         public bool UseInternalKeyboardStateHandler { get; set; } = false;
         public bool UseDefaultErrorMessage { get; set; } = false;
         public bool BruteForceKeyboardReferences { get; set; } = false;
@@ -26,26 +28,22 @@ namespace FluentCommands
         public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
         public int PerUserRateLimitOverride { get; private set; }
 
-        internal ClientBuilder? BotClient { get; set; }
         internal bool UsingBotClient { get; private set; }
-        internal IFluentDatabase? CustomDatabase { get; private set; }
-        internal bool UsingCustomDatabaseOverride { get; private set; }
-        internal IFluentLogger? CustomLogger { get; private set; }
+        internal bool UsingCustomCacheOverride { get; private set; }
         internal bool UsingCustomLoggerOverride { get; private set; }
 
+        internal ModuleConfigBuilder(Type m) => ModuleType = m;
+
         //: Documentation
-        public void AddClient(string token) { BotClient = token; UsingBotClient = true; }
-        public void AddClient(ClientBuilder client) { BotClient = client; UsingBotClient = true; }
-        public void AddClient(TelegramBotClient client) { BotClient = client; UsingBotClient = true; }
-        public void AddDatabase(IFluentDatabase db) { CustomDatabase = db; UsingCustomDatabaseOverride = true; }
-        public void AddLogger(IFluentLogger l) { CustomLogger = l; UsingCustomLoggerOverride = true; }
+        public void AddCache<TCacheImplementation>() where TCacheImplementation : class, IFluentCache { CommandService.AddCache<TCacheImplementation>(ModuleType); UsingCustomCacheOverride = true; }
+        public void AddCache(Type implementationType) { CommandService.AddCache(implementationType, ModuleType); UsingCustomCacheOverride = true; }
+        public void AddClient(string token) { CommandService.AddClient(token, ModuleType); UsingBotClient = true; }
+        public void AddClient(ClientBuilder clientBuilder) { CommandService.AddClient(clientBuilder, ModuleType); UsingBotClient = true; }
+        public void AddClient(TelegramBotClient client) { CommandService.AddClient(client, ModuleType); UsingBotClient = true; }
+        public void AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger { CommandService.AddLogger<TLoggerImplementation>(ModuleType); UsingCustomLoggerOverride = true; }
+        public void AddLogger(IFluentLogger implementationInstance) { CommandService.AddLogger(implementationInstance, ModuleType); UsingCustomLoggerOverride = true; }
+        public void AddLogger(Type implementationType) { CommandService.AddLogger(implementationType, ModuleType); UsingCustomLoggerOverride = true; }
 
         internal ModuleConfig BuildConfig() => new ModuleConfig(this);
-        internal TelegramBotClient? BuildClient()
-        {
-            var client = BotClient?.Build();
-            if (client is null) return null;
-            else { UsingBotClient = true; return client; }
-        }
     }
 }

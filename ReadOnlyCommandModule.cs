@@ -16,10 +16,10 @@ namespace FluentCommands
         private readonly ModuleConfig _config;
         private readonly Type _typeStorage;
         private readonly IFluentLogger? _logger;
-        private readonly IFluentDatabase? _database;
+        private readonly IFluentCache? _cache;
         private readonly TelegramBotClient? _client;
         private readonly bool _useModuleLogger;
-        private readonly bool _useModuleDb;
+        private readonly bool _useModuleCache;
         private readonly bool _useClient;
 
         ModuleConfig IReadOnlyModule.Config => _config;
@@ -31,11 +31,11 @@ namespace FluentCommands
                 else return CommandService.Logger;
             }
         }
-        IFluentDatabase IReadOnlyModule.Database
+        IFluentCache IReadOnlyModule.Database
         {
             get
             {
-                if (_useModuleDb) return _database!; // Not Null if true.
+                if (_useModuleCache) return _cache!; // Not Null if true.
                 else return CommandService.Cache;
             }
         }
@@ -43,24 +43,24 @@ namespace FluentCommands
         {
             get
             {
-                if (_useClient) return _client!;
+                if (_useClient) return _client!; // Not Null if true.
                 else return CommandService.InternalClient;
             }
         }
         Type IReadOnlyModule.TypeStorage => _typeStorage;
         bool IReadOnlyModule.UseModuleLogger => _useModuleLogger;
-        bool IReadOnlyModule.UseModuleDb => _useModuleDb;
+        bool IReadOnlyModule.UseModuleCache => _useModuleCache;
         bool IReadOnlyModule.UseClient => _useClient;
 
-        internal ReadOnlyCommandModule(ModuleBuilder m)
+        internal ReadOnlyCommandModule(ModuleBuilder m, TelegramBotClient? client = null, IFluentCache? cache = null, IFluentLogger? logger = null)
         {
             _config = m.BuildConfig();
-            _client = m.BuildClient();
-            _database = m.ConfigBuilder.CustomDatabase;
-            _logger = m.ConfigBuilder.CustomLogger;
+            _client = client;
+            _cache = cache;
+            _logger = logger;
 
             _useModuleLogger = _logger is { };
-            _useModuleDb = _database is { };
+            _useModuleCache = _cache is { };
             _useClient = _client is { };
 
             _typeStorage = m.TypeStorage;

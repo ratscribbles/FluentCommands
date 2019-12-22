@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FluentCommands.Tests.Unit
 {
-    class TestDbContext : IFluentDatabase
+    class TestDbContext : IFluentCache
     {
         public Task AddOrUpdateState(FluentState state)
         {

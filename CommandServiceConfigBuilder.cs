@@ -8,11 +8,12 @@ using Telegram.Bot;
 using FluentCommands.Exceptions;
 using FluentCommands.Extensions;
 using FluentCommands.Cache;
+using FluentCommands.Interfaces;
 
 namespace FluentCommands.Builders
 {
     //: documentation...
-    public class CommandServiceConfigBuilder
+    public class CommandServiceConfigBuilder : IFluentInterface
     {
         public bool Logging { get; set; }
         public bool UseDefaultRules { get; set; }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 
-namespace FluentCommands.CommandTypes.Steps
+namespace FluentCommands.Commands.Steps
 {
     /// <summary>Represents the result of a <see cref="Step"/> based on the defintion of a <see cref="Command{TArgs}"/> step.</summary>
     public enum StepResult 

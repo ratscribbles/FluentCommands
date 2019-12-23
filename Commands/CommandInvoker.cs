@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using Telegram.Bot.Args;
 
-namespace FluentCommands.CommandTypes
+namespace FluentCommands.Commands
 {
     /// <summary>
     /// Responsible for containing the possible delegates that can be invoked from a <see cref="CommandDelegate{TArgs, TReturn}"/> of this {TReturn}.

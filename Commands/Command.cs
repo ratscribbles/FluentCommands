@@ -10,12 +10,12 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Commands.Steps;
 using Telegram.Bot;
 using FluentCommands.Utility;
 using FluentCommands.Menus;
 
-namespace FluentCommands.CommandTypes
+namespace FluentCommands.Commands
 {
     internal delegate Task CommandDelegate<TArgs>(TelegramBotClient c, TArgs e) where TArgs : EventArgs;
     internal delegate Task<TReturn> CommandDelegate<TArgs, TReturn>(TelegramBotClient c, TArgs e) where TArgs : EventArgs;

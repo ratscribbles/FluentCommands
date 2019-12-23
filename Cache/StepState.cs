@@ -1,5 +1,5 @@
-﻿using FluentCommands.CommandTypes;
-using FluentCommands.CommandTypes.Steps;
+﻿using FluentCommands.Commands;
+using FluentCommands.Commands.Steps;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

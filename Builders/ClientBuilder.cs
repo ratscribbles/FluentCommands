@@ -6,6 +6,7 @@ using Telegram.Bot;
 namespace FluentCommands.Builders
 {
     //: describe class, add method documentation for public members
+    [Obsolete("Phasing this out...")]
     public class ClientBuilder
     {
         private readonly string _token = "";

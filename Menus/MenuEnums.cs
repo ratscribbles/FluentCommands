@@ -14,7 +14,7 @@ namespace FluentCommands.Menus
         /// <para><strong>Does not work with MediaGroup messages.</strong></para></summary>
         EditLastMessage,
         /// <summary>Attempts to modiy the last message sent by this <see cref="TelegramBotClient"/> with the contents of this <see cref="Menu"/>. 
-        /// <para>On failure, attempts to delete the last message sent. If that fails, sends the <see cref="Menu"/> as normal with the previous message stll present.</para></summary>
+        /// <para>On failure, attempts to delete the last message sent. If that fails, sends the <see cref="Menu"/> as normal with the previous message still present.</para></summary>
         EditOrDeleteLastMessage,
     }
     internal enum MenuType

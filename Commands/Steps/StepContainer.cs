@@ -6,7 +6,7 @@ using FluentCommands.Attributes;
 using System.Reflection;
 using FluentCommands.Exceptions;
 
-namespace FluentCommands.CommandTypes.Steps
+namespace FluentCommands.Commands.Steps
 {
     internal class StepContainer
     {

@@ -1,9 +1,9 @@
-﻿using FluentCommands.CommandTypes.Steps;
+﻿using FluentCommands.Commands.Steps;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FluentCommands.CommandTypes
+namespace FluentCommands.Commands
 {
     /// <summary>
     /// Marks an object as a valid <see cref="ICommand"/>. This interface is a marker for use in collections.

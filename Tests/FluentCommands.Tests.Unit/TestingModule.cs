@@ -9,7 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using FluentCommands.Logging;
 using FluentCommands.Menus;
-using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Commands.Steps;
 
 namespace FluentCommands.Tests.Unit
 {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reflection;
 using FluentCommands.Builders;
-using FluentCommands.CommandTypes;
+using FluentCommands.Commands;
 using FluentCommands.Interfaces;
 using FluentCommands.Attributes;
 using FluentCommands.Exceptions;
@@ -21,7 +21,7 @@ using System.Runtime.CompilerServices;
 using FluentCommands.Logging;
 using FluentCommands.Cache;
 using Microsoft.Extensions.DependencyInjection;
-using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Commands.Steps;
 using System.Diagnostics.CodeAnalysis;
 using Telegram.Bot.Types.Enums;
 
@@ -87,8 +87,6 @@ namespace FluentCommands
         internal static void AddLogger(Type implementationType, Type moduleType) => _services.Value.AddLogger(implementationType, moduleType);
         internal static void AddCache<TDatabaseImplementation>(Type moduleType) where TDatabaseImplementation : class, IFluentCache => _services.Value.AddCache<TDatabaseImplementation>(moduleType);
         internal static void AddCache(Type implementationType, Type moduleType) => _services.Value.AddCache(implementationType, moduleType);
-
-
 
 
         //: desc, explain that no type definition gets the default client 
@@ -165,12 +163,6 @@ namespace FluentCommands
 
             _modules = tempModulesToReadOnly;
             _commands = tempCommandsToReadOnly;
-
-            _client?.StartReceiving(Array.Empty<UpdateType>());
-            foreach(var key in _modules.Keys)
-            {
-                _modules[key].Client?.StartReceiving(Array.Empty<UpdateType>());
-            }
 
             void Init_1_ModuleAssembler()
             {
@@ -263,12 +255,11 @@ namespace FluentCommands
                     catch (InvalidOperationException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                     catch (NotSupportedException ex) { throw new CommandOnBuildingException(unexpected, ex); }
 
-                    Action<TelegramBotClient?> setHandlers = (client) =>
+                    Action<TelegramBotClient?, bool> setHandlers = (client, b) =>
                     {
                         try
                         {
-                            method_RegisterHandlers.Invoke(moduleContext, new object[] { client });
-                            if (moduleConfigBuilder is null) throw new CommandOnBuildingException(); //: describe in detail
+                            method_RegisterHandlers.Invoke(moduleContext, new object[] { client, b });
                         }
                         catch (TargetException ex) { throw new CommandOnBuildingException(unexpected, ex); }
                         catch (ArgumentException ex) { throw new CommandOnBuildingException(unexpected, ex); }
@@ -295,8 +286,7 @@ namespace FluentCommands
                     var logger = provider.GetService<IFluentLogger>();
 
                     // Subscribe to the client if it exists. Global client if not. Not at all if not.
-                    //: Be sure to re-write these conditionals based on the configs
-                    setHandlers(client is { } ? client : _client is { } ? _client : null);
+                    setHandlers(client is { } ? client : _client is { } ? _client : null, moduleConfigBuilder.DisableInternalCommandEvaluation);
 
                     tempServicesCollection.Add(moduleBuilder.TypeStorage, (client, cache, logger));
 
@@ -337,7 +327,7 @@ namespace FluentCommands
                 {
                     List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
                     Type buttonType = typeof(TButton);
-                    ModuleConfig config = _tempModules[parentModule ?? throw new InvalidKeyboardRowException("Error updating keyboard rows. (Keyboard belonged to a Command, but the Command's module type was null.")]?.ConfigBuilder.BuildConfig()
+                    ModuleConfig config = _tempModules[parentModule ?? throw new InvalidKeyboardRowException("Error updating keyboard rows. (Keyboard belonged to a Command, but the Command's module type was null.")]?.ConfigBuilder?.BuildConfig()
                             ?? throw new CommandOnBuildingException($"Module: \"{parentModule.FullName ?? "NULL"}\" config was null while building commands.");
                     Func<string, Exception> keyboardException = (string s) => { return new CommandOnBuildingException(s); };
                     string keyboardContainer = $"Command \"{parentCommandName ?? "NULL"}\"";
@@ -700,6 +690,31 @@ namespace FluentCommands
         {
             if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect. Please consider checking your code and restarting your application to prevent this warning.").ConfigureAwait(false)); return; }
             _ =_instance.Value;
+
+            StartClientsReceiving();
+
+            _commandServiceStarted.Value = true;
+        }
+
+        public static void Start(string token)
+        {
+            if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect. Please consider checking your code and restarting your application to prevent this warning.").ConfigureAwait(false)); return; }
+            _tempCfg.AddClient(token);
+            _ = _instance.Value;
+
+            StartClientsReceiving();
+
+            _commandServiceStarted.Value = true;
+        }
+
+        public static void Start(TelegramBotClient client)
+        {
+            if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect. Please consider checking your code and restarting your application to prevent this warning.").ConfigureAwait(false)); return; }
+            _tempCfg.AddClient(client);
+            _ = _instance.Value;
+
+            StartClientsReceiving();
+
             _commandServiceStarted.Value = true;
         }
 
@@ -713,6 +728,9 @@ namespace FluentCommands
 
             _tempCfg = cfg;
             _ =_instance.Value;
+
+            StartClientsReceiving();
+
             _commandServiceStarted.Value = true;
         }
 
@@ -724,16 +742,27 @@ namespace FluentCommands
         {
             if (_commandServiceStarted) { Task.Run(async () => await Logger.Warning("Attempted to start the CommandService after it was already started. This action has no effect; consider checking your code and restarting to prevent this warning.").ConfigureAwait(false)); return; }
             
-            CommandServiceConfigBuilder cfg = new CommandServiceConfigBuilder();
-
-            if (buildAction is { }) buildAction(cfg);
+            if (buildAction is { }) buildAction(_tempCfg);
             else throw new CommandOnBuildingException("BuildAction for the CommandServiceConfig was null.");
 
-            if (cfg is null) throw new CommandOnBuildingException("CommandServiceConfig was null. Please check your BuildAction delegate and restart your application. If this issue persists, please contact the creator of this library.");
+            if (_tempCfg is null) throw new CommandOnBuildingException("CommandServiceConfig was null. Please check your BuildAction delegate and restart your application. If this issue persists, please contact the creator of this library.");
 
-            _tempCfg = cfg;
             _ =_instance.Value;
+
+            StartClientsReceiving();
+
             _commandServiceStarted.Value = true;
+        }
+
+        private static void StartClientsReceiving()
+        {
+            if (_commandServiceStarted) return;
+
+            InternalClient?.StartReceiving(Array.Empty<UpdateType>());
+            foreach (var key in Modules.Keys)
+            {
+                Modules[key].Client?.StartReceiving(Array.Empty<UpdateType>());
+            }
         }
         #endregion
 
@@ -827,6 +856,26 @@ namespace FluentCommands
                             //: improve this lol im going to sleep
 
                         }
+                        else
+                        {
+                            if (config.DeleteCommandAfterCall)
+                            {
+                                var foundMessage = e.TryGetMessage(out var msg);
+
+                                if (foundMessage)
+                                {
+                                    try
+                                    {
+                                        await client.DeleteMessageAsync(chat?.Id, msg!.MessageId).ConfigureAwait(false);
+                                    }
+                                    catch
+                                    {
+                                        //: log
+                                    }
+                                }
+                                else return; //: Log
+                            }
+                        }
                     }
                     else return; //: log
                 }
@@ -838,9 +887,14 @@ namespace FluentCommands
             {
                 await ProcessCommand(command).ConfigureAwait(false);
             }
-            catch (ArgumentNullException) { return; } //: Catch, default error message?, Log it, re-throw.
+            catch (ArgumentNullException) { return; } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
             catch (ArgumentException) { return; } //: Catch, Log it, re-throw.
             catch (RegexMatchTimeoutException) { return; } //: Catch, Log it, re-throw? maybe not re-throw
+            catch (Exception) { return; }
+
+            state.CurrentlyAccessed = false;
+
+            await Cache.AddOrUpdateState(state).ConfigureAwait(false);
 
             // Processes the Command<TArgs> based on the type of its TArgs.
             async Task ProcessCommand(ICommand cmd)
@@ -853,31 +907,31 @@ namespace FluentCommands
                         {
                             case var _ when cmd is Command<CallbackQueryEventArgs> c:
                             {
-                                if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke(client!, args).ConfigureAwait(false);
                                 else; //: error message, log.
                                 break;
                             }
                             case var _ when cmd is Command<ChosenInlineResultEventArgs> c:
                             {
-                                if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke(client!, args).ConfigureAwait(false);
                                 else; //: log.
                                 break;
                             }
                             case var _ when cmd is Command<InlineQueryEventArgs> c:
                             {
-                                if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke(client!, args).ConfigureAwait(false);
                                 else; //: log.
                                 break;
                             }
                             case var _ when cmd is Command<MessageEventArgs> c:
                             {
-                                if (e.TryGetMessageEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                if (e.TryGetMessageEventArgs(out var args)) await c.Invoke(client!, args).ConfigureAwait(false);
                                 else; //: log.
                                 break;
                             }
                             case var _ when cmd is Command<UpdateEventArgs> c:
                             {
-                                if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke(client, args).ConfigureAwait(false);
+                                if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke(client!, args).ConfigureAwait(false);
                                 else; //: log.  
                                 break;
                             }
@@ -928,10 +982,6 @@ namespace FluentCommands
 
                 if (stepReturn.OnResult is { }) await stepReturn.OnResult().ConfigureAwait(false);
                 await state.StepState.Update(c as ICommand, stepReturn).ConfigureAwait(false);
-
-                state.CurrentlyAccessed = false;
-
-                await Cache.AddOrUpdateState(state).ConfigureAwait(false);
             }
             // Returns null if it fails to evaluate.
             async Task<TReturn?> EvaluateInvoker<TReturn>(Delegate? d) where TReturn : class
@@ -942,27 +992,27 @@ namespace FluentCommands
                 {
                     case CommandDelegate<CallbackQueryEventArgs, TReturn> c: 
                     {
-                        if (e.TryGetCallbackQueryEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        if (e.TryGetCallbackQueryEventArgs(out var args)) return await c.Invoke(client!, args).ConfigureAwait(false);
                         else return null;
                     }
                     case CommandDelegate<ChosenInlineResultEventArgs, TReturn> c: 
                     {
-                        if (e.TryGetChosenInlineResultEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        if (e.TryGetChosenInlineResultEventArgs(out var args)) return await c.Invoke(client!, args).ConfigureAwait(false);
                         else return null;
                     }
                     case CommandDelegate<InlineQueryEventArgs, TReturn> c: 
                     {
-                        if (e.TryGetInlineQueryEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        if (e.TryGetInlineQueryEventArgs(out var args)) return await c.Invoke(client!, args).ConfigureAwait(false);
                         else return null;
                     }
                     case CommandDelegate<MessageEventArgs, TReturn> c:
                     {
-                        if (e.TryGetMessageEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        if (e.TryGetMessageEventArgs(out var args)) return await c.Invoke(client!, args).ConfigureAwait(false);
                         else return null;
                     }
                     case CommandDelegate<UpdateEventArgs, TReturn> c:
                     {
-                        if (e.TryGetUpdateEventArgs(out var args)) return await c.Invoke(client, args).ConfigureAwait(false);
+                        if (e.TryGetUpdateEventArgs(out var args)) return await c.Invoke(client!, args).ConfigureAwait(false);
                         else return null;
                     }
                     default:

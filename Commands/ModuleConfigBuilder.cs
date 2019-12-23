@@ -22,6 +22,7 @@ namespace FluentCommands
         public bool BruteForceKeyboardReferences { get; set; } = false;
         public bool DeleteCommandAfterCall { get; set; } = false;
         public bool LogModuleActivities { get; set; } = false;
+        public bool DisableInternalCommandEvaluation { get; set; } = false;
         public FluentLogLevel MaximumLogLevelOverride { get; set; } = FluentLogLevel.Fatal;
         public string Prefix { get; set; } = "/";
         public IMenu? DefaultErrorMessageOverride { get; set; } = null;

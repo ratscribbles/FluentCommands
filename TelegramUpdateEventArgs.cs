@@ -85,8 +85,7 @@ namespace FluentCommands
                 _ => 0
             };
 
-            if (chatId == 0) return false;
-            else return true;
+            return chatId != 0;
         }
 
         internal static bool TryGetUserId(this TelegramUpdateEventArgs e, out int userId)
@@ -101,8 +100,7 @@ namespace FluentCommands
                 _ => 0
             };
 
-            if (userId == 0) return false;
-            else return true;
+            return userId != 0;
         }
 
         internal static bool TryGetChat(this TelegramUpdateEventArgs e, [NotNullWhen(true)] out Chat? c)
@@ -115,8 +113,7 @@ namespace FluentCommands
                 _ => null
             };
 
-            if (c is null) return false;
-            else return true;
+            return c is { };
         }
 
         internal static bool TryGetUser(this TelegramUpdateEventArgs e, [NotNullWhen(true)] out User? u)
@@ -131,8 +128,20 @@ namespace FluentCommands
                 _ => null
             };
 
-            if (u is null) return false;
-            else return true;
+            return u is { };
+        }
+
+        internal static bool TryGetMessage(this TelegramUpdateEventArgs e, [NotNullWhen(true)] out Message? m)
+        {
+            m = e switch
+            {
+                { CallbackQueryEventArgs: { } } => e.CallbackQueryEventArgs.GetMessage(),
+                { MessageEventArgs: { } } => e.MessageEventArgs.GetMessage(),
+                { UpdateEventArgs: { } } => e.UpdateEventArgs.GetMessage(),
+                _ => null
+            };
+
+            return m is { };
         }
     }
 }

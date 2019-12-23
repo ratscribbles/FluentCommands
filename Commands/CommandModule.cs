@@ -19,7 +19,7 @@ namespace FluentCommands
         internal CommandModule(Action<ModuleBuilder> onBuilding) { } // for testing
 
         /// <summary>
-        /// Builds a <see cref="CommandTypes.Command{TModule}"/> module.
+        /// Builds a <see cref="Commands.Command{TModule}"/> module.
         /// </summary>
         /// <param name="moduleBuilder"></param>
         protected virtual void OnBuilding(ModuleBuilder moduleBuilder) { }
@@ -36,20 +36,23 @@ namespace FluentCommands
         protected virtual async void OnMessage(object? sender, MessageEventArgs e) { }
         protected virtual async void OnUpdate(object? sender, UpdateEventArgs e) { }
 
-        internal void RegisterHandlers(TelegramBotClient client)
+        internal void RegisterHandlers(TelegramBotClient client, bool disableEvaluate = false)
         {
             if (client is null) return;
 
+            if (!disableEvaluate)
+            {
+                client.OnCallbackQuery += Evaluate_OnCallbackQuery;
+                client.OnInlineResultChosen += Evaluate_OnChosenInlineResult;
+                client.OnInlineQuery += Evaluate_OnInlineQuery;
+                client.OnMessage += Evaluate_OnMessage;
+            }
+
             client.OnCallbackQuery += OnCallbackQuery;
-            client.OnCallbackQuery += Evaluate_OnCallbackQuery;
             client.OnInlineResultChosen += OnChosenInlineResult;
-            client.OnInlineResultChosen += Evaluate_OnChosenInlineResult;
             client.OnInlineQuery += OnInlineQuery;
-            client.OnInlineQuery += Evaluate_OnInlineQuery;
             client.OnMessage += OnMessage;
-            client.OnMessage += Evaluate_OnMessage;
             client.OnUpdate += OnUpdate;
-            client.OnUpdate += Evaluate_OnUpdate;
         }
 
         private async void Evaluate_OnCallbackQuery(object? sender, CallbackQueryEventArgs e)
@@ -59,8 +62,6 @@ namespace FluentCommands
         private async void Evaluate_OnInlineQuery(object? sender, InlineQueryEventArgs e)
             => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
         private async void Evaluate_OnMessage(object? sender, MessageEventArgs e)
-            => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
-        private async void Evaluate_OnUpdate(object? sender, UpdateEventArgs e)
             => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
     }
 }

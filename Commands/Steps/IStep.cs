@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FluentCommands.CommandTypes.Steps
+namespace FluentCommands.Commands.Steps
 {
     public interface IStep : IFluentInterface
     {

@@ -110,16 +110,8 @@ namespace FluentCommands.Menus
         public async Task Send(TelegramBotClient client, MessageEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
 
-        public async Task Send(TelegramBotClient client, ChosenInlineResultEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
-
-        //: test these
-        public async Task Send(TelegramBotClient client, InlineQueryEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
-
         public async Task Send(TelegramBotClient client, UpdateEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
-        //: test these
 
         public async Task Send(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
@@ -138,19 +130,17 @@ namespace FluentCommands.Menus
         //: Consider allowing the user to register a TelegramBotClient per module
         private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs? e = null, int userId = 0, long chatId = 0, ChatAction? chatAction = null, int actionDuration = 0, Type? moduleType = null)
         {
-            //? this method's signature will never be pretty 🐀
+            //? This method's signature will never be pretty.
 
-            //if (Source is null && SourceVideoNote is null)
-            //{
-            //    if (CommandService.GlobalConfig.SwallowCriticalExceptions) return; //: Log and return
-            //    else throw new NullReferenceException("Menu source was null.");
-            //}
+            if (Source is null && SourceVideoNote is null)
+            {
+                if (CommandService.GlobalConfig.SwallowCriticalExceptions) return; //: Log and return
+                else throw new NullReferenceException("Menu source was null.");
+            }
 
             ModuleConfig config = moduleType is { } && CommandService.Modules.TryGetValue(moduleType, out var module) ? module.Config : new ModuleConfig();
-            MenuMode menuMode = config.MenuModeOverride.HasValue ? (MenuMode)config.MenuModeOverride : CommandService.GlobalConfig.DefaultMenuMode;
+            MenuMode menuMode = config.MenuModeOverride.HasValue ? config.MenuModeOverride.Value : CommandService.GlobalConfig.DefaultMenuMode;
             int replyToMessageId = ReplyToMessage is { } ? ReplyToMessage.MessageId : 0;
-
-
 
             // Sets the ChatId to send the Menu to. Throws on failure to confirm the Id.
             long sendTo;
@@ -175,6 +165,9 @@ namespace FluentCommands.Menus
                 sendTo = SendToChatId != 0
                     ? SendToChatId : SendToUserId != 0
                         ? SendToUserId : throw new MenuInvalidSenderException("Could not find a suitable Id to send this Menu to.");
+
+                if(chatId == 0) chatId = SendToChatId;
+                if(userId == 0) userId = SendToUserId;
             }
 
             if (chatAction.HasValue)
@@ -183,14 +176,15 @@ namespace FluentCommands.Menus
                 await Task.Delay(actionDuration);
             }
 
-            menuMode = MenuMode.EditLastMessage;
+            //? menuMode = MenuMode.EditLastMessage;
+
             List<Message> messages = new List<Message>();
             try
             {
                 switch (menuMode)
                 {
                     case MenuMode.NoAction:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         break;
                     case MenuMode.EditLastMessage:
                         await EditLastMessage().ConfigureAwait(false);
@@ -204,20 +198,7 @@ namespace FluentCommands.Menus
             }
             catch (Exception ex) { } //: log, log, log (log all of the possible exceptions)
 
-
-
-
-
-
-            //: Add menu extensions:
-
-            //Menu.Delete()
-            //    Menu.Edit()
-
-            //: keyboard reference checkup
-
-
-            async Task NoAction()
+            async Task SendMessage()
             {
                 //? ** list of types that can only accept inlinekeyboardmarkups: ** //
                 //: game, invoice, 
@@ -237,16 +218,13 @@ namespace FluentCommands.Menus
                         messages.Add(await client.SendDocumentAsync(sendTo, Source, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
                         break;
                     case MenuType.Game:
-                        //? How to send reply keyboard lmao
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null) messages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, (InlineKeyboardMarkup?)ReplyMarkup, Token).ConfigureAwait(false));
-                        else messages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, cancellationToken: Token).ConfigureAwait(false)); //? Log this?
+                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null) messages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false));
+                        else messages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, cancellationToken: Token).ConfigureAwait(false)); //: Log this?
                         break;
                     case MenuType.Invoice:
-                        if (false /* CommandService._messageUserCache[client.BotId][e.Message.Chat.Id].Chat.Type != TelegraBot.Types.Enums.ChatType.Private*/) messages.Add(new Message()); //? throw? log it? idk
-                        else
                         {
                             if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                                messages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId, (InlineKeyboardMarkup?)ReplyMarkup).ConfigureAwait(false));
+                                messages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup).ConfigureAwait(false));
                             else
                                 //: Log this or throw
                                 messages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId).ConfigureAwait(false));
@@ -283,19 +261,19 @@ namespace FluentCommands.Menus
                         messages.Add(await client.SendVoiceAsync(sendTo, Source, Caption, ParseMode, Duration, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     default:
+                        //: Log
                         return;
                 }
 
                 await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, messages.ToArray()).ConfigureAwait(false);
             }
-
             async Task EditLastMessage()
             {
                 var msgs = await CommandService.Cache.GetMessages(client.BotId, chatId, userId);
 
                 Message? m = msgs is { Count: 1 } ? msgs.ElementAt(0) : msgs?.LastOrDefault();
 
-                if (m is null) { await NoAction().ConfigureAwait(false); return; }
+                if (m is null) { await SendMessage().ConfigureAwait(false); return; }
 
                 switch (MenuType)
                 {
@@ -306,7 +284,7 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAnimation(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else { await SendMessage().ConfigureAwait(false); return; }
                         break;
                     case MenuType.Audio:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -315,10 +293,10 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else { await SendMessage().ConfigureAwait(false); return; }
                         break;
                     case MenuType.Contact:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Document:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -327,16 +305,16 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else { await SendMessage().ConfigureAwait(false); return; }
                         break;
                     case MenuType.Game:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Invoice:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Location:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.MediaGroup:
                         break;
@@ -347,13 +325,13 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else { await SendMessage().ConfigureAwait(false); return; }
                         break;
                     case MenuType.Poll:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Sticker:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Text:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -361,10 +339,10 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageTextAsync(m.Chat.Id, m.MessageId, TextString, ParseMode, DisableWebPagePreview, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else { await SendMessage().ConfigureAwait(false); return; }
                         break;
                     case MenuType.Venue:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Video:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -373,24 +351,23 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else { await SendMessage().ConfigureAwait(false); return; }
                         break;
                     case MenuType.VideoNote:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Voice:
-                        await NoAction().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                 }
             }
-
             async Task EditOrDeleteLastMessage()
             {
                 var msgs = await CommandService.Cache.GetMessages(client.BotId, chatId, userId);
-                if(msgs is null) { await NoAction().ConfigureAwait(false); return; }
+                if(msgs is null) { await SendMessage().ConfigureAwait(false); return; }
 
                 Message? m = msgs is { Count: 1 } ? msgs.ElementAt(0) : msgs?.LastOrDefault();
-                if (m is null) { await NoAction().ConfigureAwait(false); return; }
+                if (m is null) { await SendMessage().ConfigureAwait(false); return; }
 
                 switch (MenuType)
                 {
@@ -403,16 +380,8 @@ namespace FluentCommands.Menus
                         }
                         else
                         {
-                            try
-                            {
-                                await client.DeleteMessageAsync(m.Chat.Id, m.MessageId, Token);
-                            }
-                            catch
-                            {
-                                //: log
-                            }
-
-                            await NoAction().ConfigureAwait(false);
+                            await DeleteMessages().ConfigureAwait(false);
+                            await SendMessage().ConfigureAwait(false);
                             return;
                         }
                         break;
@@ -425,34 +394,14 @@ namespace FluentCommands.Menus
                         }
                         else
                         {
-                            try
-                            {
-                                await client.DeleteMessageAsync(m.Chat.Id, m.MessageId, Token);
-                            }
-                            catch
-                            {
-                                //: log
-                            }
-
-                            await NoAction().ConfigureAwait(false);
+                            await DeleteMessages().ConfigureAwait(false);
+                            await SendMessage().ConfigureAwait(false);
                             return;
                         }
                         break;
                     case MenuType.Contact:
-                        {
-                            try
-                            {
-                                foreach (var msg in msgs!)
-                                {
-                                    await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
-                                }
-                            }
-                            catch
-                            {
-                                //: Log
-                            }
-                        }
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Document:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -461,58 +410,29 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else
+                        {
+                            await DeleteMessages().ConfigureAwait(false);
+                            await SendMessage().ConfigureAwait(false);
+                            return;
+                        }
                         break;
                     case MenuType.Game:
-                        {
-                            try
-                            {
-                                foreach (var msg in msgs!)
-                                {
-                                    await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
-                                }
-                            }
-                            catch
-                            {
-                                //: Log
-                            }
-                        }
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Invoice:
-                        {
-                            try
-                            {
-                                foreach (var msg in msgs!)
-                                {
-                                    await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
-                                }
-                            }
-                            catch
-                            {
-                                //: Log
-                            }
-                        }
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Location:
-                        {
-                            try
-                            {
-                                foreach (var msg in msgs!)
-                                {
-                                    await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
-                                }
-                            }
-                            catch
-                            {
-                                //: Log
-                            }
-                        }
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.MediaGroup:
-                        break;
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
+                        return;
                     case MenuType.Photo:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
                         {
@@ -520,26 +440,20 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else
+                        {
+                            await DeleteMessages().ConfigureAwait(false);
+                            await SendMessage().ConfigureAwait(false);
+                            return;
+                        }
                         break;
                     case MenuType.Poll:
-                        {
-                            try
-                            {
-                                foreach (var msg in msgs!)
-                                {
-                                    await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
-                                }
-                            }
-                            catch
-                            {
-                                //: Log
-                            }
-                        }
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Sticker:
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Text:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -547,10 +461,16 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageTextAsync(m.Chat.Id, m.MessageId, TextString, ParseMode, DisableWebPagePreview, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else
+                        {
+                            await DeleteMessages().ConfigureAwait(false);
+                            await SendMessage().ConfigureAwait(false);
+                            return;
+                        }
                         break;
                     case MenuType.Venue:
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Video:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
@@ -559,14 +479,36 @@ namespace FluentCommands.Menus
                             m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                             await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
                         }
-                        else { await NoAction().ConfigureAwait(false); return; }
+                        else
+                        {
+                            await DeleteMessages().ConfigureAwait(false);
+                            await SendMessage().ConfigureAwait(false);
+                            return;
+                        }
                         break;
                     case MenuType.VideoNote:
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
                     case MenuType.Voice:
-                        await NoAction().ConfigureAwait(false);
+                        await DeleteMessages().ConfigureAwait(false);
+                        await SendMessage().ConfigureAwait(false);
                         return;
+                }
+
+                async Task DeleteMessages()
+                {
+                    try
+                    {
+                        foreach (var msg in msgs!)
+                        {
+                            await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
+                        }
+                    }
+                    catch
+                    {
+                        //: Log
+                    }
                 }
             }
         }

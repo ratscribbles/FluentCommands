@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Commands.Steps;
 
 namespace FluentCommands.Attributes
 {

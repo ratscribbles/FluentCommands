@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FluentCommands.Builders;
-using FluentCommands.CommandTypes;
+using FluentCommands.Commands;
 using FluentCommands.Exceptions;
 using FluentCommands.Extensions;
 using Telegram.Bot.Args;

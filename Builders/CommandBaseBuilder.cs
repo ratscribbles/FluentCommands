@@ -6,11 +6,11 @@ using FluentCommands.Exceptions;
 using FluentCommands.Interfaces;
 using FluentCommands.Interfaces.BaseBuilders;
 using FluentCommands.Interfaces.KeyboardBuilders;
-using FluentCommands.CommandTypes;
+using FluentCommands.Commands;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using FluentCommands.Attributes;
-using FluentCommands.CommandTypes.Steps;
+using FluentCommands.Commands.Steps;
 using System.Reflection;
 
 namespace FluentCommands.Builders

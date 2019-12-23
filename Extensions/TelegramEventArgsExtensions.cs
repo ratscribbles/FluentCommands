@@ -171,5 +171,19 @@ namespace FluentCommands.Extensions
                 _ => 0
             };
         }
+
+        internal static Message? GetMessage(this CallbackQueryEventArgs e) => e?.CallbackQuery?.Message;
+        internal static Message? GetMessage(this MessageEventArgs e) => e?.Message;
+        internal static Message? GetMessage(this UpdateEventArgs e)
+        {
+            var update = e?.Update;
+
+            return update switch
+            {
+                { CallbackQuery: { Message: { } } } => update.CallbackQuery.Message,
+                { Message: { } } => update.Message,
+                _ => null
+            };
+        }
     }
 }

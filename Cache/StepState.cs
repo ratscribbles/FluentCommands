@@ -32,7 +32,7 @@ namespace FluentCommands.Cache
         /// <para>If the <see cref="Command"/> does not have a <see cref="StepContainer"/>, <see cref="IsDefault"/> is true, and it will be assumed the user is not currently in a command with steps.</para></summary>
         public StepState() { }
 
-        internal Task Update(ICommand c, IStep s)
+        internal Task Update(ICommand c, Step s)
         {
             return Task.Run(() =>
             {

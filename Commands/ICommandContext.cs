@@ -7,8 +7,9 @@ namespace FluentCommands.Commands
 {
     internal interface ICommandContext<TArgs> where TArgs : EventArgs
     {
-        internal TelegramBotClient Client { get; }
-        internal string[] CommandArguments { get; }
-        internal TArgs EventArgs { get; }
+        internal Type ModuleType { get; }
+        IReadOnlyList<string> Arguments { get; }
+        TelegramBotClient Client { get; }
+        TArgs EventArgs { get; }
     }
 }

@@ -10,7 +10,7 @@ namespace FluentCommands.Commands.Steps
 {
     internal class StepContainer
     {
-        private readonly IReadOnlyDictionary<int, CommandInvoker<IStep>> _invokers;
+        private readonly IReadOnlyDictionary<int, CommandInvoker<Step>> _invokers;
 
         internal int TotalCount => _invokers.Count;
         internal (int Positive, int Negative) Count => (_invokers.Count(kvp => kvp.Key > 0), _invokers.Count(kvp => kvp.Key < 0));
@@ -20,7 +20,7 @@ namespace FluentCommands.Commands.Steps
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        internal CommandInvoker<IStep> this[int key] => _invokers[key];
+        internal CommandInvoker<Step> this[int key] => _invokers[key];
 
         /// <summary>
         /// Note: StepData and DebugStepData index 0 should have no value (null); it'll never be accessed.
@@ -29,7 +29,7 @@ namespace FluentCommands.Commands.Steps
         /// </summary>
         internal StepContainer(IEnumerable<MethodInfo> methods)
         {
-            var dict = new Dictionary<int, CommandInvoker<IStep>>();
+            var dict = new Dictionary<int, CommandInvoker<Step>>();
 
             string stepsExceptions = "";
             bool firstExceptionIteration = true;
@@ -39,8 +39,8 @@ namespace FluentCommands.Commands.Steps
                 var stepAttribute = m.GetCustomAttribute<StepAttribute>() ?? throw new Exception("This exception should never happen. If you encounter it, please contact the creator of this library or put in a bug report. (Step Attribute was null while building StepContainer.)");
                 var num = stepAttribute.StepNum;
 
-                CommandInvoker<IStep> invoker;
-                try { invoker = new CommandInvoker<IStep>(m); }
+                CommandInvoker<Step> invoker;
+                try { invoker = new CommandInvoker<Step>(m); }
                 catch(ArgumentException) 
                 {
                     if (firstExceptionIteration) stepsExceptions += $"Step {num}";

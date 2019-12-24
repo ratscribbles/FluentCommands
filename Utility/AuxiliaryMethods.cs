@@ -135,25 +135,27 @@ namespace FluentCommands.Utility
             else return true;
         }
 
-        /// <summary>Converts the <see cref="MethodInfo"/> to the appropriate <see cref="CommandDelegate{TArgs}"/> based on the generic arguments.</summary>
-        internal static bool TryConvertDelegate<TArgs>(MethodInfo method, [NotNullWhen(true)] out CommandDelegate<TArgs>? c) where TArgs : EventArgs
+        /// <summary>Converts the <see cref="MethodInfo"/> to the appropriate <see cref="CommandDelegate{TContext, TArgs}"/> based on the generic arguments.</summary>
+        internal static bool TryConvertDelegate<TContext, TArgs>(MethodInfo method, [NotNullWhen(true)] out CommandDelegate<TContext, TArgs>? c) 
+            where TContext : ICommandContext<TArgs> 
+            where TArgs : EventArgs
         {
             if (method is null) { c = null; return false; }
 
-            c = (CommandDelegate<TArgs>)Delegate.CreateDelegate(typeof(CommandDelegate<TArgs>), null, method);
+            c = Delegate.CreateDelegate(typeof(CommandDelegate<TContext, TArgs>), null, method) as CommandDelegate<TContext, TArgs>;
 
-            if (c is null) return false;
-            else return true;
+            return c is { };
         }
-        /// <summary>Converts the <see cref="MethodInfo"/> to the appropriate <see cref="CommandDelegate{TArgs, TReturn}"/> based on the generic arguments.<para>Can return null.</para></summary>
-        internal static bool TryConvertDelegate<TArgs, TReturn>(MethodInfo method, [NotNullWhen(true)] out CommandDelegate<TArgs, TReturn>? c) where TArgs : EventArgs
+        /// <summary>Converts the <see cref="MethodInfo"/> to the appropriate <see cref="CommandDelegate{TContext, TArgs, TReturn}"/> based on the generic arguments.<para>Can return null.</para></summary>
+        internal static bool TryConvertDelegate<TContext, TArgs, TReturn>(MethodInfo method, [NotNullWhen(true)] out CommandDelegate<TContext, TArgs, TReturn>? c) 
+            where TContext : ICommandContext<TArgs> 
+            where TArgs : EventArgs
         {
             if (method is null) { c = null; return false; }
             
-            c = (CommandDelegate<TArgs, TReturn>)Delegate.CreateDelegate(typeof(CommandDelegate<TArgs, TReturn>), null, method);
+            c = Delegate.CreateDelegate(typeof(CommandDelegate<TContext, TArgs, TReturn>), null, method) as CommandDelegate<TContext, TArgs, TReturn>;
 
-            if (c is null) return false;
-            else return true;
+            return c is { };
         }
     }
 }

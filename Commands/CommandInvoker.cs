@@ -15,11 +15,11 @@ namespace FluentCommands.Commands
     /// </summary>
     internal class CommandInvoker<TReturn>
     {
-        private readonly CommandDelegate<CallbackQueryEventArgs, TReturn>? _callbackQuery;
-        private readonly CommandDelegate<ChosenInlineResultEventArgs, TReturn>? _chosenInlineResult;
-        private readonly CommandDelegate<InlineQueryEventArgs, TReturn>? _inlineQuery;
-        private readonly CommandDelegate<MessageEventArgs, TReturn>? _message;
-        private readonly CommandDelegate<UpdateEventArgs, TReturn>? _update;
+        private readonly CommandDelegate<CallbackQueryContext, CallbackQueryEventArgs, TReturn>? _callbackQuery;
+        private readonly CommandDelegate<ChosenInlineResultContext, ChosenInlineResultEventArgs, TReturn>? _chosenInlineResult;
+        private readonly CommandDelegate<InlineQueryContext, InlineQueryEventArgs, TReturn>? _inlineQuery;
+        private readonly CommandDelegate<MessageContext, MessageEventArgs, TReturn>? _message;
+        private readonly CommandDelegate<UpdateContext, UpdateEventArgs, TReturn>? _update;
 
         /// <summary>
         /// Can be one of 5 delegate types:
@@ -46,11 +46,11 @@ namespace FluentCommands.Commands
 #nullable disable
                 return t switch
                 {
-                    var _ when t == typeof(CommandDelegate<CallbackQueryEventArgs, TReturn>) => _callbackQuery,
-                    var _ when t == typeof(CommandDelegate<ChosenInlineResultEventArgs, TReturn>) => _chosenInlineResult,
-                    var _ when t == typeof(CommandDelegate<InlineQueryEventArgs, TReturn>) => _inlineQuery,
-                    var _ when t == typeof(CommandDelegate<MessageEventArgs, TReturn>) => _message,
-                    var _ when t == typeof(CommandDelegate<UpdateEventArgs, TReturn>) => _update,
+                    var _ when t == typeof(CommandDelegate<CallbackQueryContext, CallbackQueryEventArgs, TReturn>) => _callbackQuery,
+                    var _ when t == typeof(CommandDelegate<ChosenInlineResultContext, ChosenInlineResultEventArgs, TReturn>) => _chosenInlineResult,
+                    var _ when t == typeof(CommandDelegate<InlineQueryContext, InlineQueryEventArgs, TReturn>) => _inlineQuery,
+                    var _ when t == typeof(CommandDelegate<MessageContext, MessageEventArgs, TReturn>) => _message,
+                    var _ when t == typeof(CommandDelegate<UpdateContext, UpdateEventArgs, TReturn>) => _update,
                     _ => throw new ArgumentNullException("No delegate was found. (This exception should NEVER occur. If it does, please contact the creator of the library.)"),
                 };
 #nullable enable
@@ -66,25 +66,25 @@ namespace FluentCommands.Commands
             Type t = method.GetParameters()[1].ParameterType;
             switch (t)
             {
-                case var _ when t == typeof(CallbackQueryEventArgs):
-                    AuxiliaryMethods.TryConvertDelegate<CallbackQueryEventArgs, TReturn>(method, out var c1);
-                    _callbackQuery = c1; DelegateType = typeof(CommandDelegate<CallbackQueryEventArgs, TReturn>);
+                case var _ when t == typeof(CallbackQueryContext):
+                    AuxiliaryMethods.TryConvertDelegate<CallbackQueryContext, CallbackQueryEventArgs, TReturn>(method, out var c1);
+                    _callbackQuery = c1; DelegateType = typeof(CommandDelegate<CallbackQueryContext, CallbackQueryEventArgs, TReturn>);
                     break;
-                case var _ when t == typeof(ChosenInlineResultEventArgs):
-                    AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultEventArgs, TReturn>(method, out var c2);
-                    _chosenInlineResult = c2; DelegateType = typeof(CommandDelegate<ChosenInlineResultEventArgs, TReturn>);
+                case var _ when t == typeof(ChosenInlineResultContext):
+                    AuxiliaryMethods.TryConvertDelegate<ChosenInlineResultContext, ChosenInlineResultEventArgs, TReturn>(method, out var c2);
+                    _chosenInlineResult = c2; DelegateType = typeof(CommandDelegate<ChosenInlineResultContext, ChosenInlineResultEventArgs, TReturn>);
                     break;
-                case var _ when t == typeof(InlineQueryEventArgs):
-                    AuxiliaryMethods.TryConvertDelegate<InlineQueryEventArgs, TReturn>(method, out var c3);
-                    _inlineQuery = c3; DelegateType = typeof(CommandDelegate<InlineQueryEventArgs, TReturn>);
+                case var _ when t == typeof(InlineQueryContext):
+                    AuxiliaryMethods.TryConvertDelegate<InlineQueryContext, InlineQueryEventArgs, TReturn>(method, out var c3);
+                    _inlineQuery = c3; DelegateType = typeof(CommandDelegate<InlineQueryContext, InlineQueryEventArgs, TReturn>);
                     break;
-                case var _ when t == typeof(MessageEventArgs):
-                    AuxiliaryMethods.TryConvertDelegate<MessageEventArgs, TReturn>(method, out var c4);
-                    _message = c4; DelegateType = typeof(CommandDelegate<MessageEventArgs, TReturn>);
+                case var _ when t == typeof(MessageContext):
+                    AuxiliaryMethods.TryConvertDelegate<MessageContext, MessageEventArgs, TReturn>(method, out var c4);
+                    _message = c4; DelegateType = typeof(CommandDelegate<MessageContext, MessageEventArgs, TReturn>);
                     break;
-                case var _ when t == typeof(UpdateEventArgs):
-                    AuxiliaryMethods.TryConvertDelegate<UpdateEventArgs, TReturn>(method, out var c5);
-                    _update = c5; DelegateType = typeof(CommandDelegate<UpdateEventArgs, TReturn>);
+                case var _ when t == typeof(UpdateContext):
+                    AuxiliaryMethods.TryConvertDelegate<UpdateContext, UpdateEventArgs, TReturn>(method, out var c5);
+                    _update = c5; DelegateType = typeof(CommandDelegate<UpdateContext, UpdateEventArgs, TReturn>);
                     break;
                 default: throw new ArgumentException($"Step {method.GetCustomAttribute<StepAttribute>()!.StepNum} had invalid method signature.");
             }

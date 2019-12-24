@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using FluentCommands.Commands;
+using FluentCommands.Commands.Steps;
 using FluentCommands.Attributes;
 using FluentCommands.Menus;
 using Telegram.Bot;
@@ -17,13 +19,15 @@ namespace FluentCommands.Tests.Integration
         }
 
         [Command("test")]
-        public async Task Test(TelegramBotClient client, MessageEventArgs e)
+        public async Task Test(MessageContext c)
         {
         }
 
         [Command("thinking")]
-        public async Task Wow(MessageContext c)
+        [Step(1)]
+        public async Task<Step> Wow(UpdateContext c)
         {
+            return Step.Success().ReturnToStart();
         }
     }
 

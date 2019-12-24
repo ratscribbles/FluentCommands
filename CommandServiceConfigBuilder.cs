@@ -15,14 +15,15 @@ namespace FluentCommands.Builders
     //: documentation...
     public class CommandServiceConfigBuilder : IFluentInterface
     {
-        public bool Logging { get; set; }
-        public bool UseDefaultRules { get; set; }
-        public bool UseDefaultErrorMsg { get; set; }
-        public bool UseInternalStateHandlerForReplyKeyboards { get; set; }
-        public bool UseGlobalLogging { get; set; }
+        public bool BruteForceKeyboardReferences { get; set; } //: Advanced. Consider separating advanced switches from the rest of them (but maybe consider ALL of these to be advanced features)
+        public bool DisableLogging { get; set; }
+        public bool DisableDefaultRules { get; set; }
+        public bool UseCustomDefaultErrorMsg { get; set; }
+        public bool UseCustomDefaultHelpMsg { get; set; }
         public bool CaptureAllLoggingEvents { get; set; }
         public bool SwallowCriticalExceptions { get; set; }
         public bool DisableInternalEventHandlers { get; set; }
+        public bool EnableManualSetup { get; }
         public FluentLogLevel MaximumLogLevel { get; set; } = FluentLogLevel.Fatal;
         public string DefaultPrefix { get; set; } = "/";
         public MenuMode DefaultMenuMode { get; set; } = MenuMode.NoAction;

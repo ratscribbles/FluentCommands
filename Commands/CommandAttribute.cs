@@ -4,7 +4,7 @@ using System.Text;
 using FluentCommands.Utility;
 using FluentCommands.Exceptions;
 
-namespace FluentCommands.Attributes
+namespace FluentCommands.Commands
 {
     /// <summary>
     /// Declares a method as a <see cref="Command"/> for the <see cref="CommandService"/>.

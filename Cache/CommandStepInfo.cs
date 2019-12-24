@@ -5,7 +5,7 @@ using System.Text;
 
 namespace FluentCommands.Cache
 {
-    public struct CommandStepInfo : IEquatable<CommandStepInfo>
+    public class CommandStepInfo : IEquatable<CommandStepInfo>
     {
         internal static CommandStepInfo Empty = new CommandStepInfo("", (0,0), 0);
 

@@ -28,7 +28,7 @@ namespace FluentCommands.Builders
         internal string[] InAliases { get; private set; } = Array.Empty<string>();
         /// <summary>Gets the Description for this <see cref="Command"/>.</summary>
         internal string InDescription { get; private set; } = "There is no description for this command.";
-        /// <summary>Gets the <see cref="Telegram.Bot.Types.Enums.ParseMode"/> for this <see cref="Command"/>. Used for the <see cref="Command.Description"/>).</summary>
+        /// <summary>Gets the <see cref="Telegram.Bot.Types.Enums.ParseMode"/> for this <see cref="Command"/>. Used for the <see cref="CommandBase.Description"/>).</summary>
         internal ParseMode InParseMode { get; private set; } = ParseMode.Default;
         /// <summary>Gets the <see cref="IKeyboardButton"/> for this <see cref="Command"/>. Used to call this command via Keyboard Markups, such as <see cref="InlineKeyboardMarkup"/> and <see cref="ReplyKeyboardMarkup"/>).</summary>
         internal IKeyboardButton? InButton { get; private set; } = null;

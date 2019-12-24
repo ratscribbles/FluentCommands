@@ -26,6 +26,25 @@ namespace FluentCommands
                                 && (MessageEventArgs is null || MessageEventArgs.Message is null)
                                 && (UpdateEventArgs is null || UpdateEventArgs.Update is null);
 
+        internal TelegramUpdateEventArgs() { }
+
+        internal static bool TryFromEventArgs(EventArgs e, [NotNullWhen(true)] out TelegramUpdateEventArgs? t)
+        {
+            if (e is null) { t = null; return false; }
+
+            t = e switch
+            {
+                CallbackQueryEventArgs args => args,
+                ChosenInlineResultEventArgs args => args,
+                InlineQueryEventArgs args => args,
+                MessageEventArgs args => args,
+                UpdateEventArgs args => args,
+                _ => null
+            };
+
+            return t is { };
+        }
+
         public static implicit operator TelegramUpdateEventArgs(CallbackQueryEventArgs e) => new TelegramUpdateEventArgs { CallbackQueryEventArgs = e };
         public static implicit operator TelegramUpdateEventArgs(ChosenInlineResultEventArgs e) => new TelegramUpdateEventArgs { ChosenInlineResultEventArgs = e };
         public static implicit operator TelegramUpdateEventArgs(InlineQueryEventArgs e) => new TelegramUpdateEventArgs { InlineQueryEventArgs = e };

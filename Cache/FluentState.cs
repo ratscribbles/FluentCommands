@@ -8,7 +8,6 @@ namespace FluentCommands.Cache
     //: describe this class and its members
     public sealed class FluentState
     {
-
         /// <summary>Determines whether this state is in its default state.</summary>
         public bool IsDefault => StepState.IsDefault; // Add to this bool as needed;
         public DateTimeOffset LastUpdated { get; } = DateTimeOffset.Now;

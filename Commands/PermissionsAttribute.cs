@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using FluentCommands.Commands;
 
-namespace FluentCommands.Attributes
+namespace FluentCommands.Commands
 {
     [Flags]
     public enum Permissions

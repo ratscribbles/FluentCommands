@@ -11,10 +11,11 @@ namespace FluentCommands
     internal class CommandServiceConfig
     {
         internal bool DisableLogging { get; }
-        internal bool UseDefaultHelpMsg { get; }
-        internal bool UseDefaultErrorMsg { get; }
+        internal bool UseCustomDefaultHelpMsg { get; }
+        internal bool UseCustomDefaultErrorMsg { get; }
         internal bool UsingCustomDatabase { get; private set; }
         internal bool UsingCustomLogger { get; private set; }
+        internal bool EnableManualConfiguration { get; }
         internal FluentLogLevel MaximumLogLevel { get; }
         internal bool SwallowCriticalExceptions { get; }
         internal int PerUserRateLimit { get; } //: make this set-able, and available for the module class
@@ -26,11 +27,11 @@ namespace FluentCommands
         {
             DefaultMenuMode = c.DefaultMenuMode;
             DefaultPrefix = c.DefaultPrefix;
-            DisableLogging = c.Logging;
+            DisableLogging = c.DisableLogging;
             MaximumLogLevel = c.MaximumLogLevel;
             SwallowCriticalExceptions = c.SwallowCriticalExceptions;
-            UseDefaultErrorMsg = c.UseDefaultErrorMsg;
-            UseDefaultHelpMsg = c.UseDefaultRules;
+            UseCustomDefaultErrorMsg = c.UseCustomDefaultErrorMsg;
+            UseCustomDefaultHelpMsg = c.UseCustomDefaultHelpMsg;
         }
 
         internal void UseCustomDatabase() => UsingCustomDatabase = true;

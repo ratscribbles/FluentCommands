@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using FluentCommands.Builders;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Interfaces.BaseBuilderOfModule

@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VenueBuilder
 {
-    public interface IMenuVenueDisableNotification : IReplyMarkupable<IMenuVenueReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuVenueDisableNotification : IReplyMarkupable<IMenuVenueReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Foursquare identifier of the venue.
@@ -26,12 +26,12 @@ namespace FluentCommands.Interfaces.MenuBuilders.VenueBuilder
         /// </summary>
         /// <param name="message"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(Message message);
+        Menus.Menu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(int messageId);
+        Menus.Menu ReplyToMessage(int messageId);
     }
 }

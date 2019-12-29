@@ -9,7 +9,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoOptionalBuilder : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuVideoOptionalBuilder : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.
@@ -93,6 +93,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

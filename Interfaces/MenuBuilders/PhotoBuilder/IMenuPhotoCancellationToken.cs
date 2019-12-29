@@ -7,7 +7,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.PhotoBuilder
 {
-    public interface IMenuPhotoCancellationToken : IReplyMarkupable<IMenuPhotoReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuPhotoCancellationToken : IReplyMarkupable<IMenuPhotoReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Photo caption (may also be used when resending photos by file_id), 0-1024 characters.
@@ -32,12 +32,12 @@ namespace FluentCommands.Interfaces.MenuBuilders.PhotoBuilder
         /// </summary>
         /// <param name="message"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(Message message);
+        Menus.Menu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(int messageId);
+        Menus.Menu ReplyToMessage(int messageId);
     }
 }

@@ -11,7 +11,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.VideoBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -32,7 +32,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoOptionalBuilder.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoOptionalBuilder.Width(int width) { Width = width; return this; }
         #endregion
         #region Additional Implenentation
         IMenuVideoCaption IMenuVideoCancellationToken.Caption(string caption) { Caption = caption; return this; }
@@ -46,7 +46,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoCancellationToken.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoCancellationToken.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoDisableNotification IMenuVideoCaption.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuVideoDuration IMenuVideoCaption.Duration(int duration) { Duration = duration; return this; }
@@ -58,7 +58,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoCaption.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoCaption.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoCaption.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoCaption.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoCaption.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoDuration IMenuVideoDisableNotification.Duration(int duration) { Duration = duration; return this; }
         IMenuVideoHeight IMenuVideoDisableNotification.Height(int height) { Height = height; return this; }
@@ -69,7 +69,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoDisableNotification.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoDisableNotification.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoHeight IMenuVideoDuration.Height(int height) { Height = height; return this; }
         IMenuVideoParseMode IMenuVideoDuration.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
@@ -79,7 +79,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoDuration.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoDuration.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoDuration.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoDuration.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoDuration.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoParseMode IMenuVideoHeight.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
         IMenuVideoReplyToMessage IMenuVideoHeight.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
@@ -88,7 +88,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoHeight.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoHeight.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoHeight.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoHeight.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoHeight.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoReplyToMessage IMenuVideoParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoReplyToMessage IMenuVideoParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
@@ -96,7 +96,7 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoParseMode.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoParseMode.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoParseMode.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoParseMode.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoParseMode.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoReplyToMessage IMenuVideoReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuVideoReplyToMessage IMenuVideoReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
@@ -104,20 +104,20 @@ namespace FluentCommands.Menus
         IMenuVideoThumbnail IMenuVideoReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoReplyMarkup.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoReplyMarkup.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoSupportsStreaming IMenuVideoReplyToMessage.SupportsStreaming(bool supportsStreaming) { SupportsStreaming = supportsStreaming; return this; }
         IMenuVideoThumbnail IMenuVideoReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoReplyToMessage.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoReplyToMessage.Width(int width) { Width = width; return this; }
         ////
         IMenuVideoThumbnail IMenuVideoSupportsStreaming.Thumbnail(string source) { Thumbnail = source; return this; }
         IMenuVideoThumbnail IMenuVideoSupportsStreaming.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
         IMenuVideoThumbnail IMenuVideoSupportsStreaming.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
-        IMenu IMenuVideoSupportsStreaming.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoSupportsStreaming.Width(int width) { Width = width; return this; }
         ////
-        IMenu IMenuVideoThumbnail.Width(int width) { Width = width; return this; }
+        Menu IMenuVideoThumbnail.Width(int width) { Width = width; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuVideoReplyMarkup> IReplyMarkupable<IMenuVideoReplyMarkup>.ReplyMarkup() => this;

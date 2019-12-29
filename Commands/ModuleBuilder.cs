@@ -13,13 +13,13 @@ using FluentCommands.Logging;
 using FluentCommands.Cache;
 using Telegram.Bot;
 
-namespace FluentCommands.Builders
+namespace FluentCommands.Commands
 {
     /// <summary>
     /// Builder that creates <see cref="CommandBaseBuilder"/> objects to assemble into commands of this Module.
     /// </summary>
     public sealed class ModuleBuilder : IModuleBuilder,
-        ICommandBaseBuilderOfModule, ICommandBaseOfModuleDescriptionBuilder, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleKeyboard, ICommandBaseOfModuleCompletion, IKeyboardBuilder<ICommandBaseOfModuleKeyboard>, IReplyMarkupable<ICommandBaseOfModuleKeyboard>,
+        ICommandBaseBuilderOfModule, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleCompletion,
         IFluentInterface
     {
         /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
@@ -90,81 +90,21 @@ namespace FluentCommands.Builders
         /// Adds a description to this command. Will show when "help" is called, unless default help command is disabled.
         /// </summary>
         /// <param name="description">The description of this command.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescriptionBuilder"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
-        public ICommandBaseOfModuleDescriptionBuilder HelpDescription(string description)
+        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
+        public ICommandBaseOfModuleDescription HelpDescription(string description, ParseMode parseMode = ParseMode.Default)
         {
             CommandStorage!.HelpDescription(description);
             UpdateBuilder(CommandStorage);
             return this;
         }
         /// <summary>
-        /// Adds a <see cref="ParseMode"/> to the description of this command.
+        /// Adds a description to this command. Will show when "help" is called, unless default help command is disabled.
         /// </summary>
-        /// <param name="parseMode"></param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseOfModuleDescription UsingParseMode(ParseMode parseMode)
+        /// <param name="description">The description of this command.</param>
+        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
+        public ICommandBaseOfModuleDescription HelpDescription(Menus.Menu helpMessage)
         {
-            CommandStorage!.UsingParseMode(parseMode);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Constructs a <see cref="KeyboardBuilder"/> for this command, to become a Keyboard Markup for display.
-        /// </summary>
-        /// <param name="buildAction">Delegate that constructs a <see cref="KeyboardBuilder"/> for this future <see cref="FluentCommands.Command"/>.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        public IKeyboardBuilder<ICommandBaseOfModuleKeyboard> ReplyMarkup() => this;
-
-        /// <summary>
-        /// Returns this <see cref="IKeyboardBuilder"/> as one marked for <see cref="InlineKeyboardMarkup"/> objects.
-        /// </summary>
-        public ICommandBaseOfModuleKeyboard Inline(Action<IInlineKeyboardBuilder> buildAction)
-        {
-            CommandStorage!.ReplyMarkup().Inline(buildAction);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Returns this <see cref="IKeyboardBuilder"/> as one marked for <see cref="ReplyKeyboardMarkup"/> objects.
-        /// </summary>
-        public ICommandBaseOfModuleKeyboard Reply(Action<IReplyKeyboardBuilder> buildAction)
-        {
-            CommandStorage!.ReplyMarkup().Reply(buildAction);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Adds an <see cref="InlineKeyboardBuilder"/> to this command. Will display after this command is called by a user.
-        /// </summary>
-        /// <param name="markup">The <see cref="InlineKeyboardMarkup"/></param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseOfModuleKeyboard ReplyMarkup(InlineKeyboardMarkup markup)
-        {
-            CommandStorage!.ReplyMarkup(markup);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Adds a <see cref="ReplyKeyboardBuilder"/> to this command. Will display after this command is called by a user.
-        /// </summary>
-        /// <param name="markup">The <see cref="ReplyKeyboardMarkup"/> being added to this command.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleKeyboard"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardMarkup markup)
-        {
-            CommandStorage!.ReplyMarkup(markup);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-        public ICommandBaseOfModuleKeyboard ReplyMarkup(ForceReplyMarkup markup, bool selective = false)
-        {
-            CommandStorage!.ReplyMarkup(markup, selective);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-
-        public ICommandBaseOfModuleKeyboard ReplyMarkup(ReplyKeyboardRemove markup, bool selective = false)
-        {
-            CommandStorage!.ReplyMarkup(markup, selective);
+            CommandStorage!.HelpDescription(helpMessage);
             UpdateBuilder(CommandStorage);
             return this;
         }
@@ -174,9 +114,9 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <param name="button">The button to be added to this command.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleCompletion"/>, signalling the end of this command's construction.</returns>
-        public ICommandBaseOfModuleCompletion KeyboardButtonReference(IKeyboardButton button)
+        public ICommandBaseOfModuleCompletion InlineKeyboardButtonReference(InlineKeyboardButton button)
         {
-            CommandStorage!.KeyboardButtonReference(button);
+            CommandStorage!.InlineKeyboardButtonReference(button);
             UpdateBuilder(CommandStorage);
             return this;
         }
@@ -186,20 +126,6 @@ namespace FluentCommands.Builders
         /// </summary>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="IModuleBuilder"/> to begin the command building process again.</returns>
         public IModuleBuilder Next() => this;
-
-        public ICommandBaseOfModuleKeyboard Remove(bool selective = false)
-        {
-            CommandStorage!.Remove(selective);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
-        //: Add descs
-        public ICommandBaseOfModuleKeyboard ForceReply(bool selective = false)
-        {
-            CommandStorage!.ForceReply(selective);
-            UpdateBuilder(CommandStorage);
-            return this;
-        }
 
         /// <summary>Updates the <see cref="ModuleBuilder"/> in the Modules dictionary contained within the <see cref="CommandService"/>.</summary>
         /// <param name="c"></param>

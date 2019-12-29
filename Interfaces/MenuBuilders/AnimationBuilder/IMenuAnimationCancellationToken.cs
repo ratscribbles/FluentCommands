@@ -9,7 +9,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationCancellationToken : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuAnimationCancellationToken : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Animation caption (may also be used when resending animation by file_id), 0-1024 characters.
@@ -80,6 +80,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menu Width(int width);
     }
 }

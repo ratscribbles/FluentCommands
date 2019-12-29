@@ -7,7 +7,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.PollBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -22,19 +22,19 @@ namespace FluentCommands.Menus
         #region Optional
         IMenuPollCancellationToken IMenuPollOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuPollDisableNotification IMenuPollOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenu IMenuPollOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuPollOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPollOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuPollOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuPollDisableNotification IMenuPollCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenu IMenuPollCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuPollCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPollCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuPollCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuPollDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuPollDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPollDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuPollDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuPollReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuPollReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPollReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuPollReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuPollReplyMarkup> IReplyMarkupable<IMenuPollReplyMarkup>.ReplyMarkup() => this;

@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.GameBuilder
 {
-    public interface IMenuGameOptionalBuilder : IReplyMarkupableForceInline<IMenuGameReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuGameOptionalBuilder : IReplyMarkupableForceInline<IMenuGameReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.
@@ -27,12 +27,12 @@ namespace FluentCommands.Interfaces.MenuBuilders.GameBuilder
         /// </summary>
         /// <param name="message"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(Message message);
+        Menus.Menu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(int messageId);
+        Menus.Menu ReplyToMessage(int messageId);
     }
 }

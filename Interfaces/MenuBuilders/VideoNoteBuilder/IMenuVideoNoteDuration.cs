@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder
 {
-    public interface IMenuVideoNoteDuration : IReplyMarkupable<IMenuVideoNoteReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuVideoNoteDuration : IReplyMarkupable<IMenuVideoNoteReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Video width and height, i.e. diameter of the video message.
@@ -33,7 +33,7 @@ namespace FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder
         /// </summary>
         /// <param name="source"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Thumbnail(string source);
+        Menus.Menu Thumbnail(string source);
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
         /// <para>The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail‘s width and height should not exceed 320. Ignored if the file is not uploaded using multipart/form-data.</para>
@@ -41,13 +41,13 @@ namespace FluentCommands.Interfaces.MenuBuilders.VideoNoteBuilder
         /// <param name="content"></param>
         /// <param name="fileName"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Thumbnail(Stream content, string fileName);
+        Menus.Menu Thumbnail(Stream content, string fileName);
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
         /// <para>The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail‘s width and height should not exceed 320. Ignored if the file is not uploaded using multipart/form-data.</para>
         /// </summary>
         /// <param name="thumbnail"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Thumbnail(InputMedia thumbnail);
+        Menus.Menu Thumbnail(InputMedia thumbnail);
     }
 }

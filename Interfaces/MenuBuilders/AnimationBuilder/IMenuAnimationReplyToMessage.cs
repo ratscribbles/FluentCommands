@@ -6,7 +6,7 @@ using System.IO;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationReplyToMessage : IFluentInterface, IMenu
+    public interface IMenuAnimationReplyToMessage : IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
@@ -35,6 +35,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoReplyToMessage : IFluentInterface, IMenu
+    public interface IMenuVideoReplyToMessage : IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Pass <c>true</c> if the uploaded video is suitable for streaming.
@@ -41,6 +41,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

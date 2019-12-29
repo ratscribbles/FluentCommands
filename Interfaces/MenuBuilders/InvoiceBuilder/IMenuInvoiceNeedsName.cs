@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder
 {
-    public interface IMenuInvoiceNeedsName : IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuInvoiceNeedsName : IReplyMarkupableForceInline<IMenuInvoiceReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Pass <c>true</c> if you require the user's phone number to complete the order.
@@ -57,12 +57,12 @@ namespace FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder
         /// </summary>
         /// <param name="message"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(Message message);
+        Menus.Menu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(int messageId);
+        Menus.Menu ReplyToMessage(int messageId);
     }
 }

@@ -23,20 +23,20 @@ namespace FluentCommands.Commands
 
         /// <summary>
         /// Can be one of 5 delegate types:
-        /// <para>* CommandDelegate{CallbackQueryEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{ChosenInlineResultEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{InlineQueryEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{MessageEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{UpdateEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{CallbackQueryContext, CallbackQueryEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{ChosenInlineResultContext, ChosenInlineResultEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{InlineQueryContext, InlineQueryEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{MessageContext, MessageEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{UpdateContext, UpdateEventArgs, TReturn}</para>
         /// </summary>
         internal Type DelegateType { get; }
         /// <summary>
         /// Can be one of 5 delegates:
-        /// <para>* CommandDelegate{CallbackQueryEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{ChosenInlineResultEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{InlineQueryEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{MessageEventArgs, TReturn}</para>
-        /// <para>* CommandDelegate{UpdateEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{CallbackQueryContext, CallbackQueryEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{ChosenInlineResultContext, ChosenInlineResultEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{InlineQueryContext, InlineQueryEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{MessageContext, MessageEventArgs, TReturn}</para>
+        /// <para>* CommandDelegate{UpdateContext, UpdateEventArgs, TReturn}</para>
         /// </summary>
         internal Delegate Delegate
         {

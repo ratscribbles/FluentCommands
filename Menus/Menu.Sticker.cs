@@ -10,7 +10,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.StickerBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -21,19 +21,19 @@ namespace FluentCommands.Menus
         #region Optional
         IMenuStickerCancellationToken IMenuStickerOptionalBuilder.CancellationToken(CancellationToken token) { Token = token; return this; }
         IMenuStickerDisableNotification IMenuStickerOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenu IMenuStickerOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuStickerOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuStickerOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuStickerOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuStickerDisableNotification IMenuStickerCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
-        IMenu IMenuStickerCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuStickerCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuStickerCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuStickerCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuStickerDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuStickerDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuStickerDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuStickerDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuStickerReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuStickerReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuStickerReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuStickerReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuStickerReplyMarkup> IReplyMarkupable<IMenuStickerReplyMarkup>.ReplyMarkup() => this;

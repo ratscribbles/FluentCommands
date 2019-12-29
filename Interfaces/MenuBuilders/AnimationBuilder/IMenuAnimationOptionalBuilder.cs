@@ -10,7 +10,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationOptionalBuilder : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuAnimationOptionalBuilder : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="Menu"/>.
@@ -88,6 +88,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

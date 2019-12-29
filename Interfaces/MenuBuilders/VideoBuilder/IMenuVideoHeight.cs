@@ -8,7 +8,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoHeight : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuVideoHeight : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.
@@ -61,6 +61,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

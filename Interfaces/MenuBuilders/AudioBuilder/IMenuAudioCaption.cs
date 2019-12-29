@@ -8,7 +8,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioCaption : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuAudioCaption : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.
@@ -61,6 +61,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
         /// </summary>
         /// <param name="title"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Title(string title);
+        Menus.Menu Title(string title);
     }
 }

@@ -9,7 +9,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.InvoiceBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -41,8 +41,8 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceOptionalBuilder.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceOptionalBuilder.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceOptionalBuilder.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
 
         #region Additional Implementation
@@ -57,8 +57,8 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceCancellationToken.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceCancellationToken.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceCancellationToken.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoiceIsFlexible IMenuInvoiceDisableNotification.IsFlexible(bool isFlexible) { IsFlexibile = isFlexible; return this; }
         IMenuInvoiceNeedsEmail IMenuInvoiceDisableNotification.NeedsEmail(bool needsEmail) { NeedsEmail = needsEmail; return this; }
@@ -70,8 +70,8 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceDisableNotification.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceDisableNotification.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceDisableNotification.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoiceNeedsEmail IMenuInvoiceIsFlexible.NeedsEmail(bool needsEmail) { NeedsEmail = needsEmail; return this; }
         IMenuInvoiceNeedsName IMenuInvoiceIsFlexible.NeedsName(bool needsName) { NeedsName = needsName; return this; }
@@ -82,8 +82,8 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceIsFlexible.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceIsFlexible.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceIsFlexible.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceIsFlexible.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceIsFlexible.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceIsFlexible.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceIsFlexible.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoiceNeedsName IMenuInvoiceNeedsEmail.NeedsName(bool needsName) { NeedsName = needsName; return this; }
         IMenuInvoiceNeedsPhoneNumber IMenuInvoiceNeedsEmail.NeedsPhoneNumber(bool needsPhoneNumber) { NeedsPhoneNumber = needsPhoneNumber; return this; }
@@ -93,8 +93,8 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceNeedsEmail.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceNeedsEmail.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceNeedsEmail.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceNeedsEmail.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceNeedsEmail.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceNeedsEmail.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceNeedsEmail.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoiceNeedsPhoneNumber IMenuInvoiceNeedsName.NeedsPhoneNumber(bool needsPhoneNumber) { NeedsPhoneNumber = needsPhoneNumber; return this; }
         IMenuInvoiceNeedsShippingAddress IMenuInvoiceNeedsName.NeedsShippingAddress(bool needsShippingAddress) { NeedsShippingAddress = needsShippingAddress; return this; }
@@ -103,8 +103,8 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceNeedsName.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceNeedsName.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceNeedsName.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceNeedsName.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceNeedsName.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceNeedsName.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceNeedsName.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoiceNeedsShippingAddress IMenuInvoiceNeedsPhoneNumber.NeedsShippingAddress(bool needsShippingAddress) { NeedsShippingAddress = needsShippingAddress; return this; }
         IMenuInvoicePhotoHeight IMenuInvoiceNeedsPhoneNumber.PhotoHeight(int photoHeight) { PhotoHeight = photoHeight; return this; }
@@ -112,44 +112,44 @@ namespace FluentCommands.Menus
         IMenuInvoicePhotoWidth IMenuInvoiceNeedsPhoneNumber.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceNeedsPhoneNumber.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceNeedsPhoneNumber.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceNeedsPhoneNumber.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceNeedsPhoneNumber.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceNeedsPhoneNumber.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceNeedsPhoneNumber.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoicePhotoHeight IMenuInvoiceNeedsShippingAddress.PhotoHeight(int photoHeight) { PhotoHeight = photoHeight; return this; }
         IMenuInvoicePhotoSize IMenuInvoiceNeedsShippingAddress.PhotoSize(int photoSize) { PhotoSize = photoSize; return this; }
         IMenuInvoicePhotoWidth IMenuInvoiceNeedsShippingAddress.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoiceNeedsShippingAddress.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoiceNeedsShippingAddress.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoiceNeedsShippingAddress.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceNeedsShippingAddress.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceNeedsShippingAddress.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceNeedsShippingAddress.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoicePhotoSize IMenuInvoicePhotoHeight.PhotoSize(int photoSize) { PhotoSize = photoSize; return this; }
         IMenuInvoicePhotoWidth IMenuInvoicePhotoHeight.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoicePhotoHeight.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoicePhotoHeight.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoicePhotoHeight.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoicePhotoHeight.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoicePhotoHeight.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoicePhotoHeight.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoicePhotoWidth IMenuInvoicePhotoSize.PhotoWidth(int photoWidth) { PhotoWidth = photoWidth; return this; }
         IMenuInvoicePhotoUrl IMenuInvoicePhotoSize.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoicePhotoSize.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoicePhotoSize.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoicePhotoSize.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoicePhotoSize.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoicePhotoSize.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoicePhotoUrl IMenuInvoicePhotoUrl.PhotoUrl(string photoUrl) { PhotoUrl = photoUrl; return this; }
         IMenuInvoiceProviderData IMenuInvoicePhotoUrl.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoicePhotoUrl.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoicePhotoUrl.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoicePhotoUrl.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoicePhotoUrl.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuInvoiceProviderData IMenuInvoicePhotoWidth.ProviderData(string providerData) { ProviderData = providerData; return this; }
-        IMenu IMenuInvoicePhotoWidth.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoicePhotoWidth.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoicePhotoWidth.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoicePhotoWidth.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuInvoiceProviderData.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceProviderData.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceProviderData.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceProviderData.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuInvoiceReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuInvoiceReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuInvoiceReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuInvoiceReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
 
         #region Keyboard Implementation

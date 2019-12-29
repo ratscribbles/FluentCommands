@@ -8,13 +8,15 @@ using Telegram.Bot.Types;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Args;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Interfaces.MenuBuilders
 {
     /// <summary>
     /// Represents a valid <see cref="Menu"/> object that can be sent to a <see cref="Chat"/> or <see cref="User"/> on Telegram.
+    /// <para>A <see cref="Menu"/> becomes "sendable" when all required parameters of that Menu's message <see cref="MessageType." type are provided.</para>
     /// </summary>
-    public interface IMenu : IFluentInterface
+    public interface ISendableMenu : IFluentInterface
     {
         /// <summary>
         /// Allows you specify where to send this <see cref="Menu"/>.
@@ -47,11 +49,13 @@ namespace FluentCommands.Interfaces.MenuBuilders
         /// <exception cref="InvalidUserIdException"></exception>
         /// <exception cref="UserNotFoundException"></exception>
         //Task Send(long idToSendTo, ChatAction? chatAction = null, int duration = 0);
-
-        Task Send(TelegramBotClient client, MessageEventArgs e, ChatAction? chatAction = null, int duration = 0);
-
-        Task Send(TelegramBotClient client, InlineQueryEventArgs e, ChatAction? chatAction = null, int duration = 0);
-        Task Send(TelegramBotClient client, ChosenInlineResultEventArgs e, ChatAction? chatAction = null, int duration = 0);
-
+        Menu Done();
+            
+        Task Send(CallbackQueryContext e, ChatAction? chatAction = null, int duration = 0);
+        Task Send(ChosenInlineResultContext e, ChatAction? chatAction = null, int duration = 0);
+        Task Send(InlineQueryContext e, ChatAction? chatAction = null, int duration = 0);
+        Task Send(MessageContext e, ChatAction? chatAction = null, int duration = 0);
+        Task Send(UpdateContext e, ChatAction? chatAction = null, int duration = 0);
+        //Task Send<TModule>(TelegramBotClient client, Callback)
     }
 }

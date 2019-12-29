@@ -11,7 +11,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.DocumentBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -26,9 +26,9 @@ namespace FluentCommands.Menus
         IMenuDocumentParseMode IMenuDocumentOptionalBuilder.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenu IMenuDocumentOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentOptionalBuilder.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentOptionalBuilder.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentOptionalBuilder.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         #endregion
 
         #region Additional Implementation
@@ -37,40 +37,40 @@ namespace FluentCommands.Menus
         IMenuDocumentParseMode IMenuDocumentCancellationToken.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenu IMenuDocumentCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentCancellationToken.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentCancellationToken.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentCancellationToken.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuDocumentDisableNotification IMenuDocumentCaption.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuDocumentParseMode IMenuDocumentCaption.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentCaption.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentCaption.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenu IMenuDocumentCaption.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentCaption.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentCaption.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentCaption.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentCaption.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentCaption.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuDocumentParseMode IMenuDocumentDisableNotification.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenu IMenuDocumentDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentDisableNotification.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentDisableNotification.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentDisableNotification.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuDocumentReplyToMessage IMenuDocumentParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenu IMenuDocumentParseMode.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentParseMode.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentParseMode.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentParseMode.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentParseMode.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentParseMode.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
         IMenuDocumentReplyToMessage IMenuDocumentReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
         IMenuDocumentReplyToMessage IMenuDocumentReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
-        IMenu IMenuDocumentReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentReplyMarkup.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentReplyMarkup.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentReplyMarkup.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         ////
-        IMenu IMenuDocumentReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
-        IMenu IMenuDocumentReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
-        IMenu IMenuDocumentReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
+        Menus.Menu IMenuDocumentReplyToMessage.Thumbnail(string source) { Thumbnail = source; return this; }
+        Menus.Menu IMenuDocumentReplyToMessage.Thumbnail(Stream content, string fileName) { Thumbnail = new InputMedia(content, fileName); return this; }
+        Menus.Menu IMenuDocumentReplyToMessage.Thumbnail(InputMedia thumbnail) { Thumbnail = thumbnail; return this; }
         #endregion
 
         #region Keyboard Implementation

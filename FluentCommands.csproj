@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="ReadOnlyCommandModule.cs">
+    <Compile Update="Commands\ReadOnlyCommandModule.cs">
       <Generator>MSBuild:Compile</Generator>
     </Compile>
   </ItemGroup>

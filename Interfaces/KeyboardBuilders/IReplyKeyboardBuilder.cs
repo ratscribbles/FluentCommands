@@ -1,4 +1,4 @@
-﻿using FluentCommands.KeyboardTypes;
+﻿using FluentCommands.Commands.KeyboardTypes;
 using System;
 using System.Collections.Generic;
 using System.Text;

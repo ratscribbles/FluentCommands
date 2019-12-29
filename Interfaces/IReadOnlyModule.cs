@@ -1,5 +1,5 @@
-﻿using FluentCommands.Builders;
-using FluentCommands.Cache;
+﻿using FluentCommands.Cache;
+using FluentCommands.Commands;
 using FluentCommands.Logging;
 using System;
 using System.Collections.Generic;

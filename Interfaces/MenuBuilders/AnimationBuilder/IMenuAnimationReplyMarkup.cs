@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationReplyMarkup : IFluentInterface, IMenu
+    public interface IMenuAnimationReplyMarkup : IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
@@ -47,6 +47,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

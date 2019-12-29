@@ -7,7 +7,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
 {
-    public interface IMenuAudioPerformer : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuAudioPerformer : IReplyMarkupable<IMenuAudioReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
@@ -36,6 +36,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AudioBuilder
         /// </summary>
         /// <param name="title"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Title(string title);
+        Menus.Menu Title(string title);
     }
 }

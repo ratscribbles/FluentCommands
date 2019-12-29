@@ -4,13 +4,13 @@ using System.Text;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoThumbnail : IFluentInterface, IMenu
+    public interface IMenuVideoThumbnail : IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Video width.
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

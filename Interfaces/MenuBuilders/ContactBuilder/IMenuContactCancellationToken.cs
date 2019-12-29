@@ -7,7 +7,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactCancellationToken : IReplyMarkupable<IMenuContactReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuContactCancellationToken : IReplyMarkupable<IMenuContactReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.
@@ -60,6 +60,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
         /// </summary>
         /// <param name="vCard"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu VCard(string vCard);
+        Menus.Menu VCard(string vCard);
     }
 }

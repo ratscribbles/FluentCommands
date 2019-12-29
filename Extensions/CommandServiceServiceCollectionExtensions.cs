@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using FluentCommands.Builders;
 using FluentCommands.Cache;
 using FluentCommands.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,11 +13,6 @@ namespace FluentCommands.Extensions
         internal static IServiceCollection AddClient(this IServiceCollection c, string token)
         {
             c.AddSingleton(new TelegramBotClient(token));
-            return c;
-        }
-        internal static IServiceCollection AddClient(this IServiceCollection c, ClientBuilder clientBuilder)
-        {
-            c.AddSingleton(clientBuilder.Build());
             return c;
         }
         internal static IServiceCollection AddClient(this IServiceCollection c, TelegramBotClient client)

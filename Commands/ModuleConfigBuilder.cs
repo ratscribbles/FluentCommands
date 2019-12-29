@@ -9,41 +9,60 @@ using FluentCommands.Utility;
 using FluentCommands.Cache;
 using FluentCommands.Interfaces.MenuBuilders;
 using Telegram.Bot;
-using FluentCommands.Builders;
 using Microsoft.Extensions.DependencyInjection;
+using Telegram.Bot.Types.Enums;
 
-namespace FluentCommands
+namespace FluentCommands.Commands
 {
+    //: doc...
     public class ModuleConfigBuilder
     {
-        internal Type ModuleType { get; }
-        public bool UseInternalKeyboardStateHandler { get; set; } = false;
-        public bool UseDefaultErrorMessage { get; set; } = false;
-        public bool BruteForceKeyboardReferences { get; set; } = false;
-        public bool DeleteCommandAfterCall { get; set; } = false;
-        public bool LogModuleActivities { get; set; } = false;
-        public bool DisableInternalCommandEvaluation { get; set; } = false;
-        public FluentLogLevel MaximumLogLevelOverride { get; set; } = FluentLogLevel.Fatal;
-        public string Prefix { get; set; } = "/";
-        public IMenu? DefaultErrorMessageOverride { get; set; } = null;
-        public MenuMode MenuModeOverride { get; set; } = MenuMode.NoAction;
-        public int PerUserRateLimitOverride { get; private set; }
-
-        internal bool UsingBotClient { get; private set; }
-        internal bool UsingCustomCacheOverride { get; private set; }
-        internal bool UsingCustomLoggerOverride { get; private set; }
-
+        //: documentation...
         internal ModuleConfigBuilder(Type m) => ModuleType = m;
+        internal Type ModuleType { get; }
+
+        //: add a warning onto this setting.
+        internal bool In_DeleteAllIncomingUserInputs { get; private set; }
+        public void DeleteAllIncomingUserInputs() => In_DeleteAllIncomingUserInputs = true;
+
+        internal bool In_DeleteCommandAfterCall { get; private set; }
+        public void DeleteCommandAfterCall() => In_DeleteCommandAfterCall = true;
+
+        internal bool In_DisableLogging { get; private set; }
+        public void DisableLogging() => In_DisableLogging = true;
+
+        internal bool On_Building_DisableInternalCommandEvaluation { get; private set; }
+        public void DisableInternalCommandEvaluation() => On_Building_DisableInternalCommandEvaluation = true;
+
+        internal FluentLogLevel In_MaximumLogLevelOverride { get; private set; }
+        public void MaximumLogLevelOverride(FluentLogLevel logLevel) => In_MaximumLogLevelOverride = logLevel;
+
+        internal string In_Prefix { get; private set; } = "/";
+        public void Prefix(string prefix) => In_Prefix = prefix;
+
+        internal ISendableMenu? In_DefaultErrorMessageOverride { get; private set; }
+        public void DefaultErrorMessageOverride(string errorMessage, ParseMode parseMode) => In_DefaultErrorMessageOverride = Menu.Text(errorMessage).ParseMode(parseMode);
+        public void DefaultErrorMessageOverride(ISendableMenu menu) => In_DefaultErrorMessageOverride = menu;
+
+        internal MenuMode In_MenuModeOverride { get; private set; } = MenuMode.NoAction;
+        public void MenuModeOverride(MenuMode menuMode) => In_MenuModeOverride = menuMode;
+
+        internal (int AmountOfMessages, TimeSpan PerTimeSpan) In_RateLimitPerUser { get; private set; }
+        public void RateLimitPerUser(int amountOfMessages, TimeSpan perTimeSpan = default) => In_RateLimitPerUser = (amountOfMessages, perTimeSpan);
+
+
+        internal bool In_UsingBotClient { get; private set; }
+        internal bool In_UsingCustomCacheOverride { get; private set; }
+        internal bool In_UsingCustomLoggerOverride { get; private set; }
 
         //: Documentation
-        public void AddCache<TCacheImplementation>() where TCacheImplementation : class, IFluentCache { CommandService.AddCache<TCacheImplementation>(ModuleType); UsingCustomCacheOverride = true; }
-        public void AddCache(Type implementationType) { CommandService.AddCache(implementationType, ModuleType); UsingCustomCacheOverride = true; }
-        public void AddClient(string token) { CommandService.AddClient(token, ModuleType); UsingBotClient = true; }
-        public void AddClient(ClientBuilder clientBuilder) { CommandService.AddClient(clientBuilder, ModuleType); UsingBotClient = true; }
-        public void AddClient(TelegramBotClient client) { CommandService.AddClient(client, ModuleType); UsingBotClient = true; }
-        public void AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger { CommandService.AddLogger<TLoggerImplementation>(ModuleType); UsingCustomLoggerOverride = true; }
-        public void AddLogger(IFluentLogger implementationInstance) { CommandService.AddLogger(implementationInstance, ModuleType); UsingCustomLoggerOverride = true; }
-        public void AddLogger(Type implementationType) { CommandService.AddLogger(implementationType, ModuleType); UsingCustomLoggerOverride = true; }
+        public void AddCache<TCacheImplementation>() where TCacheImplementation : class, IFluentCache { CommandService.AddCache<TCacheImplementation>(ModuleType); In_UsingCustomCacheOverride = true; }
+        public void AddCache(Type implementationType) { CommandService.AddCache(implementationType, ModuleType); In_UsingCustomCacheOverride = true; }
+        public void AddClient(string token) { CommandService.AddClient(token, ModuleType); In_UsingBotClient = true; }
+        public void AddClient(TelegramBotClient client) { CommandService.AddClient(client, ModuleType); In_UsingBotClient = true; }
+        public void AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger { CommandService.AddLogger<TLoggerImplementation>(ModuleType); In_UsingCustomLoggerOverride = true; }
+        public void AddLogger(IFluentLogger implementationInstance) { CommandService.AddLogger(implementationInstance, ModuleType); In_UsingCustomLoggerOverride = true; }
+        public void AddLogger(Type implementationType) { CommandService.AddLogger(implementationType, ModuleType); In_UsingCustomLoggerOverride = true; }
 
         internal ModuleConfig BuildConfig() => new ModuleConfig(this);
     }

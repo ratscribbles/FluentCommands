@@ -12,6 +12,6 @@ namespace FluentCommands.Cache
         Task AddOrUpdateState(FluentState state);
         Task<FluentState> GetState(int botId, long chatId, int userId);
         Task UpdateLastMessage(int botId, long chatId, int userId, Message[] messages);
-        Task<IReadOnlyCollection<Message>?> GetMessages(int botId, long chatId, int userId);
+        Task<IReadOnlyList<Message>?> GetMessages(int botId, long chatId, int userId);
     }
 }

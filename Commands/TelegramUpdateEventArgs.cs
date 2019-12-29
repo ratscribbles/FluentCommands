@@ -7,7 +7,7 @@ using FluentCommands.Utility;
 using Telegram.Bot.Types;
 using FluentCommands.Extensions;
 
-namespace FluentCommands
+namespace FluentCommands.Commands
 {
     /// <summary>
     /// A container class for the 5 most commonly-used Telegram EventArgs for obtaining user input:

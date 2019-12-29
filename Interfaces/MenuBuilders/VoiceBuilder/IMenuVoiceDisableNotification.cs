@@ -7,7 +7,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VoiceBuilder
 {
-    public interface IMenuVoiceDisableNotification : IReplyMarkupable<IMenuVoiceReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuVoiceDisableNotification : IReplyMarkupable<IMenuVoiceReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Duration of the voice message in seconds.
@@ -26,12 +26,12 @@ namespace FluentCommands.Interfaces.MenuBuilders.VoiceBuilder
         /// </summary>
         /// <param name="message"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(Message message);
+        Menus.Menu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(int messageId);
+        Menus.Menu ReplyToMessage(int messageId);
     }
 }

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using FluentCommands.Attributes;
-using FluentCommands.Builders;
 using Telegram.Bot.Types;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types.Enums;
@@ -25,9 +24,8 @@ namespace FluentCommands.Commands
         internal string Name { get; }
         internal CommandType CommandType { get; }
         internal string[] Aliases { get; } = Array.Empty<string>();
-        internal string Description { get; } = string.Empty;
-        internal ParseMode ParseMode { get; } = ParseMode.Default;
-        internal IKeyboardButton? Button { get; } = null;
+        internal Menu Description { get; } = Menu.Text("There is no description for this command.").Done();
+        internal InlineKeyboardButton? Button { get; } = null;
         internal CommandDelegate<TContext, TArgs> Invoke { get; }
         Type ICommand.Module => Module;
         Type ICommand.Args { get; } = typeof(TArgs);
@@ -50,8 +48,7 @@ namespace FluentCommands.Commands
             Module = module;
             Name = commandBase.Name;
             Aliases = commandBase.InAliases;
-            Description = commandBase.InDescription;
-            ParseMode = commandBase.InParseMode;
+            Description = commandBase.InHelpDescription;
             Button = commandBase.InButton;
             CommandType = commandBase.CommandType;
 

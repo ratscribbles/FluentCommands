@@ -8,7 +8,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
 {
-    public interface IMenuVideoCaption : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuVideoCaption : IReplyMarkupable<IMenuVideoReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Sends the message silently. Users will receive a notification with no sound.
@@ -79,6 +79,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.VideoBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

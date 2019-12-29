@@ -16,9 +16,9 @@ namespace FluentCommands.Cache
         //: maybe? to the above; not sure if i should have 0 mean anyone can interact with the bot
         private readonly ConcurrentDictionary<FluentKey, FluentState> _stateCache = new ConcurrentDictionary<FluentKey, FluentState>();
         private readonly ConcurrentDictionary<FluentKey, Message[]> _messageCache = new ConcurrentDictionary<FluentKey, Message[]>();
-
         internal CommandServiceCache() { }
 
+        #region IFluentCache Implementation
         public Task AddOrUpdateState(FluentState state)
             => Task.Run(() => _stateCache[state.Key] = state);
         public Task<FluentState> GetState(int botId, long chatId, int userId)
@@ -30,9 +30,10 @@ namespace FluentCommands.Cache
 
         public Task UpdateLastMessage(int botId, long chatId, int userId, Message[] messages)
             => Task.Run(() => _messageCache[(botId, chatId, userId)] = messages);
-        public Task<IReadOnlyCollection<Message>?> GetMessages(int botId, long chatId, int userId)
-            => Task.Run(() => { _messageCache.TryGetValue((botId, chatId, userId), out var messages); return messages as IReadOnlyCollection<Message>; });
+        public Task<IReadOnlyList<Message>?> GetMessages(int botId, long chatId, int userId)
+            => Task.Run(() => { _messageCache.TryGetValue((botId, chatId, userId), out var messages); return messages as IReadOnlyList<Message>; });
 
         //: Consider channels<T> at a later date. This is the default implementation.
+        #endregion
     }
 }

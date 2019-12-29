@@ -9,32 +9,37 @@ using FluentCommands.Utility;
 using FluentCommands.Cache;
 using FluentCommands.Interfaces.MenuBuilders;
 
-namespace FluentCommands
+namespace FluentCommands.Commands
 {
     internal class ModuleConfig
     {
-        internal bool UseInternalKeyboardStateHandler { get; }
-        internal bool UseDefaultErrorMessage { get; }
-        internal bool BruteForceKeyboardReferences { get; }
+        internal Type ModuleType { get; }
+        internal ISendableMenu? DefaultErrorMessageOverride { get; }
+        internal bool DeleteAllIncomingUserInputs { get; }
         internal bool DeleteCommandAfterCall { get; }
-        internal bool LogModuleActivities { get; }
-        internal FluentLogLevel MaximumLogLevel { get; }
-        internal string Prefix { get; private set; } = "/";
-        internal int PerUserRateLimitOverride { get; private set; }
-        internal IMenu DefaultErrorMessage { get; } = Menu.Text("ERROR!!! LMAO"); //: Modify this to be more professional. Later.
-        internal MenuMode? MenuModeOverride { get; }
+        internal bool DisableLogging { get; }
+        internal FluentLogLevel MaximumLogLevelOverride { get; }
+        internal MenuMode MenuModeOverride { get; }
+        internal string Prefix { get; }
+        internal (int AmountOfMessages, TimeSpan PerTimeSpan) RateLimitPerUser { get; }
+        internal bool UsingBotClient { get; }
+        internal bool UsingCustomCacheOverride { get; }
+        internal bool UsingCustomLoggerOverride { get; }
 
-        internal ModuleConfig() { }
         internal ModuleConfig(ModuleConfigBuilder b)
         {
-            BruteForceKeyboardReferences = b.BruteForceKeyboardReferences;
-            DeleteCommandAfterCall = b.DeleteCommandAfterCall;
-            LogModuleActivities = b.LogModuleActivities;
-            MaximumLogLevel = b.MaximumLogLevelOverride;
-            MenuModeOverride = b.MenuModeOverride;
-            Prefix = b.Prefix;
-            UseDefaultErrorMessage = b.UseDefaultErrorMessage;
-            UseInternalKeyboardStateHandler = b.UseInternalKeyboardStateHandler;
+            ModuleType = b.ModuleType;
+            DefaultErrorMessageOverride = b.In_DefaultErrorMessageOverride;
+            DeleteAllIncomingUserInputs = b.In_DeleteAllIncomingUserInputs;
+            DeleteCommandAfterCall = b.In_DeleteCommandAfterCall;
+            DisableLogging = b.In_DisableLogging;
+            MaximumLogLevelOverride = b.In_MaximumLogLevelOverride;
+            MenuModeOverride = b.In_MenuModeOverride;
+            Prefix = b.In_Prefix;
+            RateLimitPerUser = b.In_RateLimitPerUser;
+            UsingBotClient = b.In_UsingBotClient;
+            UsingCustomCacheOverride = b.In_UsingCustomCacheOverride;
+            UsingCustomLoggerOverride = b.In_UsingCustomLoggerOverride;
         }
 
         //: Put this in the commandservice class as a generic method; have it seek the actual module and then change its prefix here
@@ -52,7 +57,9 @@ namespace FluentCommands
             if (newPrefix.Length > 255) throw new InvalidConfigSettingsException("Command module prefixes may only be a maximum of 255 characters.");
             if (FluentRegex.CheckForWhiteSpaces.IsMatch(newPrefix)) throw new InvalidConfigSettingsException("Command module prefixes may not contain whitespace characters.");
 
-            Prefix = newPrefix;
+            //Prefix = newPrefix;
+
+            //: Consider removing this; there's no way to guarantee command in-ambiguity if the user has the ability to change prefixes on the fly.
         }
 
     }

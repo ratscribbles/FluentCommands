@@ -10,7 +10,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.PhotoBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -23,30 +23,30 @@ namespace FluentCommands.Menus
         IMenuPhotoCaption IMenuPhotoOptionalBuilder.Caption(string caption) { Caption = caption; return this; }
         IMenuPhotoDisableNotification IMenuPhotoOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuPhotoParseMode IMenuPhotoOptionalBuilder.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuPhotoOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
-        IMenu IMenuPhotoOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPhotoOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
+        Menu IMenuPhotoOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuPhotoCaption IMenuPhotoCancellationToken.Caption(string caption) { Caption = caption; return this; }
         IMenuPhotoDisableNotification IMenuPhotoCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuPhotoParseMode IMenuPhotoCancellationToken.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuPhotoCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
-        IMenu IMenuPhotoCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this;  }
+        Menu IMenuPhotoCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
+        Menu IMenuPhotoCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this;  }
         ////
         IMenuPhotoDisableNotification IMenuPhotoCaption.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuPhotoParseMode IMenuPhotoCaption.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuPhotoCaption.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
-        IMenu IMenuPhotoCaption.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPhotoCaption.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
+        Menu IMenuPhotoCaption.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuPhotoParseMode IMenuPhotoDisableNotification.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuPhotoDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
-        IMenu IMenuPhotoDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPhotoDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this;  }
+        Menu IMenuPhotoDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuPhotoParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuPhotoParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPhotoParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuPhotoParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuPhotoReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuPhotoReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuPhotoReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuPhotoReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuPhotoReplyMarkup> IReplyMarkupable<IMenuPhotoReplyMarkup>.ReplyMarkup() => this;

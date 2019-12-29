@@ -10,15 +10,15 @@ namespace FluentCommands.Commands
     //: desc
     public class ChosenInlineResultContext : ICommandContext<ChosenInlineResultEventArgs>
     {
-        private readonly Type _moduleType;
-        Type ICommandContext<ChosenInlineResultEventArgs>.ModuleType => _moduleType;
+        Type ICommandContext<ChosenInlineResultEventArgs>.ModuleType_Internal => ModuleType;
+        internal Type ModuleType { get; }
         public IReadOnlyList<string> Arguments { get; }
         public TelegramBotClient Client { get; }
         public ChosenInlineResultEventArgs EventArgs { get; }
 
         internal ChosenInlineResultContext(Type moduleType, TelegramBotClient client, ChosenInlineResultEventArgs eventArgs)
         {
-            _moduleType = moduleType;
+            ModuleType = moduleType;
             Client = client;
             EventArgs = eventArgs;
             _ = eventArgs.TryGetArgs(out var args);

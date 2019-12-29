@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactReplyToMessage : IFluentInterface, IMenu
+    public interface IMenuContactReplyToMessage : IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
@@ -35,6 +35,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
         /// </summary>
         /// <param name="vCard"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu VCard(string vCard);
+        Menus.Menu VCard(string vCard);
     }
 }

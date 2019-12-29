@@ -6,7 +6,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
 {
-    public interface IMenuContactReplyMarkup : IFluentInterface, IMenu
+    public interface IMenuContactReplyMarkup : IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
@@ -47,6 +47,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.ContactBuilder
         /// </summary>
         /// <param name="vCard"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu VCard(string vCard);
+        Menus.Menu VCard(string vCard);
     }
 }

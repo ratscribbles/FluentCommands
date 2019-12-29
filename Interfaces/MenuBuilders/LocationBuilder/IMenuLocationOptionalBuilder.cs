@@ -7,7 +7,7 @@ using Telegram.Bot.Types;
 
 namespace FluentCommands.Interfaces.MenuBuilders.LocationBuilder
 {
-    public interface IMenuLocationOptionalBuilder : IReplyMarkupable<IMenuLocationReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuLocationOptionalBuilder : IReplyMarkupable<IMenuLocationReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.
@@ -33,12 +33,12 @@ namespace FluentCommands.Interfaces.MenuBuilders.LocationBuilder
         /// </summary>
         /// <param name="message"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(Message message);
+        Menus.Menu ReplyToMessage(Message message);
         /// <summary>
         /// Optional. If the message is a reply, Message object or ID of the original message.
         /// </summary>
         /// <param name="messageId"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu ReplyToMessage(int messageId);
+        Menus.Menu ReplyToMessage(int messageId);
     }
 }

@@ -6,10 +6,11 @@ using System.IO;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using FluentCommands.Interfaces.KeyboardBuilders;
+using FluentCommands.Menus;
 
 namespace FluentCommands.Interfaces.MenuBuilders.DocumentBuilder
 {
-    public interface IMenuDocumentOptionalBuilder : IReplyMarkupable<IMenuDocumentReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuDocumentOptionalBuilder : IReplyMarkupable<IMenuDocumentReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. The <see cref="System.Threading.CancellationToken"/> for this <see cref="MenuItem"/>.
@@ -54,7 +55,7 @@ namespace FluentCommands.Interfaces.MenuBuilders.DocumentBuilder
         /// </summary>
         /// <param name="source"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Thumbnail(string source);
+        Menu Thumbnail(string source);
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
         /// <para>The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail‘s width and height should not exceed 320. Ignored if the file is not uploaded using multipart/form-data.</para>
@@ -62,13 +63,13 @@ namespace FluentCommands.Interfaces.MenuBuilders.DocumentBuilder
         /// <param name="content"></param>
         /// <param name="fileName"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Thumbnail(Stream content, string fileName);
+        Menu Thumbnail(Stream content, string fileName);
         /// <summary>
         /// Optional. Thumbnail of the file sent; can be ignored if thumbnail generation for the file is supported server-side.
         /// <para>The thumbnail should be in JPEG format and less than 200 kB in size. A thumbnail‘s width and height should not exceed 320. Ignored if the file is not uploaded using multipart/form-data.</para>
         /// </summary>
         /// <param name="thumbnail"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Thumbnail(InputMedia thumbnail);
+        Menu Thumbnail(InputMedia thumbnail);
     }
 }

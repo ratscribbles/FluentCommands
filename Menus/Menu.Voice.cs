@@ -11,7 +11,7 @@ using FluentCommands.Interfaces.MenuBuilders;
 using FluentCommands.Interfaces.MenuBuilders.VoiceBuilder;
 using FluentCommands.Interfaces.KeyboardBuilders;
 using Telegram.Bot.Types.ReplyMarkups;
-using FluentCommands.Builders;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
@@ -25,37 +25,37 @@ namespace FluentCommands.Menus
         IMenuVoiceDisableNotification IMenuVoiceOptionalBuilder.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuVoiceDuration IMenuVoiceOptionalBuilder.Duration(int duration) { Duration = duration; return this; }
         IMenuVoiceParseMode IMenuVoiceOptionalBuilder.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuVoiceOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceOptionalBuilder.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceOptionalBuilder.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Additional Implementation
         IMenuVoiceCaption IMenuVoiceCancellationToken.Caption(string caption) { Caption = caption; return this; }
         IMenuVoiceDisableNotification IMenuVoiceCancellationToken.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuVoiceDuration IMenuVoiceCancellationToken.Duration(int duration) { Duration = duration; return this; }
         IMenuVoiceParseMode IMenuVoiceCancellationToken.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuVoiceCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceCancellationToken.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceCancellationToken.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuVoiceDisableNotification IMenuVoiceCaption.DisableNotification(bool disableNotification) { DisableNotification = disableNotification; return this; }
         IMenuVoiceDuration IMenuVoiceCaption.Duration(int duration) { Duration = duration; return this; }
         IMenuVoiceParseMode IMenuVoiceCaption.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuVoiceCaption.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceCaption.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceCaption.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceCaption.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuVoiceDuration IMenuVoiceDisableNotification.Duration(int duration) { Duration = duration; return this; }
         IMenuVoiceParseMode IMenuVoiceDisableNotification.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuVoiceDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceDisableNotification.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceDisableNotification.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
         IMenuVoiceParseMode IMenuVoiceDuration.ParseMode(ParseMode parseMode) { ParseMode = parseMode; return this; }
-        IMenu IMenuVoiceDuration.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceDuration.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceDuration.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceDuration.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuVoiceParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceParseMode.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceParseMode.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         ////
-        IMenu IMenuVoiceReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
-        IMenu IMenuVoiceReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
+        Menu IMenuVoiceReplyMarkup.ReplyToMessage(Message message) { ReplyToMessage = message; return this; }
+        Menu IMenuVoiceReplyMarkup.ReplyToMessage(int messageId) { ReplyToMessage = new Message { MessageId = messageId }; return this; }
         #endregion
         #region Keyboard Implementation
         IKeyboardBuilder<IMenuVoiceReplyMarkup> IReplyMarkupable<IMenuVoiceReplyMarkup>.ReplyMarkup() => this;

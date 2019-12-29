@@ -32,10 +32,11 @@ using Telegram.Bot;
 using FluentCommands.Utility;
 using FluentCommands.Exceptions;
 using Telegram.Bot.Args;
+using FluentCommands.Commands;
 
 namespace FluentCommands.Menus
 {
-    public partial class Menu : IFluentInterface, IMenu
+    public partial class Menu : IFluentInterface, ISendableMenu
     {
         //// Telegram Bot Api Properties ////
         internal string? Address { get; private set; } = default;
@@ -90,13 +91,6 @@ namespace FluentCommands.Menus
         //// MenuItem Exclusive Properties ////
         internal MenuType MenuType { get; private set; } = MenuType.None;
 
-        //: consider removing these properties
-        internal int SendToUserId { get; private set; } = default;
-        internal long SendToChatId { get; private set; } = default;
-        internal ChatAction? ChatAction { get; private set; } = null;
-        internal int ChatActionDuration { get; private set; } = default;
-
-
         /// <summary>This class cannot be instantiated directly. Please use the static fluent builder methods.</summary>
         private Menu(MenuType menuType) { MenuType = menuType; }
         /// <summary>This class cannot be instantiated directly. Please use the static fluent builder methods.</summary>
@@ -104,14 +98,17 @@ namespace FluentCommands.Menus
         /// <summary>This class cannot be instantiated directly. Please use the static fluent builder methods.</summary>
         private Menu(MenuType menuType, InputTelegramFile source) { MenuType = menuType; SourceVideoNote = source; }
 
-        public async Task Send(TelegramBotClient client, CallbackQueryEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
+        public async Task Send(CallbackQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
 
-        public async Task Send(TelegramBotClient client, MessageEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
+        public async Task Send(MessageContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
 
-        public async Task Send(TelegramBotClient client, UpdateEventArgs e, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
+        public async Task Send(UpdateContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
+
+
+        //: ask c# discord about this one; naming convention? overloads look ugly here, want a manual alternative
 
         public async Task Send(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
@@ -125,6 +122,16 @@ namespace FluentCommands.Menus
         public async Task Send<TModule>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0) where TModule : CommandModule<TModule>
             => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TModule)).ConfigureAwait(false);
 
+
+        public Menu Done() => this;
+
+        public async Task Send(ChosenInlineResultContext e, ChatAction? chatAction = null, int duration = 0)
+        {
+        }
+
+        public async Task Send(InlineQueryContext e, ChatAction? chatAction = null, int duration = 0)
+        {
+        }
         //: overloads for eventargs
 
         //: Consider allowing the user to register a TelegramBotClient per module
@@ -132,14 +139,8 @@ namespace FluentCommands.Menus
         {
             //? This method's signature will never be pretty.
 
-            if (Source is null && SourceVideoNote is null)
-            {
-                if (CommandService.GlobalConfig.SwallowCriticalExceptions) return; //: Log and return
-                else throw new NullReferenceException("Menu source was null.");
-            }
-
-            ModuleConfig config = moduleType is { } && CommandService.Modules.TryGetValue(moduleType, out var module) ? module.Config : new ModuleConfig();
-            MenuMode menuMode = config.MenuModeOverride.HasValue ? config.MenuModeOverride.Value : CommandService.GlobalConfig.DefaultMenuMode;
+            ModuleConfig? config = moduleType is { } && CommandService.Modules.TryGetValue(moduleType, out var module) ? module.Config : null;
+            MenuMode menuMode = config?.MenuModeOverride ?? CommandService.GlobalConfig.DefaultMenuMode;
             int replyToMessageId = ReplyToMessage is { } ? ReplyToMessage.MessageId : 0;
 
             // Sets the ChatId to send the Menu to. Throws on failure to confirm the Id.
@@ -162,23 +163,20 @@ namespace FluentCommands.Menus
             }
             else
             {
-                sendTo = SendToChatId != 0
-                    ? SendToChatId : SendToUserId != 0
-                        ? SendToUserId : throw new MenuInvalidSenderException("Could not find a suitable Id to send this Menu to.");
-
-                if(chatId == 0) chatId = SendToChatId;
-                if(userId == 0) userId = SendToUserId;
+                sendTo = chatId != 0
+                    ? chatId : userId != 0
+                        ? userId : throw new MenuInvalidSenderException("Could not find a suitable Id to send this Menu to.");
             }
 
             if (chatAction.HasValue)
             {
                 await client.SendChatActionAsync(sendTo, chatAction.Value, Token);
-                await Task.Delay(actionDuration);
+                if(actionDuration > 0) await Task.Delay(actionDuration);
             }
 
             //? menuMode = MenuMode.EditLastMessage;
-
-            List<Message> messages = new List<Message>();
+            var inboundMessages = await CommandService.Cache.GetMessages(client.BotId, chatId, userId);
+            var outboundMessages = new List<Message>();
             try
             {
                 switch (menuMode)
@@ -198,80 +196,79 @@ namespace FluentCommands.Menus
             }
             catch (Exception ex) { } //: log, log, log (log all of the possible exceptions)
 
+            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, outboundMessages.ToArray()).ConfigureAwait(false);
+
             async Task SendMessage()
             {
                 //? ** list of types that can only accept inlinekeyboardmarkups: ** //
-                //: game, invoice, 
+                //? game, invoice, 
 
                 switch (MenuType)
                 {
                     case MenuType.Animation:
-                        messages.Add(await client.SendAnimationAsync(sendTo, Source, Duration, Width, Height, Thumbnail, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendAnimationAsync(sendTo, Source, Duration, Width, Height, Thumbnail, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     case MenuType.Audio:
-                        messages.Add(await client.SendAudioAsync(sendTo, Source, Caption, ParseMode, Duration, Performer, Title, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendAudioAsync(sendTo, Source, Caption, ParseMode, Duration, Performer, Title, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
                         break;
                     case MenuType.Contact:
-                        messages.Add(await client.SendContactAsync(sendTo, PhoneNumber, FirstName, LastName, DisableNotification, replyToMessageId, ReplyMarkup, Token, VCard).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendContactAsync(sendTo, PhoneNumber, FirstName, LastName, DisableNotification, replyToMessageId, ReplyMarkup, Token, VCard).ConfigureAwait(false));
                         break;
                     case MenuType.Document:
-                        messages.Add(await client.SendDocumentAsync(sendTo, Source, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendDocumentAsync(sendTo, Source, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
                         break;
                     case MenuType.Game:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null) messages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false));
-                        else messages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, cancellationToken: Token).ConfigureAwait(false)); //: Log this?
+                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null) outboundMessages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false));
+                        else outboundMessages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, cancellationToken: Token).ConfigureAwait(false)); //: Log this?
                         break;
                     case MenuType.Invoice:
                         {
                             if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                                messages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup).ConfigureAwait(false));
+                                outboundMessages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup).ConfigureAwait(false));
                             else
                                 //: Log this or throw
-                                messages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId).ConfigureAwait(false));
+                                outboundMessages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId).ConfigureAwait(false));
                         }
                         break;
                     case MenuType.Location:
-                        messages.Add(await client.SendLocationAsync(sendTo, Latitude, Longitude, LivePeriod, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendLocationAsync(sendTo, Latitude, Longitude, LivePeriod, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     case MenuType.MediaGroup:
-                        messages.AddRange(await client.SendMediaGroupAsync(Media, sendTo, DisableNotification, replyToMessageId, Token).ConfigureAwait(false));
+                        outboundMessages.AddRange(await client.SendMediaGroupAsync(Media, sendTo, DisableNotification, replyToMessageId, Token).ConfigureAwait(false));
                         break;
                     case MenuType.Photo:
-                        messages.Add(await client.SendPhotoAsync(sendTo, Source, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendPhotoAsync(sendTo, Source, Caption, ParseMode, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     case MenuType.Poll:
-                        messages.Add(await client.SendPollAsync(sendTo, Question, Options, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendPollAsync(sendTo, Question, Options, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     case MenuType.Sticker:
-                        messages.Add(await client.SendStickerAsync(sendTo, Source, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendStickerAsync(sendTo, Source, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     case MenuType.Text:
-                        messages.Add(await client.SendTextMessageAsync(sendTo, TextString, ParseMode, DisableWebPagePreview, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendTextMessageAsync(sendTo, TextString, ParseMode, DisableWebPagePreview, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     case MenuType.Venue:
-                        messages.Add(await client.SendVenueAsync(sendTo, Latitude, Longitude, Title, Address, FourSquareId, DisableNotification, replyToMessageId, ReplyMarkup, Token, FourSquareType).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendVenueAsync(sendTo, Latitude, Longitude, Title, Address, FourSquareId, DisableNotification, replyToMessageId, ReplyMarkup, Token, FourSquareType).ConfigureAwait(false));
                         break;
                     case MenuType.Video:
-                        messages.Add(await client.SendVideoAsync(sendTo, Source, Duration, Width, Height, Caption, ParseMode, SupportsStreaming, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendVideoAsync(sendTo, Source, Duration, Width, Height, Caption, ParseMode, SupportsStreaming, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
                         break;
                     case MenuType.VideoNote:
-                        messages.Add(await client.SendVideoNoteAsync(sendTo, SourceVideoNote, Duration, Length, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendVideoNoteAsync(sendTo, SourceVideoNote, Duration, Length, DisableNotification, replyToMessageId, ReplyMarkup, Token, Thumbnail).ConfigureAwait(false));
                         break;
                     case MenuType.Voice:
-                        messages.Add(await client.SendVoiceAsync(sendTo, Source, Caption, ParseMode, Duration, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
+                        outboundMessages.Add(await client.SendVoiceAsync(sendTo, Source, Caption, ParseMode, Duration, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     default:
                         //: Log
                         return;
                 }
-
-                await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, messages.ToArray()).ConfigureAwait(false);
             }
             async Task EditLastMessage()
             {
-                var msgs = await CommandService.Cache.GetMessages(client.BotId, chatId, userId);
-
-                Message? m = msgs is { Count: 1 } ? msgs.ElementAt(0) : msgs?.LastOrDefault();
+                if (inboundMessages is null || inboundMessages.Count == 0) { await SendMessage().ConfigureAwait(false); return; }
+                Message? m = inboundMessages is { Count: 1 } ? inboundMessages.ElementAt(0) : inboundMessages?.LastOrDefault();
 
                 if (m is null) { await SendMessage().ConfigureAwait(false); return; }
 
@@ -363,10 +360,9 @@ namespace FluentCommands.Menus
             }
             async Task EditOrDeleteLastMessage()
             {
-                var msgs = await CommandService.Cache.GetMessages(client.BotId, chatId, userId);
-                if(msgs is null) { await SendMessage().ConfigureAwait(false); return; }
+                if(inboundMessages is null || inboundMessages.Count == 0) { await SendMessage().ConfigureAwait(false); return; }
 
-                Message? m = msgs is { Count: 1 } ? msgs.ElementAt(0) : msgs?.LastOrDefault();
+                Message? m = inboundMessages is { Count: 1 } ? inboundMessages.ElementAt(0) : inboundMessages?.LastOrDefault();
                 if (m is null) { await SendMessage().ConfigureAwait(false); return; }
 
                 switch (MenuType)
@@ -498,16 +494,16 @@ namespace FluentCommands.Menus
 
                 async Task DeleteMessages()
                 {
-                    try
+                    foreach (var msg in inboundMessages!)
                     {
-                        foreach (var msg in msgs!)
+                        try
                         {
                             await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
                         }
-                    }
-                    catch
-                    {
-                        //: Log
+                        catch
+                        {
+                            //: Log
+                        }
                     }
                 }
             }

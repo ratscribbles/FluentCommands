@@ -8,7 +8,7 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 
 namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
 {
-    public interface IMenuAnimationDuration : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, IMenu
+    public interface IMenuAnimationDuration : IReplyMarkupable<IMenuAnimationReplyMarkup>, IFluentInterface, ISendableMenu
     {
         /// <summary>
         /// Optional. Animation height.
@@ -61,6 +61,6 @@ namespace FluentCommands.Interfaces.MenuBuilders.AnimationBuilder
         /// </summary>
         /// <param name="width"></param>
         /// <returns>Returns this <see cref="Menus.Menu"/> to continue fluently building its parameters.</returns>
-        IMenu Width(int width);
+        Menus.Menu Width(int width);
     }
 }

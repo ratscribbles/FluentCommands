@@ -10,31 +10,35 @@ namespace FluentCommands
 {
     internal class CommandServiceConfig
     {
+        internal bool BruteForceKeyboardReferences { get; }
+        internal ISendableMenu? CustomDefaultErrorMsg { get; }
+        internal ISendableMenu? CustomDefaultHelpMsg { get; }
+        internal MenuMode DefaultMenuMode { get; }
         internal bool DisableLogging { get; }
-        internal bool UseCustomDefaultHelpMsg { get; }
-        internal bool UseCustomDefaultErrorMsg { get; }
-        internal bool UsingCustomDatabase { get; private set; }
-        internal bool UsingCustomLogger { get; private set; }
         internal bool EnableManualConfiguration { get; }
         internal FluentLogLevel MaximumLogLevel { get; }
+        internal (int AmountOfMessages, TimeSpan PerTimeSpan) DefaultRateLimitPerUser { get; } 
         internal bool SwallowCriticalExceptions { get; }
-        internal int PerUserRateLimit { get; } //: make this set-able, and available for the module class
-        internal string DefaultPrefix { get; }
-        internal MenuMode DefaultMenuMode { get; }
-        public IMenu DefaultErrorMessage { get; set; } = Menu.Text("OH NO!!!!!!!!!!"); //: Make this more professional.
+        internal bool UsingCustomCache { get; }
+        internal bool UsingCustomDefaultHelpMsg { get; }
+        internal bool UsingCustomDefaultErrorMsg { get; }
+        internal bool UsingCustomLogger { get; }
 
-        internal CommandServiceConfig(Builders.CommandServiceConfigBuilder c)
+        internal CommandServiceConfig(CommandServiceConfigBuilder c)
         {
-            DefaultMenuMode = c.DefaultMenuMode;
-            DefaultPrefix = c.DefaultPrefix;
-            DisableLogging = c.DisableLogging;
-            MaximumLogLevel = c.MaximumLogLevel;
-            SwallowCriticalExceptions = c.SwallowCriticalExceptions;
-            UseCustomDefaultErrorMsg = c.UseCustomDefaultErrorMsg;
-            UseCustomDefaultHelpMsg = c.UseCustomDefaultHelpMsg;
+            BruteForceKeyboardReferences = c.In_BruteForceKeyboardReferences;
+            CustomDefaultErrorMsg = c.In_CustomDefaultErrorMsg;
+            CustomDefaultHelpMsg = c.In_CustomDefaultHelpMsg;
+            DefaultMenuMode = c.In_DefaultMenuMode;
+            DisableLogging = c.In_DisableLoggingGlobally;
+            EnableManualConfiguration = c.In_EnableManualConfiguration;
+            MaximumLogLevel = c.In_MaximumLogLevel;
+            DefaultRateLimitPerUser = c.In_DefaultRateLimitPerUser;
+            SwallowCriticalExceptions = c.In_SwallowCriticalExceptions;
+            UsingCustomCache = c.In_UsingCustomCache;
+            UsingCustomDefaultErrorMsg = c.In_UsingCustomDefaultErrorMsg;
+            UsingCustomDefaultHelpMsg = c.In_UsingCustomDefaultHelpMsg;
+            UsingCustomLogger = c.In_UsingCustomLogger;
         }
-
-        internal void UseCustomDatabase() => UsingCustomDatabase = true;
-        internal void UseCustomLogger() => UsingCustomLogger = true;
     }
 }

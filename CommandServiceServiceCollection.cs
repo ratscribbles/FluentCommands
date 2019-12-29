@@ -5,7 +5,6 @@ using System.Text;
 using FluentCommands.Extensions;
 using FluentCommands.Logging;
 using FluentCommands.Cache;
-using FluentCommands.Builders;
 using Telegram.Bot;
 
 namespace FluentCommands
@@ -26,17 +25,6 @@ namespace FluentCommands
                 var value = _serviceClientHashcodes.Count;
                 _serviceClientHashcodes.Add(moduleType, value);
                 _services.AddClient(token);
-            }
-        }
-        internal void AddClient(ClientBuilder clientBuilder, Type moduleType)
-        {
-            if (moduleType is null) moduleType = typeof(CommandService);
-            if (_serviceClientHashcodes.ContainsKey(moduleType)) return;
-            else
-            {
-                var indexToIncrement = _serviceClientHashcodes.Count;
-                _serviceClientHashcodes.Add(moduleType, indexToIncrement);
-                _services.AddClient(clientBuilder);
             }
         }
         internal void AddClient(TelegramBotClient client, Type moduleType)

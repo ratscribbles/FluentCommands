@@ -1,5 +1,5 @@
-﻿using FluentCommands.Builders;
-using FluentCommands.Cache;
+﻿using FluentCommands.Cache;
+using FluentCommands.Commands;
 using FluentCommands.Exceptions;
 using FluentCommands.Interfaces;
 using FluentCommands.Logging;
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using Telegram.Bot;
 
-namespace FluentCommands
+namespace FluentCommands.Commands
 {
     internal class ReadOnlyCommandModule : IReadOnlyModule
     {
@@ -65,7 +65,7 @@ namespace FluentCommands
 
             _typeStorage = m.TypeStorage;
 
-            if (_config.LogModuleActivities)
+            if (_config.DisableLogging)
             {
                 //: might remove this
             }

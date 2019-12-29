@@ -116,11 +116,11 @@ namespace FluentCommands.Menus
         public async Task Send(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
 
-        public async Task Send<TModule>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0) where TModule : CommandModule<TModule>
-            => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TModule)).ConfigureAwait(false);
+        public async Task Send<TCommand>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : CommandModule<TCommand>
+            => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand)).ConfigureAwait(false);
 
-        public async Task Send<TModule>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0) where TModule : CommandModule<TModule>
-            => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TModule)).ConfigureAwait(false);
+        public async Task Send<TCommand>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : CommandModule<TCommand>
+            => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand)).ConfigureAwait(false);
 
 
         public Menu Done() => this;

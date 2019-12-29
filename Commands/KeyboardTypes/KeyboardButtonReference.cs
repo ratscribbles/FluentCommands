@@ -51,8 +51,8 @@ namespace FluentCommands.Commands.KeyboardTypes
         /// <summary>
         /// Creates a reference to a <see cref="Command"/> object's button (or actual command if no button is set for it) that exists in another module.
         /// </summary>
-        /// <typeparam name="TModule">The command module containing this <see cref="Command"/>.</typeparam>
+        /// <typeparam name="TCommand">The command module containing this <see cref="Command"/>.</typeparam>
         /// <returns></returns>
-        public KeyboardButtonLinkedReference InModule<TModule>() where TModule : class => new KeyboardButtonLinkedReference(this, typeof(TModule));
+        public KeyboardButtonLinkedReference InModule<TCommand>() where TCommand : class => new KeyboardButtonLinkedReference(this, typeof(TCommand));
     }
 }

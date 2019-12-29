@@ -10,7 +10,7 @@ namespace FluentCommands.Interfaces
     /// Fluent builder selection of <see cref="ICommandBaseBuilder"/>, with <see cref="UsingParseMode(ParseMode)"/> being the only option available in Intellisense.
     /// <para>This interface is responsible for making sure the <see cref="Command.Description"/> has a <see cref="ParseMode"/> when sent to the user.</para>
     /// </summary>
-    /// <typeparam name="TModule">The class that represents a Module for the <see cref="CommandService"/> to construct <see cref="Command"/> objects from.</typeparam>
+    /// <typeparam name="TCommand">The class that represents a Module for the <see cref="CommandService"/> to construct <see cref="Command"/> objects from.</typeparam>
     public interface ICommandDescriptionBuilder : IFluentInterface
     {
         /// <summary>

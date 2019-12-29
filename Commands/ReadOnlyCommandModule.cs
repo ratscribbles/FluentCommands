@@ -12,7 +12,7 @@ namespace FluentCommands.Commands
 {
     internal class ReadOnlyCommandModule : IReadOnlyModule
     {
-        /// <summary>Stored logger for this <see cref="CommandModule{TModule}"/>.</summary>
+        /// <summary>Stored logger for this <see cref="CommandModule{TCommand}"/>.</summary>
         private readonly ModuleConfig _config;
         private readonly Type _typeStorage;
         private readonly IFluentLogger? _logger;

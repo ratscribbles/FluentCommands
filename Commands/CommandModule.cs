@@ -9,16 +9,16 @@ using Telegram.Bot.Args;
 
 namespace FluentCommands.Commands
 {
-    public abstract class CommandModule<TModule> where TModule : class
+    public abstract class CommandModule<TCommand> where TCommand : class
     {
         /// <summary>The class that contains the actual command implementations for this module.</summary>
-        internal Type CommandClass { get; } = typeof(TModule);
+        internal Type CommandClass { get; } = typeof(TCommand);
 
         protected CommandModule() { }
         internal CommandModule(Action<ModuleBuilder> onBuilding) { } // for testing
 
         /// <summary>
-        /// Builds a <see cref="Commands.Command{TModule}"/> module.
+        /// Builds a <see cref="Commands.Command{TCommand}"/> module.
         /// </summary>
         /// <param name="moduleBuilder"></param>
         protected virtual void OnBuilding(ModuleBuilder moduleBuilder) { }
@@ -65,12 +65,12 @@ namespace FluentCommands.Commands
         }
 
         private async void Evaluate_OnCallbackQuery(object? sender, CallbackQueryEventArgs e)
-            => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
+            => await CommandService.Evaluate_ToHandler<TCommand>(e).ConfigureAwait(false);
         private async void Evaluate_OnChosenInlineResult(object? sender, ChosenInlineResultEventArgs e)
-            => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
+            => await CommandService.Evaluate_ToHandler<TCommand>(e).ConfigureAwait(false);
         private async void Evaluate_OnInlineQuery(object? sender, InlineQueryEventArgs e)
-            => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
+            => await CommandService.Evaluate_ToHandler<TCommand>(e).ConfigureAwait(false);
         private async void Evaluate_OnMessage(object? sender, MessageEventArgs e)
-            => await CommandService.Evaluate_ToHandler<TModule>(e).ConfigureAwait(false);
+            => await CommandService.Evaluate_ToHandler<TCommand>(e).ConfigureAwait(false);
     }
 }

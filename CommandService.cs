@@ -42,7 +42,6 @@ namespace FluentCommands
         private static readonly Lazy<CommandServiceServiceCollection> _services = new Lazy<CommandServiceServiceCollection>(() => new CommandServiceServiceCollection());
         private static readonly Lazy<CommandServiceOnBuildingNotifier> _notifier = new Lazy<CommandServiceOnBuildingNotifier>(() => new CommandServiceOnBuildingNotifier());
         private static readonly Lazy<EmptyLogger> _emptyLogger = new Lazy<EmptyLogger>(() => new EmptyLogger());
-        private static readonly IReadOnlyCollection<Type> _assemblyTypes;
         private static readonly IReadOnlyCollection<Type> _validEventArgs = new HashSet<Type> { typeof(CallbackQueryEventArgs), typeof(ChosenInlineResultEventArgs), typeof(InlineQueryEventArgs), typeof(MessageEventArgs), typeof(UpdateEventArgs) };
         private static readonly IReadOnlyCollection<Type> _commandContexts = new HashSet<Type> { typeof(CallbackQueryContext), typeof(ChosenInlineResultContext), typeof(InlineQueryContext), typeof(MessageContext), typeof(UpdateContext) };
         private static readonly Dictionary<Type, ModuleBuilder> _tempModules = new Dictionary<Type, ModuleBuilder>();
@@ -51,6 +50,7 @@ namespace FluentCommands
         ///////
         private readonly CommandServiceConfig _config;
         private readonly IReadOnlyDictionary<Type, IReadOnlyModule> _modules;
+        private readonly IReadOnlyDictionary<Type, TelegramBotClient> _clients;
         private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> _commands;
         private readonly IFluentCache? _customCache;
         private readonly IFluentLogger? _customLogger;
@@ -58,6 +58,7 @@ namespace FluentCommands
         ///////
         private static CommandServiceCache InternalCache => _defaultCache.Value;
         private static IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> Commands => _instance.Value._commands;
+        internal static IReadOnlyDictionary<Type, TelegramBotClient> ClientCollection => _instance.Value._clients;
         internal static IReadOnlyDictionary<Type, IReadOnlyModule> Modules => _instance.Value._modules;
         internal static TelegramBotClient? InternalClient => _instance.Value._client;
         internal static IFluentCache Cache
@@ -96,15 +97,21 @@ namespace FluentCommands
             => _instance.Value._client;
         public static TelegramBotClient? Client(Type module)
             => Modules[module]?.Client;
-        public static TelegramBotClient? Client<TModule>() where TModule : CommandModule<TModule>
-            => Modules[typeof(TModule)]?.Client;
+        public static TelegramBotClient? Client<TCommand>() where TCommand : CommandModule<TCommand>
+            => Modules[typeof(TCommand)]?.Client;
 
         #region Constructors
         /// <summary>
-        /// Guarantees the Assembly Types are cached before the CommandService starts.
+        /// Constructor for use only with the singleton. Enforces that internal collectons are completely unable to be modified and are read-only. Populates the following:
+        /// <para>- Modules readonly dictionary</para>
+        /// <para>- Commands readonly dictionary</para>
+        /// <para>- Global config object</para>
         /// </summary>
-        static CommandService()
+        private CommandService(CommandServiceConfigBuilder cfg)
         {
+            //! Gather all assemblies.
+            IReadOnlyCollection<Type> _assemblyTypes;
+
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             List<Type> assemblyTypes = new List<Type>();
 
@@ -119,19 +126,12 @@ namespace FluentCommands
             }
 
             _assemblyTypes = assemblyTypes;
-        }
 
-        /// <summary>
-        /// Constructor for use only with the singleton. Enforces that internal collectons are completely unable to be modified and are read-only. Populates the following:
-        /// <para>- Modules readonly dictionary</para>
-        /// <para>- Commands readonly dictionary</para>
-        /// <para>- Global config object</para>
-        /// </summary>
-        private CommandService(CommandServiceConfigBuilder cfg)
-        {
+            //! Setup notifier, config
             var notifier = _notifier.Value;
             _config = cfg.BuildConfig();
 
+            //! Setup Default Services:
             // Is true if the CfgBuilder added services.
             if (_services.IsValueCreated)
             {
@@ -143,10 +143,14 @@ namespace FluentCommands
             }
             else notifier.AddWarning("No client detected for CommandService.");
 
+            //! Temporary collections for use in the building process (to make them readonly once completed)
             var tempCommands = new Dictionary<Type, Dictionary<ReadOnlyMemory<char>, ICommand>>();
+            var tempClients = new Dictionary<Type, TelegramBotClient>();
             var tempServicesCollection = new Dictionary<Type, (TelegramBotClient client, IFluentCache cache, IFluentLogger logger)>();
 
+
             Init_1_ModuleAssembler();
+
 
             // With modules assembled, can collect *every* method labeled as a Command:
             var allCommandMethods = _assemblyTypes
@@ -155,8 +159,11 @@ namespace FluentCommands
                 .Where(method => !(method is null) && method.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0)
                 .ToList();
 
+
             Init_2_CommandAssembler();
 
+
+            // Assemble teadonly instance collections
             var tempModulesToReadOnly = new Dictionary<Type, IReadOnlyModule>(_tempModules.Count);
             foreach (var kvp in _tempModules.ToList())
             {
@@ -169,20 +176,10 @@ namespace FluentCommands
 
             _modules = tempModulesToReadOnly;
             _commands = tempCommandsToReadOnly;
+            _clients = tempClients;
 
-            CheckForCommandDuplicateAmbiguity();
 
-            if (_client is null && !_config.EnableManualConfiguration)
-            {
-                if (_modules.Any(o => o.Value.Client is { }))
-                {
-                    //: Add to logger object.
-
-                    //foreach, add warning for each one without a client. if none, regular warning
-                }
-                else throw new CommandOnBuildingException("The TelegramBotClient provided to the CommandService was null without Manual Configuration enabled, and there was no suitable TelegramBotClient provided for any module. Did you mean to enable Manual Configuration? Please verify that your CommandServiceConfig and ModuleBuilderConfigs are set-up properly before starting the CommandService.");
-            }
-
+            //! Local functions...
             void Init_1_ModuleAssembler()
             {
                 /* Description:
@@ -302,12 +299,16 @@ namespace FluentCommands
 
                     // Get services added in the ModuleConfigBuilder
                     var provider = _services.Value.GetServices().BuildServiceProvider();
-                    var client = provider.GetService<TelegramBotClient>();
+                    var client = provider.GetService<TelegramBotClient?>();
                     var cache = provider.GetService<IFluentCache>();
                     var logger = provider.GetService<IFluentLogger>();
 
+                    // Check if a client was registered to this module, or if one of the same Id was already registered to another module.
+                    //if (tempServicesCollection.Any(kvp => kvp.Value.client?.BotId == client?.BotId)) throw new InvalidConfigSettingsException($"Duplicate TelegramBotClient detected in module: {commandClass.FullName}. Please make sure to only use ")
+                    client = client is { } ? client : _client is { } ? _client : null;
+
                     // Subscribe to the client if it exists. Global client if not. Not at all if not.
-                    setHandlers(client is { } ? client : _client is { } ? _client : null, moduleConfigBuilder.On_Building_DisableInternalCommandEvaluation);
+                    setHandlers(client, moduleConfigBuilder.On_Building_DisableInternalCommandEvaluation);
 
                     // Save services to add to module later.
                     tempServicesCollection.Add(moduleBuilder.TypeStorage, (client, cache, logger));
@@ -527,84 +528,6 @@ namespace FluentCommands
                     }
                 }
             }
-
-            void CheckForCommandDuplicateAmbiguity()
-            {
-                // Checks for duplicates (this will likely be a common error)
-                var allCommandNameDuplicates = allCommandMethods
-                    .Where(m => m.GetCustomAttribute<StepAttribute>() is null)
-                    .GroupBy(m => m.GetCustomAttribute<CommandAttribute>()?.Name)
-                    .Where(g => g.Count() > 1)
-                    .SelectMany(g => g);
-
-                //: new dict(string, (type, int)) to select
-
-                //? check each module, and check each dictionary of command strings to see if any single command s present in another command string dictionary
-                // Will throw; responsible for formatting the exception.
-                if (allCommandNameDuplicates.Count() != 0)
-                {
-
-
-
-                    //foreach (var kvp in commandDuplicates)
-                    //{
-                    //    foreach(var type in kvp.Value)
-                    //    {
-                    //        var prefix = _modules[type].Config.Prefix;
-                    //        var clientId = _modules[type].Client?.BotId;
-
-                    //        //foreach(var t in kvp.Value)
-                    //        //{
-                    //        //    if (type == t) continue;
-                                
-                    //        //}
-                    //    }
-                    //}
-
-
-                        //.Where(kvp => _commands[kvp.Key].Count(kvp => kvp.
-                        //&& _modules.TryGetValue(kvp.Key, out var module)
-                        //&& _modules.Count(kvp => kvp.Value.Config.Prefix == module.Config.Prefix) > 1
-                        //&& _modules.Count(kvp => kvp.Value.Client?.BotId == module.Client?.BotId) > 1)
-
-                    // Exception formatting below.
-                    //Dictionary<string, (string Name, string MethodName)> duplicateNames = new Dictionary<string, (string, string)>();
-
-                    ////foreach (var m in trueDuplicates)
-                    ////{
-                    ////    duplicateNames[m.DeclaringType?.FullName ?? "??NULL??"] = (m.GetCustomAttribute<CommandAttribute>()?.Name ?? "??NULL??", m.Name);
-                    ////}
-
-                    //bool oneDuplicate = duplicateNames.Count() == 1;
-                    //string duplicates = oneDuplicate ? "This Command has one duplicate " : "These Commands have one or more duplicates ";
-
-                    //int moduleCounter = 0;
-                    //int moduleTotal = duplicateNames.Keys.Count();
-                    //foreach (var module in duplicateNames.Keys)
-                    //{
-                    //    moduleCounter++;
-
-                    //    duplicates += $"in module {module}: ";
-                    //    var namesList = duplicateNames.Select(n => n.Value).ToList();
-
-                    //    int nameCounter = 0;
-                    //    int nameTotal = namesList.Count();
-                    //    foreach (var (Name, MethodName) in namesList)
-                    //    {
-                    //        nameCounter++;
-
-                    //        if (nameCounter == nameTotal)
-                    //        {
-                    //            if (moduleCounter == moduleTotal) duplicates += $"\"{Name}\" (method name: \"{MethodName}\"). Please check to make sure there are no conflicting Command names when running the Command Service.";
-                    //            else duplicates += $"\"{Name}\" (method name: \"{MethodName}\"); ";
-                    //        }
-                    //        else duplicates += $"\"{Name}\" (method name: \"{MethodName}\"), ";
-                    //    }
-                    //}
-
-                    //throw new DuplicateCommandException(duplicates);
-                }
-            }
         }
         #endregion
 
@@ -662,23 +585,92 @@ namespace FluentCommands
         /// </summary>
         private static void Init()
         {
+            //: reference to command ambiguity printing; remove when done.
+            void CheckForCommandDuplicateAmbiguity()
+            {
+                // Checks for duplicates (this will likely be a common error)
+                //var allCommandNameDuplicates = allCommandMethods
+                //    .Where(m => m.GetCustomAttribute<StepAttribute>() is null)
+                //    .GroupBy(m => m.GetCustomAttribute<CommandAttribute>()?.Name)
+                //    .Where(g => g.Count() > 1)
+                //    .SelectMany(g => g);
+
+                //: new dict(string, (type, int)) to select
+
+                //? check each module, and check each dictionary of command strings to see if any single command s present in another command string dictionary
+                // Will throw; responsible for formatting the exception.
+                if (true /* allCommandNameDuplicates.Count() != 0 */)
+                {
+
+
+
+                    //foreach (var kvp in commandDuplicates)
+                    //{
+                    //    foreach(var type in kvp.Value)
+                    //    {
+                    //        var prefix = _modules[type].Config.Prefix;
+                    //        var clientId = _modules[type].Client?.BotId;
+
+                    //        //foreach(var t in kvp.Value)
+                    //        //{
+                    //        //    if (type == t) continue;
+
+                    //        //}
+                    //    }
+                    //}
+
+
+                    //.Where(kvp => _commands[kvp.Key].Count(kvp => kvp.
+                    //&& _modules.TryGetValue(kvp.Key, out var module)
+                    //&& _modules.Count(kvp => kvp.Value.Config.Prefix == module.Config.Prefix) > 1
+                    //&& _modules.Count(kvp => kvp.Value.Client?.BotId == module.Client?.BotId) > 1)
+
+
+                }
+            }
+
             _ = _instance.Value;
+
+            if (InternalClient is null && !GlobalConfig.EnableManualConfiguration)
+            {
+                if (Modules.Any(o => o.Value.Client is { }))
+                {
+                    //: Add to logger object.
+
+                    //foreach, add warning for each one without a client. if none, regular warning
+                }
+                else throw new CommandOnBuildingException("The TelegramBotClient provided to the CommandService was null without Manual Configuration enabled, and there was no suitable TelegramBotClient provided for any module. Did you mean to enable Manual Configuration? Please verify that your CommandServiceConfig and ModuleBuilderConfigs are set-up properly before starting the CommandService.");
+            }
 
             CheckCommandNameAmbiguity();
             AttemptStartClientsReceiving();
 
             _notifier.Value.NotifyAll();
+            _tempModules.Clear();
 
             _commandServiceStarted.Value = true;
+
+
+
+
+
+            //: create client dictionary and hook that up proper so this stuff below doesnt cause issues
+
+
+
+
 
             // Local functions...
             static void CheckCommandNameAmbiguity()
             {
-                var trueDuplicatez = Commands
+                // Changes the format of the dictionary to exclude the ICommand, pairing type with command name (as string).
+                var trueDuplicates = Commands
                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Keys.Select(k => new string(k.Span.ToArray())));
 
+                // Loops through the collection to find non-distinct elements among -all- IEnumerable<string> collections in the dictionary.
+                // This reformats the dictionary into strings paired with a List of all types that use that string as a command name.
                 var nonDistinct = new Dictionary<string, List<Type>>();
-                foreach (var kvp in trueDuplicatez)
+                foreach (var kvp in trueDuplicates)
                 {
                     foreach (var name in kvp.Value)
                     {
@@ -687,22 +679,124 @@ namespace FluentCommands
                     }
                 }
 
+                // Groups by the number of types sharing that command name, enforcing that this collection of List<Type> is more than one, and returns to the same dictionary format as earlier.
                 var commandDuplicates = nonDistinct
                     .GroupBy(g => g.Value.Count())
                     .Where(g => g.Key > 1)
                     .SelectMany(g => g)
                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
+                // Next bunch of declarations determine all ambiguous calls: prefixes, clients, and both.
+                // If any of the "ambiguous" collections are greater than zero, the CommandServce will throw.
                 var moduleMatches = Modules
-                    .Where(g => commandDuplicates.Any(kvp => kvp.Value.Contains(g.Key))).ToList();
+                    .Where(g => commandDuplicates.Any(kvp => kvp.Value.Contains(g.Key)))
+                    .ToList();
+
+                var ambiguousPrefixesAndClients = moduleMatches
+                    .GroupBy(kvp => new
+                    {
+                        kvp.Value.Config.Prefix,
+                        kvp.Value.Client?.BotId,
+                    })
+                    .Where(g => g.Count() > 1)
+                    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
+                    .OrderBy(g => g.Key.Prefix)
+                    .OrderBy(g => g.Key.BotId);
 
                 var ambiguousPrefixes = moduleMatches
-                    .GroupBy(g => g.Value.Config.Prefix);
+                    .GroupBy(kvp => kvp.Value.Config.Prefix)
+                    .Where(g => g.Count() > 1)
+                    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
+                    .OrderBy(g => g.Key);
 
                 var ambiguousClients = moduleMatches
-                    .GroupBy(g => g.Value.Client?.BotId);
+                    .GroupBy(g => g.Value.Client?.BotId)
+                    .Where(g => g.Count() > 1)
+                    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
+                    .OrderBy(g => g.Key);
 
-                
+                bool toThrow, found_ambiguousPrefixesAndClients, found_ambiguousPrefixes, found_ambiguousClients;
+                found_ambiguousPrefixesAndClients = ambiguousPrefixesAndClients.Count() > 0;
+                found_ambiguousPrefixes = ambiguousPrefixes.Count() > 0;
+                found_ambiguousClients = ambiguousClients.Count() > 0;
+                toThrow = found_ambiguousPrefixesAndClients || found_ambiguousPrefixes || found_ambiguousClients;
+
+                // Will throw. The rest of this is formatting the Exceptions to display.
+                if (toThrow)
+                {
+                    List<Exception> exceptions = new List<Exception>();
+                    string str_ambiguousPrefixesAndClients, str_ambiguousPrefixes, str_ambiguousClients;
+                    if (found_ambiguousPrefixesAndClients)
+                    {
+                        str_ambiguousPrefixesAndClients = "The following command(s) were ambiguous due to sharing the same command name, command prefix, and TelegramBotClient: " + Environment.NewLine;
+                        foreach (var kvp in commandDuplicates)
+                        {
+                            foreach (var type in kvp.Value)
+                            {
+                                foreach(var groupKvp in ambiguousPrefixesAndClients)
+                                {
+                                    if (!groupKvp.Value.Contains(type)) continue;
+
+                                    var commandName = kvp.Key;
+                                    var module = type;
+                                    var prefix = groupKvp.Key.Prefix;
+                                    var botId = groupKvp.Key.BotId ?? 0;
+
+                                    str_ambiguousPrefixesAndClients += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Command Prefix: \"{prefix}\", Client BotId: \"{botId}\"" + Environment.NewLine;
+                                }
+                            }
+                        }
+                        exceptions.Add(new DuplicateCommandException(str_ambiguousPrefixesAndClients));
+                    }
+
+                    if (found_ambiguousPrefixes)
+                    {
+                        str_ambiguousPrefixes = "The following command(s) were ambiguous due to sharing the same command name and command prefix: ";
+                        foreach (var kvp in commandDuplicates)
+                        {
+                            foreach (var type in kvp.Value)
+                            {
+                                foreach (var groupKvp in ambiguousPrefixes)
+                                {
+                                    if (!groupKvp.Value.Contains(type)) continue;
+
+                                    var commandName = kvp.Key;
+                                    var module = type;
+                                    var prefix = groupKvp.Key;
+
+                                    str_ambiguousPrefixes += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Command Prefix: \"{prefix}\"" + Environment.NewLine;
+                                }
+                            }
+                        }
+                        exceptions.Add(new DuplicateCommandException(str_ambiguousPrefixes));
+                    }
+
+                    if (found_ambiguousClients)
+                    {
+                        str_ambiguousClients = "";
+                        foreach (var kvp in commandDuplicates)
+                        {
+                            foreach (var type in kvp.Value)
+                            {
+                                foreach (var groupKvp in ambiguousClients)
+                                {
+                                    if (!groupKvp.Value.Contains(type)) continue;
+
+                                    var commandName = kvp.Key;
+                                    var module = type;
+                                    var botId = groupKvp.Key ?? 0;
+
+                                    str_ambiguousClients += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Client BotId: \"{botId}\"" + Environment.NewLine;
+                                }
+                            }
+                        }
+                        exceptions.Add(new DuplicateCommandException(str_ambiguousClients));
+                    }
+
+                    // Guaranteed to be at least one.
+                    if (exceptions.Count() == 1) throw exceptions.First();
+                    else throw new AggregateException("Multiple duplicate command name ambiguities found when attempting to build the CommandServce. Please address the following exceptions: ", exceptions);
+                }
             }
             static void AttemptStartClientsReceiving()
             {
@@ -713,6 +807,11 @@ namespace FluentCommands
                 {
                     exceptionModules.Add("CommandService (default)", ex);
                 }
+
+                var duplicateClients = Modules.GroupBy(kvp => kvp.Value.Client?.BotId)
+                    .Where(g => g.Count() > 1)
+                    .SelectMany(g=>g).Select(kvp => kvp.Value.Client)
+                    .Distinct();
 
                 foreach (var key in Modules.Keys)
                 {
@@ -753,11 +852,11 @@ namespace FluentCommands
 
         #region Evaluate/ProcessInput Overloads
         //: BOLD that they should only be using these methods if they're an advanced user
-        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, CallbackQueryEventArgs e) where TModule : class
+        public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, CallbackQueryEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e, clientOverride).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e, clientOverride).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -767,11 +866,11 @@ namespace FluentCommands
                 return;
             }
         }
-        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, ChosenInlineResultEventArgs e) where TModule : class
+        public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, ChosenInlineResultEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e, clientOverride).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e, clientOverride).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -781,11 +880,11 @@ namespace FluentCommands
                 return;
             }
         }
-        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, InlineQueryEventArgs e) where TModule : class
+        public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, InlineQueryEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e, clientOverride).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e, clientOverride).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -795,11 +894,11 @@ namespace FluentCommands
                 return;
             }
         }
-        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, MessageEventArgs e) where TModule : class
+        public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, MessageEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e, clientOverride).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e, clientOverride).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -809,11 +908,11 @@ namespace FluentCommands
                 return;
             }
         }
-        public static async Task Evaluate<TModule>(TelegramBotClient clientOverride, UpdateEventArgs e) where TModule : class
+        public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, UpdateEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e, clientOverride).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e, clientOverride).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -895,11 +994,11 @@ namespace FluentCommands
         }
 
         //! These are for internal eventhandler purposes only (within modules). Clients will automatically be evaluating with these methods.
-        internal static async Task Evaluate_ToHandler<TModule>(CallbackQueryEventArgs e) where TModule : class
+        internal static async Task Evaluate_ToHandler<TCommand>(CallbackQueryEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -909,11 +1008,11 @@ namespace FluentCommands
                 return;
             }
         }
-        internal static async Task Evaluate_ToHandler<TModule>(ChosenInlineResultEventArgs e) where TModule : class
+        internal static async Task Evaluate_ToHandler<TCommand>(ChosenInlineResultEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -923,11 +1022,11 @@ namespace FluentCommands
                 return;
             }
         }
-        internal static async Task Evaluate_ToHandler<TModule>(InlineQueryEventArgs e) where TModule : class
+        internal static async Task Evaluate_ToHandler<TCommand>(InlineQueryEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -937,11 +1036,11 @@ namespace FluentCommands
                 return;
             }
         }
-        internal static async Task Evaluate_ToHandler<TModule>(MessageEventArgs e) where TModule : class
+        internal static async Task Evaluate_ToHandler<TCommand>(MessageEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -951,11 +1050,11 @@ namespace FluentCommands
                 return;
             }
         }
-        internal static async Task Evaluate_ToHandler<TModule>(UpdateEventArgs e) where TModule : class
+        internal static async Task Evaluate_ToHandler<TCommand>(UpdateEventArgs e) where TCommand : class
         {
             if (e is { })
             {
-                var (Success, Context, Module) = await CanEvaluate(typeof(TModule), e).ConfigureAwait(false);
+                var (Success, Context, Module) = await CanEvaluate(typeof(TCommand), e).ConfigureAwait(false);
                 if (Success) await Evaluate_Internal(Context!, Module!).ConfigureAwait(false); // Not null if true.
                 else; //: log
             }
@@ -1273,8 +1372,11 @@ namespace FluentCommands
         /// <summary>Exposes the private TempModules dictionary to update ModuleBuilders being built using the <see cref="Interfaces.BaseBuilderOfModule.ICommandBaseBuilderOfModule"/> format.</summary>
         internal static void UpdateBuilderInTempModules(ModuleBuilder m, Type t) => _tempModules[t] = m;
 
+
+        //: Move this method to the keyboardbuilder class. Rewrite it to be less dependent on _tempModules.
+
         /// <summary>Updates keyboard rows by iterating through each row and checking each button for an implicitly-converted KeybaordButtonReference.</summary>
-        internal static List<TButton[]> UpdateKeyboardRows<TButton>(List<TButton[]> rows, Type? parentModule = null, string? parentCommandName = null, bool isMenu = true)
+        internal static List<TButton[]> UpdateKeyboardRows<TButton>(List<TButton[]> rows, Type? parenTCommand = null, string? parentCommandName = null, bool isMenu = true)
             where TButton : IKeyboardButton
         {
             List<TButton[]> updatedKeyboardBuilder = new List<TButton[]>();
@@ -1333,9 +1435,11 @@ namespace FluentCommands
                             {
                                 string moduleTextReference = match.Groups[2].Value ?? throw keyboardException($"An unknown error occurred while building {keyboardContainer} keyboard(s) (module text reference was null).");
 
-                                var referencedModule = _assemblyTypes
-                                    .Where(type => type.Name == moduleTextReference)
-                                    .FirstOrDefault();
+                                //var referencedModule = Commands
+                                //    .Where(type => type.Name == moduleTextReference)
+                                //    .FirstOrDefault();
+
+                                var referencedModule = typeof(Type);
 
                                 if (referencedModule is null) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a module that doesn't appear to exist.");
 
@@ -1352,15 +1456,15 @@ namespace FluentCommands
                             }
                             else
                             {
-                                if (parentModule is null || !_tempModules[parentModule].ModuleCommandBases.ContainsKey(commandNameReference))
-                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command in Module: {parentModule?.FullName ?? "\"NULL (check stack trace)\""} that doesn't appear to exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
+                                if (parenTCommand is null || !_tempModules[parenTCommand].ModuleCommandBases.ContainsKey(commandNameReference))
+                                    throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command in Module: {parenTCommand?.FullName ?? "\"NULL (check stack trace)\""} that doesn't appear to exist. (Please check the builder to make sure it exists, or remove the reference to \"{commandNameReference}\" in the keyboard builder.)");
 
-                                referencedButton = _tempModules[parentModule].ModuleCommandBases[commandNameReference]?.InButton;
+                                referencedButton = _tempModules[parenTCommand].ModuleCommandBases[commandNameReference]?.InButton;
                             }
 
                             if (referencedButton is null || buttonType != referencedButton.GetType())
                             {
-                                if (!GlobalConfig.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parentModule?.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
+                                if (!GlobalConfig.BruteForceKeyboardReferences) throw keyboardException($"{keyboardContainer} has a KeyboardBuilder that references a command that doesn't have a keyboard button, and the configuration for this module ({parenTCommand?.FullName ?? "\"NULL (check stack trace)\""}) is set to terminate building when this occurs.");
                                 else
                                 {
                                     // Attempts to create a reference to the command when a button reference isn't available.

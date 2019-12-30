@@ -12,7 +12,7 @@ namespace FluentCommands
     /// </summary>
     internal class CommandServiceOnBuildingNotifier
     {
-        private readonly ToggleOnce _wasStarted = new ToggleOnce(false);
+        private static ToggleOnce _wasStarted = new ToggleOnce(false);
         private readonly List<(FluentLogLevel l, string m, Exception? e, TelegramUpdateEventArgs? t)> _notifyingArgs = new List<(FluentLogLevel l, string m, Exception? e, TelegramUpdateEventArgs? t)>();
 
         internal void AddDebug(string message, Exception? e = null, TelegramUpdateEventArgs? t = null)
@@ -28,9 +28,12 @@ namespace FluentCommands
 
         /// <summary>
         /// Deploys all collected notifications to the logger.
+        /// <para>May only run once.</para>
         /// </summary>
         internal void NotifyAll()
         {
+            if (_wasStarted) return;
+
             foreach(var (l, m, e, t) in _notifyingArgs)
             {
                 switch (l)
@@ -52,6 +55,12 @@ namespace FluentCommands
                         break;
                 }
             }
+
+            if (CommandService.Modules.Count == 0) CommandService.Logger.LogInfo("CommandService started successfully... with no modules. To get the most out of FluentCommands, please try adding some!");
+            else CommandService.Logger.LogInfo("CommandService started successfully.");
+
+            _notifyingArgs.Clear();
+            _wasStarted.Value = true;
         }
     }
 }

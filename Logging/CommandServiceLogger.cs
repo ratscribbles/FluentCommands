@@ -7,7 +7,6 @@ using System.Threading.Tasks.Dataflow;
 
 namespace FluentCommands.Logging
 {
-    public enum FluentLogLevel { Fatal, Error, Warning, Info, Debug }
 
     internal class CommandServiceLogger : IFluentLogger
     {
@@ -21,7 +20,8 @@ namespace FluentCommands.Logging
 
         private async Task Logging_Internal(FluentLogLevel l, string m, Exception? e = null, TelegramUpdateEventArgs? t = null)
         {
-            //if ((int)l < (int)CommandService.GlobalConfig.MaximumLogLevel) return;
+            if ((int)l > (int)CommandService.GlobalConfig.MaximumLogLevel) return;
+
             var time = DateTime.Now.ToString("hh:mm:ss");
             SetPrefixColors(l);
             var prefixString = GetPrefixString(l, time);

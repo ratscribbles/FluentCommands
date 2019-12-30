@@ -13,7 +13,7 @@ namespace FluentCommands.Interfaces
         internal ModuleConfig Config { get; }
         internal IFluentLogger Logger { get; }
         internal Type TypeStorage { get; }
-        internal IFluentCache Database { get; }
+        internal IFluentCache Cache { get; }
         internal TelegramBotClient? Client { get; }
         internal bool UseModuleLogger { get; }
         internal bool UseModuleCache { get; }

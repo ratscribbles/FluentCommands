@@ -13,7 +13,11 @@ namespace FluentCommands.Tests.Integration
         static async Task Main(string[] args)
         {
             var token = System.IO.File.ReadAllLines(@"E:\Dropbox\FluentCommands\botinf1.txt").ElementAt(0);
-            CommandService.Start(token);
+            CommandService.Start(c =>
+            {
+                c.AddClient(token);
+                c.MaximumLogLevel(FluentLogLevel.Debug);
+            });
 
             //:         explore the MessageType enum for onEvents
 

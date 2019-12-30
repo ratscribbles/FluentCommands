@@ -15,36 +15,35 @@ namespace FluentCommands.Commands
         /// <summary>Stored logger for this <see cref="CommandModule{TCommand}"/>.</summary>
         private readonly ModuleConfig _config;
         private readonly Type _typeStorage;
-        private readonly IFluentLogger? _logger;
-        private readonly IFluentCache? _cache;
-        private readonly TelegramBotClient? _client;
         private readonly bool _useModuleLogger;
         private readonly bool _useModuleCache;
         private readonly bool _useClient;
 
         ModuleConfig IReadOnlyModule.Config => _config;
-        IFluentLogger IReadOnlyModule.Logger
-        {
-            get
-            {
-                if (_useModuleLogger) return _logger!; // Not Null if true.
-                else return CommandService.Logger;
-            }
-        }
-        IFluentCache IReadOnlyModule.Database
-        {
-            get
-            {
-                if (_useModuleCache) return _cache!; // Not Null if true.
-                else return CommandService.Cache;
-            }
-        }
         TelegramBotClient? IReadOnlyModule.Client
         {
             get
             {
-                if (_useClient) return _client!; // Not Null if true.
+                if (_useClient) return CommandService.ServicesCollection[_typeStorage].Client!; // Not Null if true.
                 else return CommandService.InternalClient;
+            }
+        }
+        IFluentCache IReadOnlyModule.Cache
+        {
+            get
+            {
+                if (_useModuleCache) return CommandService.ServicesCollection[_typeStorage].Cache!; // Not Null if true.
+                else return CommandService.Cache;
+            }
+        }
+        IFluentLogger IReadOnlyModule.Logger
+        {
+            get
+            {
+                if (_config.DisableLogging) return CommandService.EmptyLogger;
+                
+                if (_useModuleLogger) return CommandService.ServicesCollection[_typeStorage].Logger!; // Not Null if true.
+                else return CommandService.Logger;
             }
         }
         Type IReadOnlyModule.TypeStorage => _typeStorage;
@@ -52,23 +51,15 @@ namespace FluentCommands.Commands
         bool IReadOnlyModule.UseModuleCache => _useModuleCache;
         bool IReadOnlyModule.UseClient => _useClient;
 
-        internal ReadOnlyCommandModule(ModuleBuilder m, TelegramBotClient? client = null, IFluentCache? cache = null, IFluentLogger? logger = null)
+        internal ReadOnlyCommandModule(ModuleBuilder m, bool hasClient, bool hasCache, bool hasLogger)
         {
             _config = m.BuildConfig();
-            _client = client;
-            _cache = cache;
-            _logger = logger;
 
-            _useModuleLogger = _logger is { };
-            _useModuleCache = _cache is { };
-            _useClient = _client is { };
+            _useClient = hasClient;
+            _useModuleCache = hasCache;
+            _useModuleLogger = hasLogger;
 
             _typeStorage = m.TypeStorage;
-
-            if (_config.DisableLogging)
-            {
-                //: might remove this
-            }
         }
     }
 }

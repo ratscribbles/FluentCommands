@@ -50,7 +50,7 @@ namespace FluentCommands
         ///////
         private readonly CommandServiceConfig _config;
         private readonly IReadOnlyDictionary<Type, IReadOnlyModule> _modules;
-        private readonly IReadOnlyDictionary<Type, TelegramBotClient> _clients;
+        private readonly IReadOnlyDictionary<Type, (TelegramBotClient? Client, IFluentCache? Cache, IFluentLogger? Logger)> _servicesCollection;
         private readonly IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> _commands;
         private readonly IFluentCache? _customCache;
         private readonly IFluentLogger? _customLogger;
@@ -58,14 +58,14 @@ namespace FluentCommands
         ///////
         private static CommandServiceCache InternalCache => _defaultCache.Value;
         private static IReadOnlyDictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>> Commands => _instance.Value._commands;
-        internal static IReadOnlyDictionary<Type, TelegramBotClient> ClientCollection => _instance.Value._clients;
+        internal static IReadOnlyDictionary<Type, (TelegramBotClient? Client, IFluentCache? Cache, IFluentLogger? Logger)> ServicesCollection => _instance.Value._servicesCollection;
         internal static IReadOnlyDictionary<Type, IReadOnlyModule> Modules => _instance.Value._modules;
-        internal static TelegramBotClient? InternalClient => _instance.Value._client;
+        internal static TelegramBotClient? InternalClient => ServicesCollection[typeof(CommandService)].Client;
         internal static IFluentCache Cache
         {
             get
             {
-                if (GlobalConfig.UsingCustomCache) return _instance.Value._customCache!; // Not null if true
+                if (GlobalConfig.UsingCustomCache) return ServicesCollection[typeof(CommandService)].Cache!; // Not null if true
                 else return _defaultCache.Value;
             }
         }
@@ -75,12 +75,13 @@ namespace FluentCommands
             {
                 if (!GlobalConfig.DisableLogging)
                 {
-                    if (GlobalConfig.UsingCustomLogger) return _instance.Value._customLogger!; // Not null if true
+                    if (GlobalConfig.UsingCustomLogger) return ServicesCollection[typeof(CommandService)].Logger!; // Not null if true
                     else return _defaultLogger.Value;
                 }
-                else return _emptyLogger.Value;
+                else return EmptyLogger;
             }
         }
+        internal static IFluentLogger EmptyLogger => _emptyLogger.Value;
         internal static CommandServiceConfig GlobalConfig => _instance.Value._config;
 
         internal static void AddClient(string token, Type moduleType) => _services.Value.AddClient(token, moduleType);
@@ -105,10 +106,14 @@ namespace FluentCommands
         /// Constructor for use only with the singleton. Enforces that internal collectons are completely unable to be modified and are read-only. Populates the following:
         /// <para>- Modules readonly dictionary</para>
         /// <para>- Commands readonly dictionary</para>
+        /// <para>- Services readonly dictionary</para>
         /// <para>- Global config object</para>
         /// </summary>
         private CommandService(CommandServiceConfigBuilder cfg)
         {
+            //! Establish notifier.
+            var notifier = _notifier.Value;
+
             //! Gather all assemblies.
             IReadOnlyCollection<Type> _assemblyTypes;
 
@@ -120,19 +125,28 @@ namespace FluentCommands
                 List<Type> internalTypes;
 
                 try { internalTypes = assembly.GetTypes().ToList(); }
-                catch (ReflectionTypeLoadException e) { internalTypes = e.Types.Where(type => !(type is null)).ToList(); }
+                catch (ReflectionTypeLoadException e) 
+                {
+                    try { internalTypes = e.Types.Where(type => !(type is null)).ToList(); }
+                    catch (Exception ex)
+                    {
+                        notifier.AddDebug("Unexpected error occurred while beginning the CommandService on-building process.", ex);
+                        continue;
+                    }
+                }
 
                 assemblyTypes.AddRange(internalTypes);
             }
 
             _assemblyTypes = assemblyTypes;
 
-            //! Setup notifier, config
-            var notifier = _notifier.Value;
+            //! Establish config.
             _config = cfg.BuildConfig();
 
             //! Setup Default Services:
-            // Is true if the CfgBuilder added services.
+            var tempServicesCollection = new Dictionary<Type, (TelegramBotClient? Client, IFluentCache? Cache, IFluentLogger? Logger)>();
+
+            // Is true if the CfgBuilder added services
             if (_services.IsValueCreated)
             {
                 var provider = _services.Value.GetServices().BuildServiceProvider();
@@ -141,12 +155,18 @@ namespace FluentCommands
                 _customLogger = provider.GetService<IFluentLogger>();
                 _services.Value.GetServices().Clear();
             }
-            else notifier.AddWarning("No client detected for CommandService.");
+            else
+            {
+                notifier.AddWarning("No default client detected for CommandService.");
+                notifier.AddInfo("Using default Cache and Logger.");
+                _client = null;
+                _customCache = null;
+                _customLogger = null;
+            }
+            tempServicesCollection.Add(typeof(CommandService), (_client, _customCache, _customLogger));
 
             //! Temporary collections for use in the building process (to make them readonly once completed)
             var tempCommands = new Dictionary<Type, Dictionary<ReadOnlyMemory<char>, ICommand>>();
-            var tempClients = new Dictionary<Type, TelegramBotClient>();
-            var tempServicesCollection = new Dictionary<Type, (TelegramBotClient client, IFluentCache cache, IFluentLogger logger)>();
 
 
             Init_1_ModuleAssembler();
@@ -168,7 +188,7 @@ namespace FluentCommands
             foreach (var kvp in _tempModules.ToList())
             {
                 var (client, cache, logger) = tempServicesCollection[kvp.Key];
-                tempModulesToReadOnly.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value, client, cache, logger));
+                tempModulesToReadOnly.Add(kvp.Key, new ReadOnlyCommandModule(kvp.Value, client is { }, cache is { }, logger is { }));
             }
 
             var tempCommandsToReadOnly = new Dictionary<Type, IReadOnlyDictionary<ReadOnlyMemory<char>, ICommand>>(tempCommands.Count);
@@ -176,7 +196,7 @@ namespace FluentCommands
 
             _modules = tempModulesToReadOnly;
             _commands = tempCommandsToReadOnly;
-            _clients = tempClients;
+            _servicesCollection = tempServicesCollection;
 
 
             //! Local functions...
@@ -307,6 +327,12 @@ namespace FluentCommands
                     //if (tempServicesCollection.Any(kvp => kvp.Value.client?.BotId == client?.BotId)) throw new InvalidConfigSettingsException($"Duplicate TelegramBotClient detected in module: {commandClass.FullName}. Please make sure to only use ")
                     client = client is { } ? client : _client is { } ? _client : null;
 
+                    var existingClient = tempServicesCollection.FirstOrDefault(kvp => client is { } && kvp.Value.Client?.BotId == client.BotId).Value.Client;
+                    if (existingClient is { }) client = existingClient;
+                    
+                    if ((client?.BotId ?? 0) == (_client?.BotId ?? 1)) notifier.AddInfo($"Using default client for CommandModule<TCommand>: {commandClass.FullName}.");
+                    else notifier.AddWarning($"No client is assigned to CommandModule<TCommand>: {commandClass.FullName}. Commands from this Module will not be evaluated.");
+
                     // Subscribe to the client if it exists. Global client if not. Not at all if not.
                     setHandlers(client, moduleConfigBuilder.On_Building_DisableInternalCommandEvaluation);
 
@@ -314,7 +340,7 @@ namespace FluentCommands
                     tempServicesCollection.Add(moduleBuilder.TypeStorage, (client, cache, logger));
 
                     _services.Value.GetServices().Clear();
-                    notifier.AddInfo($"Module: {commandClass.FullName} build OK!");
+                    notifier.AddDebug($"Module: {commandClass.FullName} build OK!");
                 }
             }
             void Init_2_CommandAssembler()
@@ -354,7 +380,11 @@ namespace FluentCommands
 
                     CommandBaseBuilder thisCommandBase;
                     if (_tempModules[module].ModuleCommandBases.TryGetValue(attribs.Command.Name, out var dictCommandBase)) thisCommandBase = dictCommandBase;
-                    else thisCommandBase = new CommandBaseBuilder(attribs.Command.Name);
+                    else 
+                    { 
+                        thisCommandBase = new CommandBaseBuilder(attribs.Command.Name);
+                        notifier.AddDebug($"No OnBuilding detected for Command \"{attribs.Command.Name}\" in Module: \"{module.FullName}\"; using default settings.");
+                    }
 
                     #region Setters. Add to this if additional functionality needs to be created later.
                     // Permissions
@@ -367,6 +397,7 @@ namespace FluentCommands
 
                     TryAddCommand(thisCommandBase);
 
+                    
                     //: Check for help command; if it doesn't exist, make one.
 
 
@@ -383,8 +414,7 @@ namespace FluentCommands
                         // Checks return type for the incoming method. If it fails, it throws.
                         void CheckReturnType<TReturn>(Type returnType)
                         {
-                            var invalidReturnType = new CommandOnBuildingException($"{commandInfo} method had invalid return type. (Was type: \"{returnType.Name}\". Expected type: \"{typeof(TReturn).Name}\".)");
-                            if (returnType != typeof(TReturn)) throw invalidReturnType;
+                            if (returnType != typeof(TReturn)) throw new CommandOnBuildingException($"{commandInfo} method had invalid return type. (Was type: \"{returnType.Name}\". Expected type: \"{typeof(TReturn).Name}\".)");
                         }
 
                         switch (commandBase.CommandType)
@@ -404,7 +434,7 @@ namespace FluentCommands
 
                             if (paramLength == 3 /* && @params[3].ParameterType == typeof(SomeType) */)
                             {
-                                // This conditional is an example of how to set up different method signatures in the future, if updates require different checks.
+                                //? This conditional is an example of how to set up different method signatures in the future, if updates require different checks.
                             }
                         }
                         else throw new CommandOnBuildingException($"{commandInfo} method had invalid signature.");
@@ -585,59 +615,16 @@ namespace FluentCommands
         /// </summary>
         private static void Init()
         {
-            //: reference to command ambiguity printing; remove when done.
-            void CheckForCommandDuplicateAmbiguity()
-            {
-                // Checks for duplicates (this will likely be a common error)
-                //var allCommandNameDuplicates = allCommandMethods
-                //    .Where(m => m.GetCustomAttribute<StepAttribute>() is null)
-                //    .GroupBy(m => m.GetCustomAttribute<CommandAttribute>()?.Name)
-                //    .Where(g => g.Count() > 1)
-                //    .SelectMany(g => g);
-
-                //: new dict(string, (type, int)) to select
-
-                //? check each module, and check each dictionary of command strings to see if any single command s present in another command string dictionary
-                // Will throw; responsible for formatting the exception.
-                if (true /* allCommandNameDuplicates.Count() != 0 */)
-                {
-
-
-
-                    //foreach (var kvp in commandDuplicates)
-                    //{
-                    //    foreach(var type in kvp.Value)
-                    //    {
-                    //        var prefix = _modules[type].Config.Prefix;
-                    //        var clientId = _modules[type].Client?.BotId;
-
-                    //        //foreach(var t in kvp.Value)
-                    //        //{
-                    //        //    if (type == t) continue;
-
-                    //        //}
-                    //    }
-                    //}
-
-
-                    //.Where(kvp => _commands[kvp.Key].Count(kvp => kvp.
-                    //&& _modules.TryGetValue(kvp.Key, out var module)
-                    //&& _modules.Count(kvp => kvp.Value.Config.Prefix == module.Config.Prefix) > 1
-                    //&& _modules.Count(kvp => kvp.Value.Client?.BotId == module.Client?.BotId) > 1)
-
-
-                }
-            }
-
             _ = _instance.Value;
 
             if (InternalClient is null && !GlobalConfig.EnableManualConfiguration)
             {
                 if (Modules.Any(o => o.Value.Client is { }))
                 {
-                    //: Add to logger object.
-
-                    //foreach, add warning for each one without a client. if none, regular warning
+                    foreach(var module in Modules.Values)
+                    {
+                        if (!module.UseClient) _notifier.Value.AddWarning($"{module.TypeStorage.FullName} not able to execute commands due to no client. (Set a default client if you want this module's commands to execute.)");
+                    }
                 }
                 else throw new CommandOnBuildingException("The TelegramBotClient provided to the CommandService was null without Manual Configuration enabled, and there was no suitable TelegramBotClient provided for any module. Did you mean to enable Manual Configuration? Please verify that your CommandServiceConfig and ModuleBuilderConfigs are set-up properly before starting the CommandService.");
             }
@@ -650,17 +637,7 @@ namespace FluentCommands
 
             _commandServiceStarted.Value = true;
 
-
-
-
-
-            //: create client dictionary and hook that up proper so this stuff below doesnt cause issues
-
-
-
-
-
-            // Local functions...
+            //! Local functions...
             static void CheckCommandNameAmbiguity()
             {
                 // Changes the format of the dictionary to exclude the ICommand, pairing type with command name (as string).
@@ -700,8 +677,7 @@ namespace FluentCommands
                     })
                     .Where(g => g.Count() > 1)
                     .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
-                    .OrderBy(g => g.Key.Prefix)
-                    .OrderBy(g => g.Key.BotId);
+                    .OrderBy(g => g.Key);
 
                 var ambiguousPrefixes = moduleMatches
                     .GroupBy(kvp => kvp.Value.Config.Prefix)
@@ -795,30 +771,37 @@ namespace FluentCommands
 
                     // Guaranteed to be at least one.
                     if (exceptions.Count() == 1) throw exceptions.First();
-                    else throw new AggregateException("Multiple duplicate command name ambiguities found when attempting to build the CommandServce. Please address the following exceptions: ", exceptions);
+                    else throw new AggregateException("Multiple duplicate command name ambiguities found when attempting to build the CommandServce. Please address the following exceptions:" + Environment.NewLine, exceptions);
                 }
             }
             static void AttemptStartClientsReceiving()
             {
                 // All of the below attempts to start receiving updates for each client, unless full manual is enabled.
-                Dictionary<string, ApiRequestException> exceptionModules = new Dictionary<string, ApiRequestException>();
-                try { InternalClient?.StartReceiving(Array.Empty<UpdateType>()); }
-                catch (ApiRequestException ex)
+                Dictionary<int, (Type Module, ApiRequestException Exception)> exceptionModules = new Dictionary<int, (Type Module, ApiRequestException Exception)>();
+                if(InternalClient is { })
                 {
-                    exceptionModules.Add("CommandService (default)", ex);
-                }
-
-                var duplicateClients = Modules.GroupBy(kvp => kvp.Value.Client?.BotId)
-                    .Where(g => g.Count() > 1)
-                    .SelectMany(g=>g).Select(kvp => kvp.Value.Client)
-                    .Distinct();
-
-                foreach (var key in Modules.Keys)
-                {
-                    try { Modules[key].Client?.StartReceiving(Array.Empty<UpdateType>()); }
+                    try { InternalClient.StartReceiving(Array.Empty<UpdateType>()); }
                     catch (ApiRequestException ex)
                     {
-                        exceptionModules.Add(key?.FullName ?? "??NULL??", ex);
+                        exceptionModules.Add(InternalClient.BotId, (typeof(CommandService), ex));
+                    }
+                }
+
+                // Selects only the first instance of a client found based on its Id, so that it only receives updates -once-
+                var distinctClients = ServicesCollection
+                    .Where(kvp => kvp.Key != typeof(CommandService))
+                    .GroupBy(kvp => kvp.Value.Client?.BotId)
+                    .Select(g => g.First());
+
+                foreach (var kvp in distinctClients)
+                {
+                    if(kvp.Value.Client is { })
+                    {
+                        try { kvp.Value.Client.StartReceiving(Array.Empty<UpdateType>()); }
+                        catch (ApiRequestException ex)
+                        {
+                            exceptionModules.Add(kvp.Value.Client.BotId, (kvp.Key, ex));
+                        }
                     }
                 }
 
@@ -826,24 +809,30 @@ namespace FluentCommands
                 if (exceptionModules.Count != 0)
                 {
                     List<Exception> exceptions = new List<Exception>();
-                    string exceptionModuleString = "";
-                    int loopCounter = 0;
-
-                    foreach (var kvp in exceptionModules)
+                    foreach (var keyValue in exceptionModules)
                     {
-                        if (loopCounter == 0) exceptionModuleString += kvp.Key;
-                        else exceptionModuleString += $", {kvp.Key}";
+                        var clientIdsPerModule = ServicesCollection
+                            .Where(kvp => kvp.Value.Client?.BotId == keyValue.Key)
+                            .GroupBy(kvp => kvp.Value.Client?.BotId);
+                        
+                        string exceptionModuleString = "";
+                        foreach (var group in clientIdsPerModule)
+                        {
+                            exceptionModuleString += $"TelegramBotClient (Id: {group.Key}) failed to initialize in module(s): " + Environment.NewLine;
+                            var typesInCurrentClientGroup = group.Select(g => g.Key);
+                            foreach(var type in typesInCurrentClientGroup)
+                            {
+                                string moduleAsText = type == typeof(CommandService) ? $"{type.FullName!} (default client)" : type.FullName ?? "NULL";
+                                exceptionModuleString += "* " + moduleAsText + Environment.NewLine;
+                            }
+                        }
 
-                        exceptions.Add(new CommandOnBuildingException($"TelegramBotClient failed to initialize in module: {kvp.Key}.", kvp.Value));
-                        loopCounter++;
+                        exceptionModuleString += " ... Due to an ApiRequestException: " + Environment.NewLine;
+                        exceptions.Add(new InvalidConfigSettingsException(exceptionModuleString, keyValue.Value.Exception));
                     }
 
-                    string parentExceptionString = $"There was an issue initializing the TelegramBotClient for the CommandModule(s): {exceptionModuleString}. Please double-check your client, token, or ConfigBuilder to make sure it has been provided correctly. If this issue persists and you believe it is in error, please submit a bug report on the FluentCommands Github page.";
-                    if (exceptions.Count == 1)
-                    {
-                        if (exceptionModules.TryGetValue("CommandService (default)", out var ex)) throw new InvalidConfigSettingsException("There was an issue initializing the Default TelegramBotClient for the CommandService. Please double-check your client, token, or ConfigBuilder to make sure it has been provided correctly. If this issue persists and you believe it is in error, please submit a bug report on the FluentCommands Github page.", ex);
-                        else throw new InvalidConfigSettingsException(parentExceptionString, exceptions.First());
-                    }
+                    string parentExceptionString = $"There was an issue initializing one or more of the TelegramBotClient(s) for the CommandService. Please double-check your client, token, or ConfigBuilder to make sure it has been provided correctly. If this issue persists and you believe it is in error, please submit a bug report on the FluentCommands Github page.";
+                    if (exceptions.Count == 1) throw new InvalidConfigSettingsException(parentExceptionString, exceptions.First());
                     else throw new InvalidConfigSettingsException(parentExceptionString, new AggregateException(exceptions));
                 }
             }

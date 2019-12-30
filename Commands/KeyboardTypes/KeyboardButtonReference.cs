@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Text;
 using FluentCommands.Interfaces;
+using FluentCommands.Utility;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Commands.KeyboardTypes
 {
     public class KeyboardButtonReference : IFluentInterface
     {
-        internal string Name { get; private set; }
+        internal string Name { get; }
 
-        internal KeyboardButtonReference(string commandName) => Name = commandName;
+        internal KeyboardButtonReference(string commandName)
+        {
+            AuxiliaryMethods.CheckCommandNameValidity(commandName);
+            Name = commandName; 
+        }
 
         /// <summary>
         /// Implicitly converts this <see cref="KeyboardButtonReference"/> into an <see cref="InlineKeyboardButton"/> to ease keyboard building.

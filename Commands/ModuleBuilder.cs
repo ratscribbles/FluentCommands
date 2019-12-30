@@ -24,15 +24,15 @@ namespace FluentCommands.Commands
     {
         /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
         private readonly Dictionary<string, CommandBaseBuilder> _moduleCommandBases = new Dictionary<string, CommandBaseBuilder>();
+        /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
+        private CommandBaseBuilder? _commandStorage;
 
         /// <summary> Stores the module type when using alternate building form. </summary>
         internal Type TypeStorage { get; }
-        /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
-        private CommandBaseBuilder? CommandStorage { get; set; }
         /// <summary>The config object for this <see cref="ModuleBuilder"/>. Use <see cref="SetConfig(ModuleConfig)"/> to update this.</summary>
         internal ModuleConfigBuilder? ConfigBuilder { get; private set; }
         /// <summary>The internal <see cref="CommandBaseBuilder"/> dictionary for this <see cref="ModuleBuilder"/>. Readonly.</summary>
-        internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases { get { return _moduleCommandBases; } }
+        internal IReadOnlyDictionary<string, CommandBaseBuilder> ModuleCommandBases => _moduleCommandBases;
 
         /// <summary>
         /// Indexer used primarily for the "build action" <see cref="Action"/> version of the fluent builder API.
@@ -70,8 +70,8 @@ namespace FluentCommands.Commands
         {
             if (commandName is null) throw new CommandOnBuildingException($"Command name in module {TypeStorage.FullName ?? "??NULL??"} was null.");
             if (_moduleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.FullName ?? "??NULL??"}, with the command name: \"{commandName}\"");
-            CommandStorage = (CommandBaseBuilder)this[commandName];
-            UpdateBuilder(CommandStorage); //: Double check this line if anything goes wrong.
+            _commandStorage = (CommandBaseBuilder)this[commandName];
+            UpdateBuilder(_commandStorage); //: Double check this line if anything goes wrong.
             return this;
         }
         /// <summary>
@@ -81,9 +81,9 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleAliases"/>, removing this option from the fluent builder.</returns>
         public ICommandBaseOfModuleAliases Aliases(params string[] aliases)
         {
-            if (aliases.Any(alias => alias is null)) throw new CommandOnBuildingException($"Command \"{CommandStorage?.Name ?? "??NULL??"}\" in module {TypeStorage?.FullName ?? "??NULL??"} had an alias that was null.");
-            CommandStorage!.Aliases(aliases.Distinct().ToArray());
-            UpdateBuilder(CommandStorage);
+            if (aliases.Any(alias => alias is null)) throw new CommandOnBuildingException($"Command \"{_commandStorage?.Name ?? "??NULL??"}\" in module {TypeStorage?.FullName ?? "??NULL??"} had an alias that was null.");
+            _commandStorage!.Aliases(aliases.Distinct().ToArray());
+            UpdateBuilder(_commandStorage);
             return this;
         }
         /// <summary>
@@ -93,8 +93,8 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
         public ICommandBaseOfModuleDescription HelpDescription(string description, ParseMode parseMode = ParseMode.Default)
         {
-            CommandStorage!.HelpDescription(description);
-            UpdateBuilder(CommandStorage);
+            _commandStorage!.HelpDescription(description);
+            UpdateBuilder(_commandStorage);
             return this;
         }
         /// <summary>
@@ -104,8 +104,8 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
         public ICommandBaseOfModuleDescription HelpDescription(Menus.Menu helpMessage)
         {
-            CommandStorage!.HelpDescription(helpMessage);
-            UpdateBuilder(CommandStorage);
+            _commandStorage!.HelpDescription(helpMessage);
+            UpdateBuilder(_commandStorage);
             return this;
         }
         /// <summary>
@@ -116,8 +116,8 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleCompletion"/>, signalling the end of this command's construction.</returns>
         public ICommandBaseOfModuleCompletion InlineKeyboardButtonReference(InlineKeyboardButton button)
         {
-            CommandStorage!.InlineKeyboardButtonReference(button);
-            UpdateBuilder(CommandStorage);
+            _commandStorage!.InlineKeyboardButtonReference(button);
+            UpdateBuilder(_commandStorage);
             return this;
         }
         /// <summary>

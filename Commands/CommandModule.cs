@@ -40,7 +40,7 @@ namespace FluentCommands.Commands
         protected virtual async void On_ReceiveGeneralError(object? sender, ReceiveGeneralErrorEventArgs e) { }
         protected virtual async void On_Update(object? sender, UpdateEventArgs e) { }
 
-        internal void RegisterHandlers(TelegramBotClient client, bool disableEvaluate = false)
+        internal void RegisterHandlers(TelegramBotClient? client, bool disableEvaluate = false)
         {
             if (client is null) return;
 

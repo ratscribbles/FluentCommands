@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 using FluentCommands.Interfaces;
+using FluentCommands.Utility;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FluentCommands.Commands.KeyboardTypes
 {
     public class KeyboardButtonLinkedReference : IFluentInterface
     {
-        private string Name { get; set; }
-        private Type LinkedModule { get; set; }
+        internal string Name { get; }
+        internal Type LinkedModule { get; }
 
         internal KeyboardButtonLinkedReference(KeyboardButtonReference k, Type module) { Name = k.Name; LinkedModule = module; }
 

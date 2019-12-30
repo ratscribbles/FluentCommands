@@ -32,7 +32,7 @@ namespace FluentCommands
         internal bool In_EnableManualConfiguration { get; private set; }
         public void EnableManualConfiguration() => In_EnableManualConfiguration = true;
 
-        internal FluentLogLevel In_MaximumLogLevel { get; private set; }
+        internal FluentLogLevel In_MaximumLogLevel { get; private set; } = FluentLogLevel.Fatal;
         public void MaximumLogLevel(FluentLogLevel logLevel) => In_MaximumLogLevel = logLevel;
 
         internal MenuMode In_DefaultMenuMode { get; private set; }

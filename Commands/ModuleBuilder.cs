@@ -12,13 +12,14 @@ using FluentCommands.Interfaces.KeyboardBuilders;
 using FluentCommands.Logging;
 using FluentCommands.Cache;
 using Telegram.Bot;
+using FluentCommands.Interfaces.MenuBuilders;
 
 namespace FluentCommands.Commands
 {
     /// <summary>
     /// Builder that creates <see cref="CommandBaseBuilder"/> objects to assemble into commands of this Module.
     /// </summary>
-    public sealed class ModuleBuilder : IModuleBuilder,
+    public sealed class ModuleBuilder : ICommandModuleBuilder,
         ICommandBaseBuilderOfModule, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleCompletion,
         IFluentInterface
     {
@@ -102,7 +103,7 @@ namespace FluentCommands.Commands
         /// </summary>
         /// <param name="description">The description of this command.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
-        public ICommandBaseOfModuleDescription HelpDescription(Menus.Menu helpMessage)
+        public ICommandBaseOfModuleDescription HelpDescription(ISendableMenu helpMessage)
         {
             _commandStorage!.HelpDescription(helpMessage);
             UpdateBuilder(_commandStorage);
@@ -124,8 +125,8 @@ namespace FluentCommands.Commands
         /// Marks this command as complete, prompting you to build another command.
         /// <para>(If you meant to end the command building process, call <see cref="Done"/> instead!)</para>
         /// </summary>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="IModuleBuilder"/> to begin the command building process again.</returns>
-        public IModuleBuilder Next() => this;
+        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandModuleBuilder"/> to begin the command building process again.</returns>
+        public ICommandModuleBuilder Next() => this;
 
         /// <summary>Updates the <see cref="ModuleBuilder"/> in the Modules dictionary contained within the <see cref="CommandService"/>.</summary>
         /// <param name="c"></param>

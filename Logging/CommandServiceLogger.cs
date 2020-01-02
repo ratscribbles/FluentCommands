@@ -10,89 +10,105 @@ namespace FluentCommands.Logging
 
     internal class CommandServiceLogger : IFluentLogger
     {
+        private readonly static object _lock = new object();
+        private readonly static object _lock2 = new object();
         internal CommandServiceLogger() { }
 
-        async Task IFluentLogger.LogFatal(string message, Exception? e, TelegramUpdateEventArgs? t) => await Logging_Internal(FluentLogLevel.Fatal, message, e, t).ConfigureAwait(false);
-        async Task IFluentLogger.LogError(string message, Exception? e, TelegramUpdateEventArgs? t) => await Logging_Internal(FluentLogLevel.Error, message, e, t).ConfigureAwait(false);
-        async Task IFluentLogger.LogWarning(string message, Exception? e, TelegramUpdateEventArgs? t) => await Logging_Internal(FluentLogLevel.Warning, message, e, t).ConfigureAwait(false);
-        async Task IFluentLogger.LogInfo(string message, Exception? e, TelegramUpdateEventArgs? t) => await Logging_Internal(FluentLogLevel.Info, message, e, t).ConfigureAwait(false);
-        async Task IFluentLogger.LogDebug(string message, Exception? e, TelegramUpdateEventArgs? t) => await Logging_Internal(FluentLogLevel.Debug, message, e, t).ConfigureAwait(false);
+         Task IFluentLogger.LogFatal(string message, Exception? e, TelegramUpdateEventArgs? t) => Logging_Internal(FluentLogLevel.Fatal, message, e, t);
+         Task IFluentLogger.LogError(string message, Exception? e, TelegramUpdateEventArgs? t) => Logging_Internal(FluentLogLevel.Error, message, e, t);
+         Task IFluentLogger.LogWarning(string message, Exception? e, TelegramUpdateEventArgs? t) => Logging_Internal(FluentLogLevel.Warning, message, e, t);
+         Task IFluentLogger.LogInfo(string message, Exception? e, TelegramUpdateEventArgs? t) => Logging_Internal(FluentLogLevel.Info, message, e, t);
+         Task IFluentLogger.LogDebug(string message, Exception? e, TelegramUpdateEventArgs? t) => Logging_Internal(FluentLogLevel.Debug, message, e, t);
 
-        private async Task Logging_Internal(FluentLogLevel l, string m, Exception? e = null, TelegramUpdateEventArgs? t = null)
+        private Task Logging_Internal(FluentLogLevel l, string m, Exception? e = null, TelegramUpdateEventArgs? t = null)
         {
-            if ((int)l > (int)CommandService.GlobalConfig.MaximumLogLevel) return;
+            if ((int)l > (int)CommandService.GlobalConfig.MaximumLogLevel) return Task.CompletedTask;
 
-            var time = DateTime.Now.ToString("hh:mm:ss");
-            SetPrefixColors(l);
-            var prefixString = GetPrefixString(l, time);
-            await Console.Out.WriteLineAsync(prefixString).ConfigureAwait(false);
-            SetMessageColors(l);
-            await Console.Out.WriteLineAsync($" {m}").ConfigureAwait(false);
-            if (e is { }) await Console.Out.WriteLineAsync($" --> {e?.ToString()}").ConfigureAwait(false);
-            await Console.Out.WriteLineAsync().ConfigureAwait(false);
+            lock (_lock)
+            {
+                Console.Title = "FluentCommands";
+                var time = DateTime.Now.ToString("hh:mm:ss");
+                SetPrefixColors(l);
+                var prefixString = GetPrefixString(l, time);
+                Console.WriteLine(prefixString);
+                SetMessageColors(l);
+                Console.WriteLine($" {m}");
+                if (e is { }) Console.WriteLine($" --> {e?.ToString()}");
+                Console.WriteLine();
+            }
 
+            return Task.CompletedTask;
             static void SetPrefixColors(FluentLogLevel level)
             {
-                switch (level)
+                lock (_lock2)
                 {
-                    case FluentLogLevel.Fatal:
-                        Console.BackgroundColor = ConsoleColor.DarkRed;
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        break;
-                    case FluentLogLevel.Error:
-                        Console.BackgroundColor = ConsoleColor.Red; 
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        break;
-                    case FluentLogLevel.Warning:
-                        Console.BackgroundColor = ConsoleColor.Yellow;
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        break;
-                    case FluentLogLevel.Info:
-                        Console.BackgroundColor = ConsoleColor.White;
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        break;
-                    case FluentLogLevel.Debug:
-                        Console.BackgroundColor = ConsoleColor.Cyan;
-                        Console.ForegroundColor = ConsoleColor.Black;
-                        break;
+                    switch (level)
+                    {
+                        case FluentLogLevel.Fatal:
+                            Console.BackgroundColor = ConsoleColor.DarkRed;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            break;
+                        case FluentLogLevel.Error:
+                            Console.BackgroundColor = ConsoleColor.Red;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            break;
+                        case FluentLogLevel.Warning:
+                            Console.BackgroundColor = ConsoleColor.Yellow;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            break;
+                        case FluentLogLevel.Info:
+                            Console.BackgroundColor = ConsoleColor.White;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            break;
+                        case FluentLogLevel.Debug:
+                            Console.BackgroundColor = ConsoleColor.Cyan;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            break;
+                    }
                 }
             }
             static string GetPrefixString(FluentLogLevel level, string timeString)
             {
-                return level switch
+                lock (_lock2)
                 {
-                    FluentLogLevel.Fatal => $" FATAL:  {timeString}  ",
-                    FluentLogLevel.Error => $" ERROR:  {timeString}  ",
-                    FluentLogLevel.Warning => $"  WARN:  {timeString}  ",
-                    FluentLogLevel.Info => $"  INFO:  {timeString}  ",
-                    FluentLogLevel.Debug => $" DEBUG:  {timeString}  ",
-                    _ => ""
-                };
+                    return level switch
+                    {
+                        FluentLogLevel.Fatal => $" FATAL:  {timeString}  ",
+                        FluentLogLevel.Error => $" ERROR:  {timeString}  ",
+                        FluentLogLevel.Warning => $"  WARN:  {timeString}  ",
+                        FluentLogLevel.Info => $"  INFO:  {timeString}  ",
+                        FluentLogLevel.Debug => $" DEBUG:  {timeString}  ",
+                        _ => ""
+                    };
+                }
             }
             static void SetMessageColors(FluentLogLevel level)
             {
-                switch (level)
+                lock (_lock2)
                 {
-                    case FluentLogLevel.Fatal:
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        break;
-                    case FluentLogLevel.Error:
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        break;
-                    case FluentLogLevel.Warning:
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        break;
-                    case FluentLogLevel.Info:
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.White;
-                        break;
-                    case FluentLogLevel.Debug:
-                        Console.BackgroundColor = ConsoleColor.Black;
-                        Console.ForegroundColor = ConsoleColor.Cyan;
-                        break;
+                    switch (level)
+                    {
+                        case FluentLogLevel.Fatal:
+                            Console.BackgroundColor = ConsoleColor.Black;
+                            Console.ForegroundColor = ConsoleColor.DarkRed;
+                            break;
+                        case FluentLogLevel.Error:
+                            Console.BackgroundColor = ConsoleColor.Black;
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            break;
+                        case FluentLogLevel.Warning:
+                            Console.BackgroundColor = ConsoleColor.Black;
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            break;
+                        case FluentLogLevel.Info:
+                            Console.BackgroundColor = ConsoleColor.Black;
+                            Console.ForegroundColor = ConsoleColor.White;
+                            break;
+                        case FluentLogLevel.Debug:
+                            Console.BackgroundColor = ConsoleColor.Black;
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            break;
+                    }
                 }
             }
         }

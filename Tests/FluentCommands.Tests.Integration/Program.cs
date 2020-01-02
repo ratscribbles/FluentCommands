@@ -19,6 +19,9 @@ namespace FluentCommands.Tests.Integration
                 c.MaximumLogLevel(FluentLogLevel.Debug);
             });
 
+            var m = new Message();
+
+
             //:         explore the MessageType enum for onEvents
 
             //while (true)

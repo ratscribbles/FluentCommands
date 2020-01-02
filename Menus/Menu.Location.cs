@@ -56,7 +56,7 @@ namespace FluentCommands.Menus
         {
             KeyboardBuilder keyboard = new KeyboardBuilder();
             buildAction(keyboard);
-            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            keyboard.UpdateInline();
             ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
             return this;
         }
@@ -65,7 +65,6 @@ namespace FluentCommands.Menus
         {
             KeyboardBuilder keyboard = new KeyboardBuilder();
             buildAction(keyboard);
-            keyboard.UpdateReply(CommandService.UpdateKeyboardRows(keyboard.ReplyRows));
             ReplyMarkup = new ReplyKeyboardMarkup(keyboard.ReplyRows);
             return this;
         }

@@ -41,4 +41,8 @@
     </Compile>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Interfaces\BuilderBehaviors\MenuBuilderBehaviors\" />
+  </ItemGroup>
+
 </Project>

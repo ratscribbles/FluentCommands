@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-using FluentCommands.Attributes;
 using System.Reflection;
 using FluentCommands.Exceptions;
+using FluentCommands.Steps;
 
 namespace FluentCommands.Commands.Steps
 {
@@ -23,7 +23,6 @@ namespace FluentCommands.Commands.Steps
         internal CommandInvoker<Step> this[int key] => _invokers[key];
 
         /// <summary>
-        /// Note: StepData and DebugStepData index 0 should have no value (null); it'll never be accessed.
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="CommandOnBuildingException"></exception>
         /// </summary>

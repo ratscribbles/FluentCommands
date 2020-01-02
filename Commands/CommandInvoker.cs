@@ -1,4 +1,4 @@
-﻿using FluentCommands.Attributes;
+﻿using FluentCommands.Steps;
 using FluentCommands.Utility;
 using System;
 using System.Collections.Generic;
@@ -63,7 +63,7 @@ namespace FluentCommands.Commands
         /// </summary>
         internal CommandInvoker(MethodInfo method)
         {
-            Type t = method.GetParameters()[1].ParameterType;
+            Type t = method.GetParameters()[0].ParameterType;
             switch (t)
             {
                 case var _ when t == typeof(CallbackQueryContext):

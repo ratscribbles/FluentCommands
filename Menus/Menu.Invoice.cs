@@ -161,7 +161,7 @@ namespace FluentCommands.Menus
         {
             KeyboardBuilder keyboard = new KeyboardBuilder();
             buildAction(keyboard);
-            keyboard.UpdateInline(CommandService.UpdateKeyboardRows(keyboard.InlineRows));
+            keyboard.UpdateInline();
             ReplyMarkup = new InlineKeyboardMarkup(keyboard.InlineRows);
             return this;
         }

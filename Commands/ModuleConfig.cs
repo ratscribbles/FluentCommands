@@ -13,8 +13,16 @@ namespace FluentCommands.Commands
 {
     internal class ModuleConfig
     {
+        private readonly ISendableMenu? _errorMsg;
         internal Type ModuleType { get; }
-        internal ISendableMenu? DefaultErrorMessageOverride { get; }
+        internal ISendableMenu DefaultErrorMessageOverride
+        {
+            get
+            {
+                if (_errorMsg is null) return CommandService.GlobalConfig.CustomDefaultErrorMsg;
+                else return _errorMsg;
+            }
+        }
         internal bool DeleteAllIncomingUserInputs { get; }
         internal bool DeleteCommandAfterCall { get; }
         internal bool DisableLogging { get; }
@@ -29,7 +37,7 @@ namespace FluentCommands.Commands
         internal ModuleConfig(ModuleConfigBuilder b)
         {
             ModuleType = b.ModuleType;
-            DefaultErrorMessageOverride = b.In_DefaultErrorMessageOverride;
+            _errorMsg = b.In_DefaultErrorMessageOverride;
             DeleteAllIncomingUserInputs = b.In_DeleteAllIncomingUserInputs;
             DeleteCommandAfterCall = b.In_DeleteCommandAfterCall;
             DisableLogging = b.In_DisableLogging;

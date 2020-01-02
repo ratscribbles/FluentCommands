@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using FluentCommands.Commands.Steps;
 
-namespace FluentCommands.Attributes
+namespace FluentCommands.Steps
 {
     /// <summary>
     /// Labels a method as one of the steps of a <see cref="Command"/>. Return type must be <see cref="Task{T}"/> with <see cref="{TResult}"/> of type <see cref="Step"/>.

@@ -13,7 +13,7 @@ namespace FluentCommands.Tests.Integration
         public async Task lmao(MessageContext ctx)
         {
             // shouldnt work
-            await Menu.Text("poggers").Send(ctx);
+            await Menu.Text("poggers").SendAsync(ctx);
             await ctx.Client.SendTextMessageAsync(ctx.EventArgs.Message.Chat.Id, "uh oh");
         }
     }

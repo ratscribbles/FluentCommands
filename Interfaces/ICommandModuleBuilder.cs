@@ -9,7 +9,7 @@ namespace FluentCommands.Interfaces
     /// Fluent builder that creates <see cref="ICommandBaseBuilder"/> objects to assemble into commands of this Module.
     /// </summary>
     /// <typeparam name="TCommand">The class that represents a Module for the <see cref="CommandService"/> to construct <see cref="Command"/> objects from.</typeparam>
-    public interface IModuleBuilder : IFluentInterface
+    public interface ICommandModuleBuilder : IFluentInterface
     {
         /// <summary>
         /// Indexer used primarily for the "build action" <see cref="Action"/> version of the fluent builder API.

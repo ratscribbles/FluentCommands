@@ -10,8 +10,16 @@ namespace FluentCommands
 {
     internal class CommandServiceConfig
     {
+        private readonly ISendableMenu? _errorMsg;
         internal bool BruteForceKeyboardReferences { get; }
-        internal ISendableMenu? CustomDefaultErrorMsg { get; }
+        internal ISendableMenu CustomDefaultErrorMsg
+        {
+            get
+            {
+                if (_errorMsg is null) return Menu.Text("An error occurred processing your request.");
+                else return _errorMsg;
+            }
+        }
         internal ISendableMenu? CustomDefaultHelpMsg { get; }
         internal MenuMode DefaultMenuMode { get; }
         internal bool DisableLogging { get; }
@@ -27,7 +35,7 @@ namespace FluentCommands
         internal CommandServiceConfig(CommandServiceConfigBuilder c)
         {
             BruteForceKeyboardReferences = c.In_BruteForceKeyboardReferences;
-            CustomDefaultErrorMsg = c.In_CustomDefaultErrorMsg;
+            _errorMsg = c.In_CustomDefaultErrorMsg;
             CustomDefaultHelpMsg = c.In_CustomDefaultHelpMsg;
             DefaultMenuMode = c.In_DefaultMenuMode;
             DisableLogging = c.In_DisableLoggingGlobally;

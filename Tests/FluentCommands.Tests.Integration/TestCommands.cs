@@ -1,5 +1,7 @@
 ﻿using FluentCommands.Commands;
+using FluentCommands.Commands.Steps;
 using FluentCommands.Menus;
+using FluentCommands.Steps;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,16 +121,55 @@ namespace FluentCommands.Tests.Integration
 
     public class ReceiveLoggingEventsSuccessfullyOnBuilding
     {
-        public class TestCommands : CommandModule<TestCommands> {[Command("1")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands2 : CommandModule<TestCommands2> {[Command("2")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands3 : CommandModule<TestCommands3> {[Command("3")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands4 : CommandModule<TestCommands4> {[Command("4")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands5 : CommandModule<TestCommands5> {[Command("5")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands6 : CommandModule<TestCommands6> {[Command("6")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands7 : CommandModule<TestCommands7> {[Command("7")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands8 : CommandModule<TestCommands8> {[Command("8")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands9 : CommandModule<TestCommands9> {[Command("9")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
-        public class TestCommands10 : CommandModule<TestCommands10> {[Command("10")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands : CommandModule<TestCommands> {[Command("1")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands2 : CommandModule<TestCommands2> {[Command("2")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands3 : CommandModule<TestCommands3> {[Command("3")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands4 : CommandModule<TestCommands4> {[Command("4")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands5 : CommandModule<TestCommands5> {[Command("5")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands6 : CommandModule<TestCommands6> {[Command("6")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands7 : CommandModule<TestCommands7> {[Command("7")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands8 : CommandModule<TestCommands8> {[Command("8")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands9 : CommandModule<TestCommands9> {[Command("9")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
+        //public class TestCommands10 : CommandModule<TestCommands10> {[Command("10")] public async Task wow(MessageContext ctx) => await Menu.Text("it worked").Send(ctx); }
     }
+    public class StepCommandsThrowWithNoParent
+    {
+        //public class TestModule1 : CommandModule<TestModule1>
+        //{
+        //    [Command("1")] 
+        //    [Step(1)]
+        //    public async Task<Step> wow(MessageContext ctx)
+        //    {
+        //        return Step.Success();
+        //    }
+        //}
+    }
+    public class StepCommandsProcessCorrectlyAfterMoveToNewInterface
+    {
+        public class TestModule1 : CommandModule<TestModule1>
+        {
+            [Command("1")]
+            [Step(0)]
+            public async Task<Step> wow(MessageContext ctx)
+            {
+                await Menu.Text("success").SendAsync(ctx);
+                return Step.Success();
+            }
+            [Command("1")]
+            [Step(1)]
+            public async Task<Step> wow2(MessageContext ctx)
+            {
+                await Menu.Text("success 1").SendAsync(ctx);
+                return Step.Success();
+            }
+            [Command("1")]
+            [Step(2)]
+            public async Task<Step> wow3(MessageContext ctx)
+            {
+                await Menu.Text("success 2").SendAsync(ctx);
+                return Step.Success();
+            }
+        }
 
+    }
 }

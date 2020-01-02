@@ -22,7 +22,7 @@ using FluentCommands.Menus;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.InputFiles;
 
-namespace FluentCommands.Interfaces.MenuBuilders
+namespace FluentCommands.Interfaces.Reference
 {
     /// <summary>
     /// Responsible for directing the construction of a valid <see cref="Menu"/>.

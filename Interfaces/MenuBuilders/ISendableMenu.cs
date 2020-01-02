@@ -54,7 +54,7 @@ namespace FluentCommands.Interfaces.MenuBuilders
         Task Send(CallbackQueryContext e, ChatAction? chatAction = null, int duration = 0);
         Task Send(ChosenInlineResultContext e, ChatAction? chatAction = null, int duration = 0);
         Task Send(InlineQueryContext e, ChatAction? chatAction = null, int duration = 0);
-        Task Send(MessageContext e, ChatAction? chatAction = null, int duration = 0);
+        Task SendAsync(MessageContext e, ChatAction? chatAction = null, int duration = 0);
         Task Send(UpdateContext e, ChatAction? chatAction = null, int duration = 0);
         //Task Send<TCommand>(TelegramBotClient client, Callback)
     }

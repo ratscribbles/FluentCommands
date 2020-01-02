@@ -14,7 +14,7 @@ namespace FluentCommands.Interfaces.BaseBuilderOfModule
         /// Marks this command as complete, prompting you to build another command.
         /// <para>(If you meant to end the command building process, call <see cref="Done"/> instead!)</para>
         /// </summary>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="IModuleBuilder"/> to begin the command building process again.</returns>
-        IModuleBuilder Next();
+        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandModuleBuilder"/> to begin the command building process again.</returns>
+        ICommandModuleBuilder Next();
     }
 }

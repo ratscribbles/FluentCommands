@@ -101,7 +101,7 @@ namespace FluentCommands.Menus
         public async Task Send(CallbackQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
 
-        public async Task Send(MessageContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
+        public async Task SendAsync(MessageContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
 
         public async Task Send(UpdateContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
@@ -116,10 +116,10 @@ namespace FluentCommands.Menus
         public async Task Send(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0)
             => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
 
-        public async Task Send<TCommand>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : CommandModule<TCommand>
+        public async Task Send<TCommand>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : class
             => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand)).ConfigureAwait(false);
 
-        public async Task Send<TCommand>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : CommandModule<TCommand>
+        public async Task Send<TCommand>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : class
             => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand)).ConfigureAwait(false);
 
 

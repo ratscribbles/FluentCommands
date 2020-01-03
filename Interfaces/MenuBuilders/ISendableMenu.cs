@@ -50,12 +50,17 @@ namespace FluentCommands.Interfaces.MenuBuilders
         /// <exception cref="UserNotFoundException"></exception>
         //Task Send(long idToSendTo, ChatAction? chatAction = null, int duration = 0);
         Menu Done();
-            
-        Task Send(CallbackQueryContext e, ChatAction? chatAction = null, int duration = 0);
-        Task Send(ChosenInlineResultContext e, ChatAction? chatAction = null, int duration = 0);
-        Task Send(InlineQueryContext e, ChatAction? chatAction = null, int duration = 0);
-        Task SendAsync(MessageContext e, ChatAction? chatAction = null, int duration = 0);
-        Task Send(UpdateContext e, ChatAction? chatAction = null, int duration = 0);
-        //Task Send<TCommand>(TelegramBotClient client, Callback)
+
+        Task SendAsync(CallbackQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendAsync(ChosenInlineResultContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendAsync(InlineQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendAsync(MessageContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendAsync(UpdateContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendOverrideAsync(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendOverrideAsync(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendOverrideAsync(TelegramBotClient client, TelegramUpdateEventArgs e, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
+        Task SendOverrideAsync<TCommand>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null) where TCommand : class;
+        Task SendOverrideAsync<TCommand>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null) where TCommand : class;
+        Task SendOverrideAsync<TCommand>(TelegramBotClient client, TelegramUpdateEventArgs e, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null);
     }
 }

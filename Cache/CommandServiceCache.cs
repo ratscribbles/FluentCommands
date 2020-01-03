@@ -15,7 +15,7 @@ namespace FluentCommands.Cache
         //! if the user is the bot's id, that state means any user can interact with the state
         //: maybe? to the above; not sure if i should have 0 mean anyone can interact with the bot
         private readonly ConcurrentDictionary<FluentKey, FluentState> _stateCache = new ConcurrentDictionary<FluentKey, FluentState>();
-        private readonly ConcurrentDictionary<FluentKey, Message[]> _messageCache = new ConcurrentDictionary<FluentKey, Message[]>();
+        private readonly ConcurrentDictionary<FluentKey, IEnumerable<Message?>> _messageCache = new ConcurrentDictionary<FluentKey, IEnumerable<Message?>>();
         internal CommandServiceCache() { }
 
         #region IFluentCache Implementation
@@ -28,10 +28,10 @@ namespace FluentCommands.Cache
         //    => Task.Run(() => { _stateCache.TryGetValue((chatId, userId), out var state); return state ?? new FluentState(chatId, userId); });
         //: Just in case the above implementation breaks for whatever reason...
 
-        public Task UpdateLastMessage(int botId, long chatId, int userId, Message[] messages)
+        public Task UpdateLastMessage(int botId, long chatId, int userId, IEnumerable<Message?> messages)
             => Task.Run(() => _messageCache[(botId, chatId, userId)] = messages);
-        public Task<IReadOnlyList<Message>?> GetMessages(int botId, long chatId, int userId)
-            => Task.Run(() => { _messageCache.TryGetValue((botId, chatId, userId), out var messages); return messages as IReadOnlyList<Message>; });
+        public Task<IEnumerable<Message?>> GetMessages(int botId, long chatId, int userId)
+            => Task.Run(() => { _messageCache.TryGetValue((botId, chatId, userId), out var messages); return messages ?? Array.Empty<Message?>(); });
 
         //: Consider channels<T> at a later date. This is the default implementation.
         #endregion

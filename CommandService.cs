@@ -25,6 +25,7 @@ using System.Diagnostics.CodeAnalysis;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Exceptions;
 using FluentCommands.Steps;
+using FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors;
 
 //[assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
 
@@ -435,7 +436,7 @@ namespace FluentCommands
                     }
                     ICommand TryCreateDefaultCommand(CommandBaseBuilder baseBuilder)
                     {
-                        foreach (var alias in baseBuilder.InAliases) AuxiliaryMethods.CheckCommandNameValidity(baseBuilder.Name, true, alias);
+                        foreach (var alias in (baseBuilder as ICommandBaseBuilder).Out_Aliases) AuxiliaryMethods.CheckCommandNameValidity(baseBuilder.Name, true, alias);
 
                         var contextType = FetchAndCheckMethodParameters<Task>(method);
 
@@ -462,7 +463,7 @@ namespace FluentCommands
                         try { baseBuilder.Set_Steps(StepMethods); }
                         catch (ArgumentException e) { throw new CommandOnBuildingException($"{commandInfo} had one or more Step methods that were the wrong method return type (must return Task<IStep>): ", e); }
 
-                        foreach (var alias in baseBuilder.InAliases) AuxiliaryMethods.CheckCommandNameValidity(baseBuilder.Name, true, alias);
+                        foreach (var alias in baseBuilder.Aliases) AuxiliaryMethods.CheckCommandNameValidity(baseBuilder.Name, true, alias);
 
                         var contextType = FetchAndCheckMethodParameters<Task<Step>>(method);
 
@@ -727,29 +728,50 @@ namespace FluentCommands
                 // If any of the "ambiguous" collections are greater than zero, the CommandServce will throw.
                 var moduleMatches = Modules
                     .Where(g => commandDuplicates.Any(kvp => kvp.Value.Contains(g.Key)))
-                    .ToList();
-
-                var ambiguousPrefixesAndClients = moduleMatches
                     .GroupBy(kvp => new
                     {
                         kvp.Value.Config.Prefix,
                         kvp.Value.Client?.BotId,
                     })
-                    .Where(g => g.Count() > 1)
+                    .Where(g => g.Count() > 1);
+
+                var ambiguousPrefixesAndClients = moduleMatches
+                    .Where(g => g.Count(p => g.Any(v => v.Value.Client?.BotId == p.Value.Client?.BotId && v.Value.Config.Prefix == p.Value.Config.Prefix)) > 0)
                     .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
                     .OrderBy(g => g.Key);
 
                 var ambiguousPrefixes = moduleMatches
-                    .GroupBy(kvp => kvp.Value.Config.Prefix)
-                    .Where(g => g.Count() > 1)
+                    .Where(g => g.Count(p => g.Any(v => !(v.Value.Client?.BotId == p.Value.Client?.BotId) && v.Value.Config.Prefix == p.Value.Config.Prefix)) > 0)
                     .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
                     .OrderBy(g => g.Key);
 
                 var ambiguousClients = moduleMatches
-                    .GroupBy(g => g.Value.Client?.BotId)
-                    .Where(g => g.Count() > 1)
+                    .Where(g => g.Count(p => g.Any(v => v.Value.Client?.BotId == p.Value.Client?.BotId && !(v.Value.Config.Prefix == p.Value.Config.Prefix))) > 0)
                     .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
                     .OrderBy(g => g.Key);
+
+                //var ambiguousPrefixesAndClients = moduleMatches
+                //    .GroupBy(kvp => new
+                //    {
+                //        kvp.Value.Config.Prefix,
+                //        kvp.Value.Client?.BotId,
+                //    })
+                //    .Where(g => g.Count() > 1)
+                //    .Where(g => g.Count(p => g.Any(v => v.Value.Client?.BotId == p.Value.Client?.BotId)) > 0)
+                //    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
+                //    .OrderBy(g => g.Key);
+
+                //var ambiguousPrefixes = moduleMatches
+                //    .GroupBy(kvp => kvp.Value.Config.Prefix)
+                //    .Where(g => g.Count() > 1)
+                //    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
+                //    .OrderBy(g => g.Key);
+
+                //var ambiguousClients = moduleMatches
+                //    .GroupBy(g => g.Value.Client?.BotId)
+                //    .Where(g => g.Count() > 1)
+                //    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
+                //    .OrderBy(g => g.Key);
 
                 bool toThrow, found_ambiguousPrefixesAndClients, found_ambiguousPrefixes, found_ambiguousClients;
                 found_ambiguousPrefixesAndClients = ambiguousPrefixesAndClients.Count() > 0;
@@ -820,7 +842,7 @@ namespace FluentCommands
 
                                     var commandName = kvp.Key;
                                     var module = type;
-                                    var botId = groupKvp.Key ?? 0;
+                                    var botId = groupKvp.Key;
 
                                     str_ambiguousClients += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Client BotId: \"{botId}\"" + Environment.NewLine;
                                 }
@@ -911,7 +933,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming CallbackQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming CallbackQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -925,7 +947,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming ChosenInlineResultEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming ChosenInlineResultEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -939,7 +961,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming InlineQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming InlineQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -953,7 +975,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming MessageEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming MessageEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -967,7 +989,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming UpdateEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming UpdateEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -981,7 +1003,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming CallbackQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming CallbackQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -995,7 +1017,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming ChosenInlineResultEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming ChosenInlineResultEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1009,7 +1031,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming InlineQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming InlineQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1023,7 +1045,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming MessageEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming MessageEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1037,7 +1059,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming UpdateEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming UpdateEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1053,7 +1075,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming CallbackQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming CallbackQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1067,7 +1089,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming ChosenInlineResultEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming ChosenInlineResultEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1081,7 +1103,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming InlineQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming InlineQueryEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1095,7 +1117,7 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming MessageEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming MessageEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
         }
@@ -1109,15 +1131,9 @@ namespace FluentCommands
             }
             else
             {
-                await ThrowOrSwallow("Incoming UpdateEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
+                await AuxiliaryMethods.ThrowOrSwallow(Logger, "Incoming UpdateEventArgs was null while attempting to evaluate input.", new NullReferenceException("The EventArgs was null.)"), e).ConfigureAwait(false);
                 return;
             }
-        }
-
-        private static async Task ThrowOrSwallow(string s, Exception ex, TelegramUpdateEventArgs t)
-        {
-            if (GlobalConfig.SwallowCriticalExceptions) await Logger.LogFatal(s, ex, t);
-            else throw ex;
         }
 
         /// <summary>Determines whether or not a command can be evaluated within this context.</summary>
@@ -1125,27 +1141,31 @@ namespace FluentCommands
         {
             if (!_commandServiceStarted) return (false, null, null); //! Can't log this; logging requires the service to have been started.
 
-            var argsType = typeof(TArgs);
-            if (!_validEventArgs.Contains(argsType)) { await Logger.LogError("The EventArgs provied for command evaluation was invalid.").ConfigureAwait(false); return (false, null, null); }
-            if (!TelegramUpdateEventArgs.TryFromEventArgs(e, out var t)) { await Logger.LogError("An unknown error occurred while attempting to get the EventArgs for command evaluation.").ConfigureAwait(false); return (false, null, null); }
+            IFluentLogger logger;
 
             if (!Modules.TryGetValue(moduleType, out var module))
             {
-                await ThrowOrSwallow($"There was no module found for the provided type: {moduleType.FullName}, during command evaluation.", new ArgumentException(), t).ConfigureAwait(false);
+                logger = Logger;
+                await AuxiliaryMethods.ThrowOrSwallow(logger, $"There was no module found for the provided type: {moduleType.FullName}, during command evaluation.", new ArgumentException(), null).ConfigureAwait(false);
                 return (false, null, null);
             }
+            else { logger = module.Logger; }
+
+            var argsType = typeof(TArgs);
+            if (!_validEventArgs.Contains(argsType)) { await logger.LogError("The EventArgs provied for command evaluation was invalid.").ConfigureAwait(false); return (false, null, null); }
+            if (!TelegramUpdateEventArgs.TryFromEventArgs(e, out var t)) { await logger.LogError("An unknown error occurred while attempting to get the EventArgs for command evaluation.").ConfigureAwait(false); return (false, null, null); }
 
             var noClient = ("Could not find a suitable TelegramBotClient to evaluate with. (Did you mean to provide a Client Override to the method?) Please register a TelegramBotClient with the AddClient method in either the CommandService, or in your command module's OnConfiguring method.", new NullReferenceException());
             if (client is null)
             {
                 if (module.UseClient)
                 {
-                    if (module.Client is null) { await ThrowOrSwallow(noClient.Item1, noClient.Item2, t).ConfigureAwait(false); return (false, null, null); }
+                    if (module.Client is null) { await AuxiliaryMethods.ThrowOrSwallow(logger, noClient.Item1, noClient.Item2, t).ConfigureAwait(false); return (false, null, null); }
                     else client = module.Client;
                 }
                 else
                 {
-                    if (InternalClient is null) { await ThrowOrSwallow(noClient.Item1, noClient.Item2, t).ConfigureAwait(false); return (false, null, null); }
+                    if (InternalClient is null) { await AuxiliaryMethods.ThrowOrSwallow(logger, noClient.Item1, noClient.Item2, t).ConfigureAwait(false); return (false, null, null); }
                     else client = InternalClient;
                 }
             }
@@ -1180,7 +1200,7 @@ namespace FluentCommands
             _ = e.TryGetChat(out var chat);
             _ = e.TryGetUser(out var user);
 
-            if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out ReadOnlyMemory<char> input)) { await Logger.LogError($"Error retrieving raw input from EventArgs while evaluating module: \"{moduleType.FullName}\"").ConfigureAwait(false); return; }
+            if (!AuxiliaryMethods.TryGetEventArgsRawInput(e, out ReadOnlyMemory<char> input)) { await logger.LogError($"Error retrieving raw input from EventArgs while evaluating module: \"{moduleType.FullName}\"").ConfigureAwait(false); return; }
             var botId = client.BotId;
             var config = module.Config;
             var prefix = config.Prefix; //! Not AsMemory() due to the possibility of this string changing elsewhere during execution
@@ -1194,7 +1214,7 @@ namespace FluentCommands
             {
                 result = await TryProcessUserInput().ConfigureAwait(false);
             }
-            catch (RegexMatchTimeoutException ex) { await ThrowOrSwallow($"Regex match timeout from user input. User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{input}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); return; }
+            catch (RegexMatchTimeoutException ex) { await AuxiliaryMethods.ThrowOrSwallow(logger, $"Regex match timeout from user input. User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{input}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); return; }
 
             if (!result.Success) return; //! No logging necessary; logging was handled internally.
 
@@ -1204,9 +1224,9 @@ namespace FluentCommands
             {
                 await ProcessCommand(result.OutCommand!).ConfigureAwait(false); // Not null if Success is true.
             }
-            catch (ArgumentNullException ex) { await ThrowOrSwallow($"Attempted to process a null command. User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{result.OutCommand?.Name ?? "NULL"}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
-            catch (ArgumentException ex) { await ThrowOrSwallow($"An unexpected error occurred (command type was unable to be evaluated). User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{result.OutCommand?.Name ?? "NULL"}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
-            catch (Exception ex) { await ThrowOrSwallow($"User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{result.OutCommand?.Name ?? "NULL"}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
+            catch (ArgumentNullException ex) { await AuxiliaryMethods.ThrowOrSwallow(logger, $"Attempted to process a null command. User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{result.OutCommand?.Name ?? "NULL"}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
+            catch (ArgumentException ex) { await AuxiliaryMethods.ThrowOrSwallow(logger, $"An unexpected error occurred (command type was unable to be evaluated). User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{result.OutCommand?.Name ?? "NULL"}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
+            catch (Exception ex) { await AuxiliaryMethods.ThrowOrSwallow(logger, $"User: \"{user?.ToFluentLogger() ?? "Unknown user"}\", Chat: \"{chat?.ToFluentLogger() ?? "unknown chat"}\", Command name: \"{result.OutCommand?.Name ?? "NULL"}\" in Module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false); } //: Catch, default error message?, Log it, re-throw (if the config says to re-throw)
 
             #region Local Functions
             //// Config checks:
@@ -1223,7 +1243,7 @@ namespace FluentCommands
                             await logger.LogError($"Error deleting user input on command evaluation. (Config => DeleteAllUserInputs) in module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false);
                         }
                     }
-                    else await Logger.LogError($"Error retrieving message(s) for deletion. (Config => DeleteAllUserInputs) in module: \"{moduleType.FullName}\"").ConfigureAwait(false);
+                    else await logger.LogError($"Error retrieving message(s) for deletion. (Config => DeleteAllUserInputs) in module: \"{moduleType.FullName}\"").ConfigureAwait(false);
                 }
             }
             async Task CheckDeleteCommandAfterCall()
@@ -1239,7 +1259,7 @@ namespace FluentCommands
                             await logger.LogError($"Error deleting user input on command evaluation. (Config => DeleteCommandAfterCall) in module: \"{moduleType.FullName}\"", ex, e).ConfigureAwait(false);
                         }
                     }
-                    else await Logger.LogError($"Error retrieving message(s) for deletion. (Config => DeleteCommandAfterCall) in module: \"{moduleType.FullName}\"").ConfigureAwait(false);
+                    else await logger.LogError($"Error retrieving message(s) for deletion. (Config => DeleteCommandAfterCall) in module: \"{moduleType.FullName}\"").ConfigureAwait(false);
                 }
             }
             //// Command processing:
@@ -1296,31 +1316,31 @@ namespace FluentCommands
                     {
                         switch (cmd)
                         {
-                            case var _ when cmd is CommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
+                            case CommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
                             {
                                 if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke((CallbackQueryContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case var _ when cmd is CommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs> c:
+                            case CommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs> c:
                             {
                                 if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke((ChosenInlineResultContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case var _ when cmd is CommandBase<InlineQueryContext, InlineQueryEventArgs> c:
+                            case CommandBase<InlineQueryContext, InlineQueryEventArgs> c:
                             {
                                 if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke((InlineQueryContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case var _ when cmd is CommandBase<MessageContext, MessageEventArgs> c:
+                            case CommandBase<MessageContext, MessageEventArgs> c:
                             {
                                 if (e.TryGetMessageEventArgs(out var args)) await c.Invoke((MessageContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case var _ when cmd is CommandBase<UpdateContext, UpdateEventArgs> c:
+                            case CommandBase<UpdateContext, UpdateEventArgs> c:
                             {
                                 if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke((UpdateContext)context).ConfigureAwait(false);
                                 else goto default;
@@ -1339,12 +1359,12 @@ namespace FluentCommands
                     {
                         switch (cmd)
                         {
-                            case var _ when cmd is StepCommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
+                            case StepCommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
                             {
                                 await EvaluateStep(c).ConfigureAwait(false);
                                 break;
                             }
-                            case var _ when cmd is StepCommandBase<MessageContext, MessageEventArgs> c:
+                            case StepCommandBase<MessageContext, MessageEventArgs> c:
                             {
                                 await EvaluateStep(c).ConfigureAwait(false);
                                 break;

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using FluentCommands.Commands;
 using FluentCommands.Exceptions;
 using FluentCommands.Extensions;
+using FluentCommands.Logging;
 using Telegram.Bot.Args;
 
 namespace FluentCommands.Utility
@@ -155,6 +156,19 @@ namespace FluentCommands.Utility
             c = Delegate.CreateDelegate(typeof(CommandDelegate<TContext, TArgs, TReturn>), null, method) as CommandDelegate<TContext, TArgs, TReturn>;
 
             return c is { };
+        }
+
+        /// <summary>
+        /// Eithr throws an exception, or swallows it and wraps it into a LogFatal.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="ex"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        internal static async Task ThrowOrSwallow(IFluentLogger logger, string s, Exception? ex, TelegramUpdateEventArgs? t)
+        {
+            if (CommandService.GlobalConfig.SwallowCriticalExceptions) await logger.LogFatal(s, ex, t).ConfigureAwait(false);
+            else throw ex;
         }
     }
 }

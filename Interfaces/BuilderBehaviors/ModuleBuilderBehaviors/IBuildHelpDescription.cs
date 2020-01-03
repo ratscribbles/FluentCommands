@@ -7,7 +7,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors
 {
-    public interface IBuildHelpDescription<TNext> : IFluentInterface where TNext : IModuleBuilder
+    public interface IBuildHelpDescription<TNext> : IFluentInterface where TNext : ICommandBaseBuilder
     {
         internal ISendableMenu? In_HelpDescription { get; set; }
 

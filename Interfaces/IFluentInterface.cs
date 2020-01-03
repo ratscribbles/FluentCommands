@@ -12,15 +12,15 @@ namespace FluentCommands.Interfaces
     public interface IFluentInterface
     {
         [EditorBrowsable(EditorBrowsableState.Never)]
-        Type GetType();
+        Type GetType() => throw new NotImplementedException();
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        int GetHashCode();
+        int GetHashCode() => throw new NotImplementedException();
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        string? ToString();
+        string? ToString() => throw new NotImplementedException();
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        bool Equals(object obj);
+        bool Equals(object obj) => throw new NotImplementedException();
     }
 }

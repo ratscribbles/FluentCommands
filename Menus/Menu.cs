@@ -98,50 +98,40 @@ namespace FluentCommands.Menus
         /// <summary>This class cannot be instantiated directly. Please use the static fluent builder methods.</summary>
         private Menu(MenuType menuType, InputTelegramFile source) { MenuType = menuType; SourceVideoNote = source; }
 
-        public async Task Send(CallbackQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
-
-        public async Task SendAsync(MessageContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
-
-        public async Task Send(UpdateContext ctx, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType).ConfigureAwait(false);
-
-
-        //: ask c# discord about this one; naming convention? overloads look ugly here, want a manual alternative
-
-        public async Task Send(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
-
-        public async Task Send(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0)
-            => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration).ConfigureAwait(false);
-
-        public async Task Send<TCommand>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : class
-            => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand)).ConfigureAwait(false);
-
-        public async Task Send<TCommand>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0) where TCommand : class
-            => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand)).ConfigureAwait(false);
-
+        public async Task SendAsync(CallbackQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendAsync(ChosenInlineResultContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendAsync(InlineQueryContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendAsync(MessageContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendAsync(UpdateContext ctx, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(ctx.Client, e: ctx.EventArgs, chatAction: chatAction, actionDuration: actionDuration, moduleType: ctx.ModuleType, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendOverrideAsync(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendOverrideAsync(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendOverrideAsync(TelegramBotClient client, TelegramUpdateEventArgs e, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration, menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendOverrideAsync<TCommand>(TelegramBotClient client, int userId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null) where TCommand : class
+            => await Send_Logic(client, userId: userId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand), menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendOverrideAsync<TCommand>(TelegramBotClient client, long chatId, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null) where TCommand : class
+            => await Send_Logic(client, chatId: chatId, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand), menuModeOverride: menuModeOverride).ConfigureAwait(false);
+        public async Task SendOverrideAsync<TCommand>(TelegramBotClient client, TelegramUpdateEventArgs e, ChatAction? chatAction = null, int actionDuration = 0, MenuMode? menuModeOverride = null)
+            => await Send_Logic(client, e: e, chatAction: chatAction, actionDuration: actionDuration, moduleType: typeof(TCommand), menuModeOverride: menuModeOverride).ConfigureAwait(false);
 
         public Menu Done() => this;
 
-        public async Task Send(ChosenInlineResultContext e, ChatAction? chatAction = null, int duration = 0)
-        {
-        }
-
-        public async Task Send(InlineQueryContext e, ChatAction? chatAction = null, int duration = 0)
-        {
-        }
-        //: overloads for eventargs
-
-        //: Consider allowing the user to register a TelegramBotClient per module
-        private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs? e = null, int userId = 0, long chatId = 0, ChatAction? chatAction = null, int actionDuration = 0, Type? moduleType = null)
+        private async Task Send_Logic(TelegramBotClient client, TelegramUpdateEventArgs? e = null, int userId = 0, long chatId = 0, ChatAction? chatAction = null, int actionDuration = 0, Type? moduleType = null, MenuMode? menuModeOverride = null)
         {
             //? This method's signature will never be pretty.
 
-            ModuleConfig? config = moduleType is { } && CommandService.Modules.TryGetValue(moduleType, out var module) ? module.Config : null;
-            MenuMode menuMode = config?.MenuModeOverride ?? CommandService.GlobalConfig.DefaultMenuMode;
+            ModuleConfig? config = CommandService.Modules.TryGetValue(moduleType ?? typeof(Type), out var module) ? module.Config : null;
+            MenuMode menuMode = menuModeOverride ?? config?.MenuModeOverride ?? CommandService.GlobalConfig.DefaultMenuMode;
             int replyToMessageId = ReplyToMessage is { } ? ReplyToMessage.MessageId : 0;
+            var logger = (module?.UseModuleLogger ?? false) ? module.Logger : CommandService.Logger;
+            var cache = (module?.UseModuleCache ?? false) ? module.Cache : CommandService.Cache;
 
             // Sets the ChatId to send the Menu to. Throws on failure to confirm the Id.
             long sendTo;
@@ -151,8 +141,8 @@ namespace FluentCommands.Menus
                 {
                     if (!AuxiliaryMethods.TryGetEventArgsUserId(e, out var u_id))
                     {
-                        if (CommandService.GlobalConfig.SwallowCriticalExceptions) return; //: Log & return
-                        else throw new MenuInvalidSenderException("Could not find a suitable Id to send this Menu to.");
+                        await AuxiliaryMethods.ThrowOrSwallow(logger, "Error finding suitable Id to send this menu to.", new MenuInvalidSenderException("Could not find a suitable Id to send this Menu to."), e);
+                        return;
                     }
                     else sendTo = u_id;
                 }
@@ -168,40 +158,79 @@ namespace FluentCommands.Menus
                         ? userId : throw new MenuInvalidSenderException("Could not find a suitable Id to send this Menu to.");
             }
 
+            string senderInfo = "Menu with "
+                + moduleType is { } ? $"Module: \"{moduleType!.FullName}\" - " : ""
+                + $"MenuMode: {menuMode.ToString()} - "
+                + $"Client: \"{client.BotId}\" - "
+                + $"Sending To: \"{sendTo}\"";
+
             if (chatAction.HasValue)
             {
                 await client.SendChatActionAsync(sendTo, chatAction.Value, Token);
                 if(actionDuration > 0) await Task.Delay(actionDuration);
             }
 
-            //? menuMode = MenuMode.EditLastMessage;
-            var inboundMessages = await CommandService.Cache.GetMessages(client.BotId, chatId, userId);
-            var outboundMessages = new List<Message>();
-            try
+            var outboundMessages = new List<Message?>();
+            var inboundMessages = await cache.GetMessages(client.BotId, chatId, userId).ConfigureAwait(false);
+            switch (menuMode)
             {
-                switch (menuMode)
-                {
-                    case MenuMode.NoAction:
-                        await SendMessage().ConfigureAwait(false);
-                        break;
-                    case MenuMode.EditLastMessage:
-                        await EditLastMessage().ConfigureAwait(false);
-                        break;
-                    case MenuMode.EditOrDeleteLastMessage:
-                        await EditOrDeleteLastMessage().ConfigureAwait(false);
-                        break;
-                    default:
-                        goto case MenuMode.NoAction; //: Should never happen. Log if so.
-                }
+                case MenuMode.NoAction:
+                    var msgs = new List<Message>();
+                    try
+                    {
+                        msgs = await SendMessage().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        await logger.LogError($"{senderInfo} -- Error attempting to send menu.", ex, e).ConfigureAwait(false);
+                        if (config is { }) await config.DefaultErrorMessageOverride.SendOverrideAsync(client, sendTo).ConfigureAwait(false);
+                    }
+                    outboundMessages.AddRange(msgs);
+                    break;
+                case MenuMode.EditLastMessage:
+                    Message? msg;
+                    try
+                    {
+                        msg = await EditLastMessage().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        await logger.LogError($"{senderInfo} -- Error attempting to edit last message. Attempting to send...", ex, e).ConfigureAwait(false);
+                        goto case MenuMode.NoAction;
+                    }
+                    outboundMessages.Add(msg);
+                    break;
+                case MenuMode.EditOrDeleteLastMessage:
+                    try 
+                    { 
+                        await EditLastMessage().ConfigureAwait(false); 
+                    }
+                    catch (Exception ex)
+                    {
+                        await logger.LogError($"{senderInfo} -- Error attempting to edit last message. Attempting to delete...", ex, e).ConfigureAwait(false);
+                        try 
+                        { 
+                            await DeleteLastMessages().ConfigureAwait(false); 
+                        }
+                        catch (Exception ex2)
+                        {
+                            await logger.LogError($"{senderInfo} -- There was an error attempting to delete last message sent by the bot. Attempting to send...", ex2, e).ConfigureAwait(false);
+                        }
+                        goto case MenuMode.NoAction;
+                    }
+                    break;
+                default:
+                    await AuxiliaryMethods.ThrowOrSwallow(logger, $"{senderInfo} -- There was an unknown error attempting to send a menu. Attempting to send again...", new ArgumentException(), e).ConfigureAwait(false);
+                    goto case MenuMode.NoAction;
             }
-            catch (Exception ex) { } //: log, log, log (log all of the possible exceptions)
 
-            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, outboundMessages.ToArray()).ConfigureAwait(false);
+            await cache.UpdateLastMessage(client.BotId, chatId, userId, outboundMessages.ToArray()).ConfigureAwait(false);
 
-            async Task SendMessage()
+            async Task<List<Message>> SendMessage()
             {
                 //? ** list of types that can only accept inlinekeyboardmarkups: ** //
                 //? game, invoice, 
+                var outboundMessages = new List<Message>();
 
                 switch (MenuType)
                 {
@@ -219,15 +248,21 @@ namespace FluentCommands.Menus
                         break;
                     case MenuType.Game:
                         if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null) outboundMessages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false));
-                        else outboundMessages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, cancellationToken: Token).ConfigureAwait(false)); //: Log this?
+                        else
+                        {
+                            outboundMessages.Add(await client.SendGameAsync(sendTo, ShortName, DisableNotification, replyToMessageId, cancellationToken: Token).ConfigureAwait(false));
+                            await logger.LogError($"{senderInfo} -- Error sending ReplyMarkup with message due to incorrect ReplyMarkup type. Sending without ReplyMarkup.", null, e).ConfigureAwait(false);
+                        }
                         break;
                     case MenuType.Invoice:
                         {
                             if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
                                 outboundMessages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId, ReplyMarkup as InlineKeyboardMarkup).ConfigureAwait(false));
                             else
-                                //: Log this or throw
+                            {
                                 outboundMessages.Add(await client.SendInvoiceAsync((int)sendTo, Title, Description, Payload, ProviderToken, StartParameter, Currency, Prices, ProviderData, PhotoUrl, PhotoSize, PhotoWidth, PhotoHeight, NeedsName, NeedsPhoneNumber, NeedsEmail, NeedsShippingAddress, IsFlexibile, DisableNotification, replyToMessageId).ConfigureAwait(false));
+                                await logger.LogError($"{senderInfo} -- Error sending ReplyMarkup with message due to incorrect ReplyMarkup type. Sending without ReplyMarkup.", null, e).ConfigureAwait(false);
+                            }
                         }
                         break;
                     case MenuType.Location:
@@ -261,251 +296,71 @@ namespace FluentCommands.Menus
                         outboundMessages.Add(await client.SendVoiceAsync(sendTo, Source, Caption, ParseMode, Duration, DisableNotification, replyToMessageId, ReplyMarkup, Token).ConfigureAwait(false));
                         break;
                     default:
-                        //: Log
-                        return;
+                        break;
                 }
-            }
-            async Task EditLastMessage()
-            {
-                if (inboundMessages is null || inboundMessages.Count == 0) { await SendMessage().ConfigureAwait(false); return; }
-                Message? m = inboundMessages is { Count: 1 } ? inboundMessages.ElementAt(0) : inboundMessages?.LastOrDefault();
 
-                if (m is null) { await SendMessage().ConfigureAwait(false); return; }
+                return outboundMessages;
+            }
+            async Task<Message?> EditLastMessage()
+            {
+                if (inboundMessages is null || inboundMessages.Count() == 0) throw new NullReferenceException("Attempt to edit previous message failed: last message(s) do not exist.");
+                Message? m = inboundMessages?.Count() == 1 ? inboundMessages.ElementAt(0) : null;
+
+                if (m is null) throw new ArgumentException("Attempt to edit previous message failed: cannot automatically edit collections of messages with a count great than 1. Please try doing this operation manually.");
 
                 switch (MenuType)
                 {
                     case MenuType.Animation:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAnimation(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else { await SendMessage().ConfigureAwait(false); return; }
+                        await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
+                        m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAnimation(Thumbnail), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
                         break;
                     case MenuType.Audio:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else { await SendMessage().ConfigureAwait(false); return; }
+                        await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Thumbnail), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
+                        m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                         break;
-                    case MenuType.Contact:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
                     case MenuType.Document:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else { await SendMessage().ConfigureAwait(false); return; }
+                        await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Thumbnail), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
+                        m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                         break;
                     case MenuType.Game:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Invoice:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Location:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.MediaGroup:
+                        m = await client.EditMessageTextAsync(m.Chat.Id, m.MessageId, TextString, ParseMode, DisableWebPagePreview, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
                         break;
                     case MenuType.Photo:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else { await SendMessage().ConfigureAwait(false); return; }
+                        await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Thumbnail), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
+                        m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                         break;
-                    case MenuType.Poll:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Sticker:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
                     case MenuType.Text:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageTextAsync(m.Chat.Id, m.MessageId, TextString, ParseMode, DisableWebPagePreview, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else { await SendMessage().ConfigureAwait(false); return; }
+                        m = await client.EditMessageTextAsync(m.Chat.Id, m.MessageId, TextString, ParseMode, DisableWebPagePreview, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
                         break;
-                    case MenuType.Venue:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
                     case MenuType.Video:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaVideo(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else { await SendMessage().ConfigureAwait(false); return; }
+                        await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Thumbnail), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
+                        m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
                         break;
-                    case MenuType.VideoNote:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Voice:
-                        await SendMessage().ConfigureAwait(false);
-                        return;
+                    default:
+                        await AuxiliaryMethods.ThrowOrSwallow(logger, senderInfo, new ArgumentException($"Attempt to edit previous message failed: MenuType: {MenuType.ToString()} cannot modify or edit previous messages."), e).ConfigureAwait(false);
+                        break;
                 }
-            }
-            async Task EditOrDeleteLastMessage()
+
+                return m;
+            }   
+            async Task DeleteLastMessages()
             {
-                if(inboundMessages is null || inboundMessages.Count == 0) { await SendMessage().ConfigureAwait(false); return; }
+                if (inboundMessages is null || inboundMessages.Count() == 0) { await AuxiliaryMethods.ThrowOrSwallow(logger, senderInfo, new ArgumentException($"Attempt to delete previous message(s) failed: last message(s) do not exist."), e).ConfigureAwait(false); return; }
 
-                Message? m = inboundMessages is { Count: 1 } ? inboundMessages.ElementAt(0) : inboundMessages?.LastOrDefault();
-                if (m is null) { await SendMessage().ConfigureAwait(false); return; }
-
-                switch (MenuType)
+                List<Exception> exceptions = new List<Exception>();
+                foreach (var msg in inboundMessages)
                 {
-                    case MenuType.Animation:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAnimation(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await DeleteMessages().ConfigureAwait(false);
-                            await SendMessage().ConfigureAwait(false);
-                            return;
-                        }
-                        break;
-                    case MenuType.Audio:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await DeleteMessages().ConfigureAwait(false);
-                            await SendMessage().ConfigureAwait(false);
-                            return;
-                        }
-                        break;
-                    case MenuType.Contact:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Document:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await DeleteMessages().ConfigureAwait(false);
-                            await SendMessage().ConfigureAwait(false);
-                            return;
-                        }
-                        break;
-                    case MenuType.Game:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Invoice:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Location:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.MediaGroup:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Photo:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaAudio(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await DeleteMessages().ConfigureAwait(false);
-                            await SendMessage().ConfigureAwait(false);
-                            return;
-                        }
-                        break;
-                    case MenuType.Poll:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Sticker:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Text:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageTextAsync(m.Chat.Id, m.MessageId, TextString, ParseMode, DisableWebPagePreview, ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await DeleteMessages().ConfigureAwait(false);
-                            await SendMessage().ConfigureAwait(false);
-                            return;
-                        }
-                        break;
-                    case MenuType.Venue:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Video:
-                        if (ReplyMarkup is InlineKeyboardMarkup || ReplyMarkup is null)
-                        {
-                            m = await client.EditMessageMediaAsync(m.Chat.Id, m.MessageId, new InputMediaVideo(Source.Url), ReplyMarkup as InlineKeyboardMarkup, Token).ConfigureAwait(false);
-                            m = await client.EditMessageCaptionAsync(m.Chat.Id, m.MessageId, Caption, ReplyMarkup as InlineKeyboardMarkup, Token, ParseMode).ConfigureAwait(false);
-                            await CommandService.Cache.UpdateLastMessage(client.BotId, chatId, userId, new[] { m }).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await DeleteMessages().ConfigureAwait(false);
-                            await SendMessage().ConfigureAwait(false);
-                            return;
-                        }
-                        break;
-                    case MenuType.VideoNote:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                    case MenuType.Voice:
-                        await DeleteMessages().ConfigureAwait(false);
-                        await SendMessage().ConfigureAwait(false);
-                        return;
-                }
-
-                async Task DeleteMessages()
-                {
-                    foreach (var msg in inboundMessages!)
+                    try
                     {
-                        try
-                        {
-                            await client.DeleteMessageAsync(msg.Chat.Id, msg.MessageId, Token);
-                        }
-                        catch
-                        {
-                            //: Log
-                        }
+                        await client.DeleteMessageAsync(msg?.Chat.Id, msg?.MessageId ?? 0, Token);
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Add(ex);
                     }
                 }
+
+                if (exceptions.Count() != 0) throw new AggregateException(exceptions);
             }
         }
 

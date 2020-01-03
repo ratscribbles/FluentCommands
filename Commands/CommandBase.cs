@@ -13,6 +13,7 @@ using Telegram.Bot;
 using FluentCommands.Utility;
 using FluentCommands.Menus;
 using FluentCommands.Interfaces.MenuBuilders;
+using FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors;
 
 namespace FluentCommands.Commands
 {
@@ -20,13 +21,21 @@ namespace FluentCommands.Commands
     internal delegate Task<TReturn> CommandDelegate<TContext, TArgs, TReturn>(TContext e) where TContext : ICommandContext<TArgs> where TArgs : EventArgs;
     internal class CommandBase<TContext, TArgs> : ICommand where TContext : ICommandContext<TArgs> where TArgs : EventArgs
     {
+        private readonly ISendableMenu? _helpMsg;
         private readonly ISendableMenu? _errorMsg;
         internal Type Module { get; }
         internal string Name { get; }
         internal CommandType CommandType { get; }
         internal Permissions Permissions { get; } = Permissions.None;
         internal string[] Aliases { get; } = Array.Empty<string>();
-        internal ISendableMenu Description { get; } = Menu.Text("There is no description for this command.");
+        internal ISendableMenu Description
+        {
+            get
+            {
+                if (_helpMsg is null) return Menu.Text("There is no description for this command.");
+                else return _helpMsg;
+            }
+        }
         internal ISendableMenu ErrorMsg 
         {
             get
@@ -51,11 +60,11 @@ namespace FluentCommands.Commands
         {
             Module = module;
             Name = commandBase.Name;
-            Aliases = commandBase.InAliases;
+            Aliases = commandBase.Aliases;
             Permissions = commandBase.Permissions;
-            Description = commandBase.InHelpDescription;
-            _errorMsg = commandBase.ErrorMsg;
-            Button = commandBase.InButton;
+            _helpMsg = commandBase.HelpDescription;
+            _errorMsg = commandBase.ErrorMessage;
+            Button = commandBase.Button;
             CommandType = commandBase.CommandType;
 
             if (CommandType != CommandType.Default)

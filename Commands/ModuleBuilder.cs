@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Text;
 using FluentCommands.Exceptions;
 using FluentCommands.Interfaces;
-using FluentCommands.Interfaces.BaseBuilderOfModule;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Types.Enums;
 using FluentCommands.Commands;
@@ -13,20 +12,17 @@ using FluentCommands.Logging;
 using FluentCommands.Cache;
 using Telegram.Bot;
 using FluentCommands.Interfaces.MenuBuilders;
+using FluentCommands.Interfaces.BaseBuilders;
 
 namespace FluentCommands.Commands
 {
     /// <summary>
     /// Builder that creates <see cref="CommandBaseBuilder"/> objects to assemble into commands of this Module.
     /// </summary>
-    public sealed class ModuleBuilder : ICommandModuleBuilder,
-        ICommandBaseBuilderOfModule, ICommandBaseOfModuleAliases, ICommandBaseOfModuleDescription, ICommandBaseOfModuleCompletion,
-        IFluentInterface
+    public sealed class ModuleBuilder : IFluentInterface
     {
         /// <summary>The Dictionary containing all <see cref="CommandBaseBuilder"/> objects for this Module. Used for the creation of <see cref="FluentCommands.Command"/> objects.</summary>
         private readonly Dictionary<string, CommandBaseBuilder> _moduleCommandBases = new Dictionary<string, CommandBaseBuilder>();
-        /// <summary> Stores the name of the <see cref="CommandBaseBuilder"/> object. </summary>
-        private CommandBaseBuilder? _commandStorage;
 
         /// <summary> Stores the module type when using alternate building form. </summary>
         internal Type TypeStorage { get; }
@@ -39,8 +35,8 @@ namespace FluentCommands.Commands
         /// Indexer used primarily for the "build action" <see cref="Action"/> version of the fluent builder API.
         /// </summary>
         /// <param name="key">The name of the <see cref="FluentCommands.Command"/> to access in the internal dictionary.</param>
-        /// <returns>Returns a <see cref="ICommandBaseBuilder"/> with the key as its name.</returns>
-        public ICommandBaseBuilder this[string key]
+        /// <returns>Returns a <see cref="ICommandBaseOnBuilding"/> with the key as its name.</returns>
+        public ICommandBaseOnBuilding this[string key]
         {
             get
             {
@@ -58,83 +54,18 @@ namespace FluentCommands.Commands
         internal ModuleBuilder(Type t) => TypeStorage = t;
 
         internal void SetConfig(ModuleConfigBuilder cfg) => ConfigBuilder = cfg;
-
         internal ModuleConfig BuildConfig() => ConfigBuilder!.BuildConfig();
 
-        #region Builder Implementation
         /// <summary>
         /// Creates a new command for this module.
         /// </summary>
         /// <param name="commandName">The name of this <see cref="FluentCommands.Command"/>.</param>
         /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseBuilderOfModule"/>, beginning the build process.</returns>
-        public ICommandBaseBuilderOfModule Command(string commandName)
+        public ICommandBaseOnBuilding Command(string commandName)
         {
-            if (commandName is null) throw new CommandOnBuildingException($"Command name in module {TypeStorage.FullName ?? "??NULL??"} was null.");
-            if (_moduleCommandBases.ContainsKey(commandName)) throw new DuplicateCommandException($"There was more than one command detected in module: {TypeStorage.FullName ?? "??NULL??"}, with the command name: \"{commandName}\"");
-            _commandStorage = (CommandBaseBuilder)this[commandName];
-            UpdateBuilder(_commandStorage); //: Double check this line if anything goes wrong.
-            return this;
+            if (commandName is null) throw new CommandOnBuildingException($"Command was null in module: {TypeStorage.FullName ?? "NULL"}");
+            if (!_moduleCommandBases.ContainsKey(commandName)) _moduleCommandBases.TryAdd(commandName, new CommandBaseBuilder(commandName));
+            return _moduleCommandBases[commandName];
         }
-        /// <summary>
-        /// Adds aliases to this command. Duplicates are ignored.
-        /// </summary>
-        /// <param name="aliases">The aliases (alternate names) for this command.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleAliases"/>, removing this option from the fluent builder.</returns>
-        public ICommandBaseOfModuleAliases Aliases(params string[] aliases)
-        {
-            if (aliases.Any(alias => alias is null)) throw new CommandOnBuildingException($"Command \"{_commandStorage?.Name ?? "??NULL??"}\" in module {TypeStorage?.FullName ?? "??NULL??"} had an alias that was null.");
-            _commandStorage!.Aliases(aliases.Distinct().ToArray());
-            UpdateBuilder(_commandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Adds a description to this command. Will show when "help" is called, unless default help command is disabled.
-        /// </summary>
-        /// <param name="description">The description of this command.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
-        public ICommandBaseOfModuleDescription HelpDescription(string description, ParseMode parseMode = ParseMode.Default)
-        {
-            _commandStorage!.HelpDescription(description);
-            UpdateBuilder(_commandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Adds a description to this command. Will show when "help" is called, unless default help command is disabled.
-        /// </summary>
-        /// <param name="description">The description of this command.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleDescription"/>, prompting the user to add a <see cref="ParseMode"/>.</returns>
-        public ICommandBaseOfModuleDescription HelpDescription(ISendableMenu helpMessage)
-        {
-            _commandStorage!.HelpDescription(helpMessage);
-            UpdateBuilder(_commandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Adds an <see cref="IKeyboardButton"/> to this command.
-        /// <para>Other commands' Keyboards can reference this command, and its button will be displayed where referenced.</para>
-        /// </summary>
-        /// <param name="button">The button to be added to this command.</param>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandBaseOfModuleCompletion"/>, signalling the end of this command's construction.</returns>
-        public ICommandBaseOfModuleCompletion InlineKeyboardButtonReference(InlineKeyboardButton button)
-        {
-            _commandStorage!.InlineKeyboardButtonReference(button);
-            UpdateBuilder(_commandStorage);
-            return this;
-        }
-        /// <summary>
-        /// Marks this command as complete, prompting you to build another command.
-        /// <para>(If you meant to end the command building process, call <see cref="Done"/> instead!)</para>
-        /// </summary>
-        /// <returns>Returns this <see cref="ModuleBuilder"/> as an <see cref="ICommandModuleBuilder"/> to begin the command building process again.</returns>
-        public ICommandModuleBuilder Next() => this;
-
-        /// <summary>Updates the <see cref="ModuleBuilder"/> in the Modules dictionary contained within the <see cref="CommandService"/>.</summary>
-        /// <param name="c"></param>
-        private void UpdateBuilder(CommandBaseBuilder c)
-        {
-            if (!(c is null)) this[c.Name] = c;
-            if (!(TypeStorage is null)) CommandService.UpdateBuilderInTempModules(this, TypeStorage);
-        }
-        #endregion
     }
 }

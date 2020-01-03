@@ -5,7 +5,7 @@ using System.Text;
 
 namespace FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors
 {
-    public interface IBuildAliases<TNext> : IFluentInterface where TNext : IModuleBuilder
+    public interface IBuildAliases<TNext> : IFluentInterface where TNext : ICommandBaseBuilder
     {
         internal string[] In_Aliases { get; set; }
 

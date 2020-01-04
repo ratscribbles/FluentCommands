@@ -6,7 +6,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
-    <Version>0.9.1</Version>
+    <Version>0.9.2</Version>
     <Authors>ash f (ratScribbles)</Authors>
     <Description>A .NET bot framework and command system for Telegram.</Description>
     <RepositoryUrl>https://github.com/ratscribbles/FluentCommands</RepositoryUrl>

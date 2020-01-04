@@ -8,7 +8,7 @@
     <StartupObject />
     <Version>0.9.1</Version>
     <Authors>ash f (ratScribbles)</Authors>
-    <Description>A bot framework for Telegram, written on top of TelegramBots.Net.</Description>
+    <Description>A .NET bot framework and command system for Telegram.</Description>
     <RepositoryUrl>https://github.com/ratscribbles/FluentCommands</RepositoryUrl>
     <PackageTags>telegram, bots, telegrambots, commands, framework, fluent, fluentcommands</PackageTags>
     <PackageReleaseNotes>Pre-1.0 release; functional for most purposes, with some features still WIP.</PackageReleaseNotes>

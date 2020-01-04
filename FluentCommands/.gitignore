@@ -11,6 +11,8 @@
 *.sln.docstates
 
 **/misc
+**/tests/source
+**/tests/Tokens.cs
 botinf1.txt
 botinf2.txt
 botinf3.txt

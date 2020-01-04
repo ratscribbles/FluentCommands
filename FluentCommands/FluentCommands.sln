@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommands", "FluentCommands.csproj", "{1CA927AF-8BF1-4B7C-8C39-B7AAF44484DB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommands.Tests", "Tests\FluentCommands.Tests.Integration\FluentCommands.Tests.csproj", "{D10C8B61-6DD9-4344-9495-90D4A4BC37C6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommands.Tests", "Tests\FluentCommands.Tests.csproj", "{D10C8B61-6DD9-4344-9495-90D4A4BC37C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -58,7 +58,7 @@ This is just the very beginning of what you can do with this library: stay tuned
 - The [C# Discord] for being an amazing help during the development process. Its community is an invaluable resource for _any_ .NET developer, bar none.
 - The [Telegram Bots Team] for creating the .NET client for Telegram.
 - [EF Core] and [DSharpPlus] for inspiration on how to approach the design for this project.
-- The creator of [Finite.Commands] for help with some very specific problems early on.
+- The creator of [Finite.Commands] for helping me with some very specific problems early on.
 
 <!-- ---- -->
 

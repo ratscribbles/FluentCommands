@@ -6,11 +6,21 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
+    <Version>0.9.1</Version>
+    <Authors>ash f (ratScribbles)</Authors>
+    <Description>A bot framework for Telegram, written on top of TelegramBots.Net.</Description>
+    <RepositoryUrl>https://github.com/ratscribbles/FluentCommands</RepositoryUrl>
+    <PackageTags>telegram, bots, telegrambots, commands, framework, fluent, fluentcommands</PackageTags>
+    <PackageReleaseNotes>Pre-1.0 release; functional for most purposes, with some features still WIP.</PackageReleaseNotes>
+    <Copyright>ash f (ratscribbles)</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="misc\**" />
     <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="misc\**" />
     <EmbeddedResource Remove="Tests\**" />
+    <None Remove="misc\**" />
     <None Remove="Tests\**" />
   </ItemGroup>
 

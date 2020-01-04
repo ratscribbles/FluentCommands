@@ -10,29 +10,20 @@ using FluentCommands.Interfaces;
 using FluentCommands.Exceptions;
 using FluentCommands.Extensions;
 using FluentCommands.Events;
-using FluentCommands.Menus;
 using FluentCommands.Utility;
-using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bot.Args;
-using Telegram.Bot.Types;
 using Telegram.Bot;
-using System.Runtime.CompilerServices;
 using FluentCommands.Logging;
 using FluentCommands.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using FluentCommands.Commands.Steps;
-using System.Diagnostics.CodeAnalysis;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Exceptions;
 using FluentCommands.Steps;
 using FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors;
 
-//[assembly: InternalsVisibleTo("FluentCommands.Tests.Unit")]
-
 namespace FluentCommands
 {
-    //: Create methods that share internal cache services with outside dbs (EF core and such)
-
     /// <summary>
     /// The class responsible for handling the assembly and processing of Telegram Bot commands.
     /// </summary>
@@ -85,23 +76,6 @@ namespace FluentCommands
         }
         internal static IFluentLogger EmptyLogger => _emptyLogger.Value;
         internal static CommandServiceConfig GlobalConfig => _instance.Value._config;
-
-        internal static void AddClient(string token, Type moduleType) => _services.Value.AddClient(token, moduleType);
-        internal static void AddClient(TelegramBotClient client, Type moduleType) => _services.Value.AddClient(client, moduleType);
-        internal static void AddLogger<TLoggerImplementation>(Type moduleType) where TLoggerImplementation : class, IFluentLogger => _services.Value.AddLogger<TLoggerImplementation>(moduleType);
-        internal static void AddLogger(IFluentLogger implementationInstance, Type moduleType) => _services.Value.AddLogger(implementationInstance, moduleType);
-        internal static void AddLogger(Type implementationType, Type moduleType) => _services.Value.AddLogger(implementationType, moduleType);
-        internal static void AddCache<TCacheImplementation>(Type moduleType) where TCacheImplementation : class, IFluentCache => _services.Value.AddCache<TCacheImplementation>(moduleType);
-        internal static void AddCache(Type implementationType, Type moduleType) => _services.Value.AddCache(implementationType, moduleType);
-
-
-        //: desc, explain that no type definition gets the default client 
-        public static TelegramBotClient? Client()
-            => _instance.Value._client;
-        public static TelegramBotClient? Client(Type commandModule)
-            => Modules[commandModule]?.Client;
-        public static TelegramBotClient? Client<TCommand>() where TCommand : class
-            => Modules[typeof(TCommand)]?.Client;
 
         #region Constructors
         /// <summary>
@@ -625,6 +599,8 @@ namespace FluentCommands
         #region Start Overloads
         /// <summary>
         /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/>.
+        /// <para>The token provided will automatically register a default <see cref="TelegramBotClient"/>.</para>
+        /// <para><strong>To configure the <see cref="CommandService"/>, please use the <see cref="CommandServiceConfigBuilder"/> overloads of this method.</strong></para>
         /// </summary>
         public static void Start(string token)
         {
@@ -633,7 +609,10 @@ namespace FluentCommands
 
             Init();
         }
-
+        /// <summary>
+        /// Initializes the <see cref="CommandService"/> with a default <see cref="CommandServiceConfig"/> and default <see cref="TelegramBotClient"/>.
+        /// <para><strong>To configure the <see cref="CommandService"/>, please use the <see cref="CommandServiceConfigBuilder"/> overloads of this method.</strong></para>
+        /// </summary>
         public static void Start(TelegramBotClient client)
         {
             if (_commandServiceStarted) { Logger.LogWarning("Attempted to start the CommandService after it was already started. This action has no effect; consider checking your code and restarting your application to prevent this warning."); return; }
@@ -641,9 +620,9 @@ namespace FluentCommands
 
             Init();
         }
-
         /// <summary>
-        /// Initializes the <see cref="CommandService"/>.
+        /// Initializes the <see cref="CommandService"/> with settings provided by a <see cref="CommandServiceConfigBuilder"/>.
+        /// <para>To register a <see cref="TelegramBotClient"/> (or other services) please use the <em>Add()</em> methods on the <see cref="CommandServiceConfigBuilder"/>.</para>
         /// </summary>
         public static void Start(CommandServiceConfigBuilder cfg)
         {
@@ -654,10 +633,9 @@ namespace FluentCommands
 
             Init();
         }
-
-        //: Create code examples for this documentation
         /// <summary>
-        /// Initializes the <see cref="CommandService"/>.
+        /// Initializes the <see cref="CommandService"/> with settings provided by a <see cref="CommandServiceConfigBuilder"/>.
+        /// <para>To register a <see cref="TelegramBotClient"/> (or other services) please use the <em>Add()</em> methods on the <see cref="CommandServiceConfigBuilder"/>.</para>
         /// </summary>
         public static void Start(Action<CommandServiceConfigBuilder> buildAction)
         {
@@ -701,6 +679,10 @@ namespace FluentCommands
             //! Local functions...
             static void CheckCommandNameAmbiguity()
             {
+                //: Consider removing the LINQ modifications that are now possibly defunct: ambiguousClients, and ambiguousPrefixes. These are likely unnecessary now, but double check.
+
+
+
                 // Changes the format of the dictionary to exclude the ICommand, pairing type with command name (as string).
                 var trueDuplicates = Commands
                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Keys.Select(k => new string(k.Span.ToArray())));
@@ -749,29 +731,6 @@ namespace FluentCommands
                     .Where(g => g.Count(p => g.Any(v => v.Value.Client?.BotId == p.Value.Client?.BotId && !(v.Value.Config.Prefix == p.Value.Config.Prefix))) > 0)
                     .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
                     .OrderBy(g => g.Key);
-
-                //var ambiguousPrefixesAndClients = moduleMatches
-                //    .GroupBy(kvp => new
-                //    {
-                //        kvp.Value.Config.Prefix,
-                //        kvp.Value.Client?.BotId,
-                //    })
-                //    .Where(g => g.Count() > 1)
-                //    .Where(g => g.Count(p => g.Any(v => v.Value.Client?.BotId == p.Value.Client?.BotId)) > 0)
-                //    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
-                //    .OrderBy(g => g.Key);
-
-                //var ambiguousPrefixes = moduleMatches
-                //    .GroupBy(kvp => kvp.Value.Config.Prefix)
-                //    .Where(g => g.Count() > 1)
-                //    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
-                //    .OrderBy(g => g.Key);
-
-                //var ambiguousClients = moduleMatches
-                //    .GroupBy(g => g.Value.Client?.BotId)
-                //    .Where(g => g.Count() > 1)
-                //    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
-                //    .OrderBy(g => g.Key);
 
                 bool toThrow, found_ambiguousPrefixesAndClients, found_ambiguousPrefixes, found_ambiguousClients;
                 found_ambiguousPrefixesAndClients = ambiguousPrefixesAndClients.Count() > 0;
@@ -921,8 +880,36 @@ namespace FluentCommands
         }
         #endregion
 
+        #region Client Accessors
+        /// <summary>
+        /// Accesses the default <see cref="TelegramBotClient"/> registered to the <see cref="CommandService"/>. <strong>Returns null if there is no client currently registered.</strong>
+        /// <para>To access a client registered to a specific <see cref="CommandModule{TCommand}"/>, please use the overloads of this method.</para>
+        /// </summary>
+        public static TelegramBotClient? Client()
+            => _instance.IsValueCreated ? _instance.Value._client : null;
+        /// <summary>
+        /// Accesses the <see cref="TelegramBotClient"/> registered to this <see cref="CommandModule{TCommand}"/>. <strong>Returns null if there is no client currently registered.</strong>
+        /// </summary>
+        public static TelegramBotClient? Client(Type commandModule)
+            => Modules.TryGetValue(commandModule, out var module) ? (module.UseClient ? module.Client : null) : null;
+        /// <summary>
+        /// Accesses the <see cref="TelegramBotClient"/> registered to this <see cref="CommandModule{TCommand}"/>. <strong>Returns null if there is no client currently registered.</strong>
+        /// </summary>
+        public static TelegramBotClient? Client<TCommand>() where TCommand : class
+            => Modules.TryGetValue(typeof(TCommand), out var module) ? (module.UseClient ? module.Client : null) : null;
+        #endregion
+
         #region Evaluate/ProcessInput Overloads
-        //: BOLD that they should only be using these methods if they're an advanced user
+        //
+        #region Exposed Evaluation Methods
+        /// <summary>
+        /// Evaluates incoming <see cref="CallbackQueryEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, CallbackQueryEventArgs e) where TCommand : class
         {
             if (e is { })
@@ -937,6 +924,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="ChosenInlineResultEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, ChosenInlineResultEventArgs e) where TCommand : class
         {
             if (e is { })
@@ -951,6 +946,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="InlineQueryEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, InlineQueryEventArgs e) where TCommand : class
         {
             if (e is { })
@@ -965,6 +968,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="MessageEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, MessageEventArgs e) where TCommand : class
         {
             if (e is { })
@@ -979,6 +990,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="UpdateEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate<TCommand>(TelegramBotClient clientOverride, UpdateEventArgs e) where TCommand : class
         {
             if (e is { })
@@ -993,6 +1012,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="CallbackQueryEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate(TelegramBotClient clientOverride, CallbackQueryEventArgs e, Type commandModule)
         {
             if (e is { })
@@ -1007,6 +1034,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="ChosenInlineResultEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate(TelegramBotClient clientOverride, ChosenInlineResultEventArgs e, Type commandModule)
         {
             if (e is { })
@@ -1021,6 +1056,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="InlineQueryEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate(TelegramBotClient clientOverride, InlineQueryEventArgs e, Type commandModule)
         {
             if (e is { })
@@ -1035,6 +1078,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="MessageEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate(TelegramBotClient clientOverride, MessageEventArgs e, Type commandModule)
         {
             if (e is { })
@@ -1049,6 +1100,14 @@ namespace FluentCommands
                 return;
             }
         }
+        /// <summary>
+        /// Evaluates incoming <see cref="UpdateEventArgs"/> to process Command calls.
+        /// <para>This action occurs automatically within the <see cref="CommandService"/> and is not required by default.</para>
+        /// <para><strong>This method is recommended for advanced users currently using <see cref="CommandServiceConfigBuilder.EnableManualConfiguration()"/>.</strong></para>
+        /// </summary>
+        /// <typeparam name="TCommand">The class containing the command implementation.</typeparam>
+        /// <param name="clientOverride">The <see cref="TelegramBotClient"/> to send/receive requests with.</param>
+        /// <param name="e">The <see cref="EventArgs"/> being processed.</param>
         public static async Task Evaluate(TelegramBotClient clientOverride, UpdateEventArgs e, Type commandModule)
         {
             if (e is { })
@@ -1063,6 +1122,7 @@ namespace FluentCommands
                 return;
             }
         }
+        #endregion
 
         //! These are for internal eventhandler purposes only (within modules). Clients will automatically be evaluating with these methods.
         internal static async Task Evaluate_ToHandler<TCommand>(CallbackQueryEventArgs e) where TCommand : class
@@ -1439,7 +1499,15 @@ namespace FluentCommands
         }
         #endregion
 
-        #region Update/Expose Methods
+        #region Service & Update Methods
+        internal static void AddClient(string token, Type moduleType) => _services.Value.AddClient(token, moduleType);
+        internal static void AddClient(TelegramBotClient client, Type moduleType) => _services.Value.AddClient(client, moduleType);
+        internal static void AddLogger<TLoggerImplementation>(Type moduleType) where TLoggerImplementation : class, IFluentLogger => _services.Value.AddLogger<TLoggerImplementation>(moduleType);
+        internal static void AddLogger(IFluentLogger implementationInstance, Type moduleType) => _services.Value.AddLogger(implementationInstance, moduleType);
+        internal static void AddLogger(Type implementationType, Type moduleType) => _services.Value.AddLogger(implementationType, moduleType);
+        internal static void AddCache<TCacheImplementation>(Type moduleType) where TCacheImplementation : class, IFluentCache => _services.Value.AddCache<TCacheImplementation>(moduleType);
+        internal static void AddCache(Type implementationType, Type moduleType) => _services.Value.AddCache(implementationType, moduleType);
+
         /// <summary>Exposes the private TempModules dictionary to update ModuleBuilders being built using the <see cref="Interfaces.BaseBuilderOfModule.ICommandBaseBuilderOfModule"/> format.</summary>
         internal static void UpdateBuilderInTempModules(ModuleBuilder m, Type t) => _tempModules[t] = m;
         /// <summary>Provides explicit access to the Commands dictionary for debugging and/or other technical purposes.</summary>

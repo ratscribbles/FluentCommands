@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 
+**/misc
 botinf1.txt
 botinf2.txt
 botinf3.txt

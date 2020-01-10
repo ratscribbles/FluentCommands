@@ -3,6 +3,8 @@ A .NET bot framework and command system for Telegram.
 
 It allows developers to create robust command modules for their bots in an efficient and intuitive way.
 
+**[Click here to join the official Telegram group!](https://t.me/joinchat/PWHYHRBYvBfq4GTZxu0PCA)**
+
 ## Prerequisites
 
 A familiarity with [Telegram], [Telegram Bots], and the [.NET Client for Telegram Bot API].

@@ -17,9 +17,7 @@ using FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors;
 
 namespace FluentCommands.Commands
 {
-    internal delegate Task CommandDelegate<TContext, TArgs>(TContext e) where TContext : ICommandContext<TArgs> where TArgs : EventArgs;
-    internal delegate Task<TReturn> CommandDelegate<TContext, TArgs, TReturn>(TContext e) where TContext : ICommandContext<TArgs> where TArgs : EventArgs;
-    internal class CommandBase<TContext, TArgs> : ICommand where TContext : ICommandContext<TArgs> where TArgs : EventArgs
+    internal abstract class CommandBase : ICommand 
     {
         private readonly ISendableMenu? _helpMsg;
         private readonly ISendableMenu? _errorMsg;
@@ -45,9 +43,7 @@ namespace FluentCommands.Commands
             }
         }
         internal InlineKeyboardButton? Button { get; } = null;
-        internal CommandDelegate<TContext, TArgs> Invoke { get; }
         Type ICommand.Module => Module;
-        Type ICommand.Context { get; } = typeof(TContext);
         string ICommand.Name => Name;
         string[] ICommand.Aliases => Aliases;
         CommandType ICommand.CommandType => CommandType;
@@ -56,7 +52,7 @@ namespace FluentCommands.Commands
         ISendableMenu ICommand.ErrorMsg => ErrorMsg;
         InlineKeyboardButton? ICommand.Button => Button;
 
-        internal CommandBase(CommandBaseBuilder commandBase, MethodInfo method, Type module)
+        internal CommandBase(CommandBaseBuilder commandBase, Type module)
         {
             Module = module;
             Name = commandBase.Name;
@@ -66,17 +62,6 @@ namespace FluentCommands.Commands
             _errorMsg = commandBase.ErrorMessage;
             Button = commandBase.Button;
             CommandType = commandBase.CommandType;
-
-            if (CommandType != CommandType.Default)
-            {
-                // Primary invoker is not used.
-                Invoke = (ctx) => Task.CompletedTask;
-            }
-            else
-            {
-                if (AuxiliaryMethods.TryConvertDelegate<TContext, TArgs>(method, out var c)) Invoke = c;
-                else throw new ArgumentException();
-            }
         }
     }
 }

@@ -14,7 +14,6 @@ namespace FluentCommands.Commands
     internal interface ICommand
     {
         internal Type Module { get; }
-        internal Type Context { get; }
         internal string Name { get; }
         internal string[] Aliases { get; }
         internal CommandType CommandType { get; }

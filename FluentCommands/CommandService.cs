@@ -9,7 +9,6 @@ using FluentCommands.Commands;
 using FluentCommands.Interfaces;
 using FluentCommands.Exceptions;
 using FluentCommands.Extensions;
-using FluentCommands.Events;
 using FluentCommands.Utility;
 using Telegram.Bot.Args;
 using Telegram.Bot;
@@ -21,6 +20,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Exceptions;
 using FluentCommands.Steps;
 using FluentCommands.Interfaces.BuilderBehaviors.ModuleBuilderBehaviors;
+using FluentCommands.Commands.Events;
 
 namespace FluentCommands
 {
@@ -351,20 +351,20 @@ namespace FluentCommands
                     //? Add as needed...
                     );
 
-                    //! Required to have at least one of these.
-                    if (attribs.Command is null && attribs.Event is null) throw new CommandOnBuildingException($"Error determining the Command or OnEvent Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)");
+                    CommandType commandType = attribs switch
+                    {
+                        { Step: { } } => CommandType.Step,
+                        { Event: { } } => CommandType.Event,
+                        { Command: { }, Event: null, Step: null } => CommandType.Default,
+                        _ => throw new CommandOnBuildingException($"Error determining the CommandType of command method: {module.FullName ?? "NULL"} while command building. (Returned null.)")
+                    };
 
-                    var commandInfo = attribs.Command is { }
-                        ? $"Command \"{attribs.Command.Name}\" (method name: \"{method.Name}\") in module {module.FullName}:"
-                        : attribs.Event is { }
-                            ? $"Event \"{attribs.Event.EventType}\" (method name: \"{method.Name}\") in module {module.FullName}:" //: For v1.1
-                            : ""; //? Will never get here; will have thrown above.
-
-                    var commandBaseBuilder = RetrieveCommandBaseBuilder();
+                    string commandInfo = GenerateCommandInfo(commandType);
+                    var commandBaseBuilder = RetrieveCommandBaseBuilder(commandType);
 
                     // Attempt to create the command. Throw if something goes wrong.
                     ICommand c;
-                    switch (commandBaseBuilder.CommandType)
+                    switch (commandType)
                     {
                         case CommandType.Default:
                             c = TryCreateDefaultCommand(commandBaseBuilder);
@@ -382,32 +382,7 @@ namespace FluentCommands
 
                     AddCommandToCollection(c);
 
-                    //: Check for help command; if it doesn't exist, make one.
-
                     #region Local Functions
-                    ICommand CreateCommand<TBase, TContext, TArgs>(CommandBaseBuilder c)
-                        where TBase : CommandBase<TContext, TArgs>
-                        where TContext : ICommandContext<TArgs>
-                        where TArgs : EventArgs
-                    {
-                        Type commandBaseType = typeof(TBase);
-
-                        try
-                        {
-                            return commandBaseType switch
-                            {
-                                var _ when commandBaseType == typeof(CommandBase<TContext, TArgs>) => new CommandBase<TContext, TArgs>(c, method, module),
-                                var _ when commandBaseType == typeof(EventCommandBase<TContext, TArgs>) => new EventCommandBase<TContext, TArgs>(c, method, module),
-                                var _ when commandBaseType == typeof(StepCommandBase<TContext, TArgs>) => new StepCommandBase<TContext, TArgs>(c, method, module),
-                                //? Add as needed.
-                                _ => throw new CommandOnBuildingException($"{commandInfo} failed to build. (Could not cast to proper command type. If you encounter this error, please submit a bug report. This should never happen.)")
-                            };
-                        }
-                        catch (ArgumentNullException e) { throw new CommandOnBuildingException($"{commandInfo} method was null.", e); }
-                        catch (ArgumentException e) { throw new CommandOnBuildingException(commandInfo, e); }
-                        catch (MissingMethodException e) { throw new CommandOnBuildingException($"{commandInfo} method not found.", e); }
-                        catch (MethodAccessException e) { throw new CommandOnBuildingException($"{commandInfo} method MUST be marked public.", e); }
-                    }
                     ICommand TryCreateDefaultCommand(CommandBaseBuilder baseBuilder)
                     {
                         foreach (var alias in (baseBuilder as ICommandBaseBuilder).Out_Aliases) AuxiliaryMethods.CheckCommandNameValidity(baseBuilder.Name, true, alias);
@@ -416,12 +391,12 @@ namespace FluentCommands
 
                         return contextType switch
                         {
-                            _ when contextType == typeof(CallbackQueryContext) => CreateCommand<CommandBase<CallbackQueryContext, CallbackQueryEventArgs>, CallbackQueryContext, CallbackQueryEventArgs>(baseBuilder),
-                            _ when contextType == typeof(ChosenInlineResultContext) => CreateCommand<CommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs>, ChosenInlineResultContext, ChosenInlineResultEventArgs>(baseBuilder),
-                            _ when contextType == typeof(InlineQueryContext) => CreateCommand<CommandBase<InlineQueryContext, InlineQueryEventArgs>, InlineQueryContext, InlineQueryEventArgs>(baseBuilder),
-                            _ when contextType == typeof(MessageContext) => CreateCommand<CommandBase<MessageContext, MessageEventArgs>, MessageContext, MessageEventArgs>(baseBuilder),
-                            _ when contextType == typeof(UpdateContext) => CreateCommand<CommandBase<UpdateContext, UpdateEventArgs>, UpdateContext, UpdateEventArgs>(baseBuilder),
-                            _ => throw new CommandOnBuildingException($"{commandInfo} failed to build. (Could not cast to proper command type. If you encounter this error, please submit a bug report. This should never happen.)")
+                            _ when contextType == typeof(CallbackQueryContext) => new DefaultCommandBase<CallbackQueryContext, CallbackQueryEventArgs>(method, baseBuilder, module),
+                            _ when contextType == typeof(ChosenInlineResultContext) => new DefaultCommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs>(method, baseBuilder, module),
+                            _ when contextType == typeof(InlineQueryContext) => new DefaultCommandBase<InlineQueryContext, InlineQueryEventArgs>(method, baseBuilder, module),
+                            _ when contextType == typeof(MessageContext) => new DefaultCommandBase<MessageContext, MessageEventArgs>(method, baseBuilder, module),
+                            _ when contextType == typeof(UpdateContext) => new DefaultCommandBase<UpdateContext, UpdateEventArgs>(method, baseBuilder, module),
+                            _ => throw new CommandOnBuildingException($"{commandInfo} failed to build. (Could not cast to proper command type (Default Command). If you encounter this error, please submit a bug report. This should never happen.)")
                         };
                     }
                     ICommand TryCreateEventCommand(CommandBaseBuilder commandBase) { return null; } //: To implement in v1.1
@@ -434,22 +409,10 @@ namespace FluentCommands
                         var (StepMethods, Continue) = CheckStepCommandValidity(attribs.Step.StepNum);
                         if(Continue) { c = null; return (_, true); }
 
-                        try { baseBuilder.Set_Steps(StepMethods); }
-                        catch (ArgumentException e) { throw new CommandOnBuildingException($"{commandInfo} had one or more Step methods that were the wrong method return type (must return Task<IStep>): ", e); }
-
-                        foreach (var alias in baseBuilder.Aliases) AuxiliaryMethods.CheckCommandNameValidity(baseBuilder.Name, true, alias);
-
                         var contextType = FetchAndCheckMethodParameters<Task<Step>>(method);
 
-                        c = contextType switch
-                        {
-                            _ when contextType == typeof(CallbackQueryContext) => CreateCommand<StepCommandBase<CallbackQueryContext, CallbackQueryEventArgs>, CallbackQueryContext, CallbackQueryEventArgs>(baseBuilder),
-                            _ when contextType == typeof(ChosenInlineResultContext) => CreateCommand<StepCommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs>, ChosenInlineResultContext, ChosenInlineResultEventArgs>(baseBuilder),
-                            _ when contextType == typeof(InlineQueryContext) => CreateCommand<StepCommandBase<InlineQueryContext, InlineQueryEventArgs>, InlineQueryContext, InlineQueryEventArgs>(baseBuilder),
-                            _ when contextType == typeof(MessageContext) => CreateCommand<StepCommandBase<MessageContext, MessageEventArgs>, MessageContext, MessageEventArgs>(baseBuilder),
-                            _ when contextType == typeof(UpdateContext) => CreateCommand<StepCommandBase<UpdateContext, UpdateEventArgs>, UpdateContext, UpdateEventArgs>(baseBuilder),
-                            _ => throw new CommandOnBuildingException($"{commandInfo} failed to build. (Could not cast to proper command type. If you encounter this error, please submit a bug report. This should never happen.)")
-                        };
+                        try { c = new StepCommandBase(StepMethods, baseBuilder, module); }
+                        catch (ArgumentException e) { throw new CommandOnBuildingException($"{commandInfo} had one or more Step methods that were the wrong method return type (must return Task<IStep>): ", e); }
 
                         return (_, false);
 
@@ -525,49 +488,53 @@ namespace FluentCommands
                         }
                         catch (ArgumentNullException e) { throw new CommandOnBuildingException($"An unexpected error occurred while building commmands in module: {module.FullName} (shouldn't ever happen, please submit a bug report if you ecnounter this error):", e); }
                         catch (ArgumentException) { throw new DuplicateCommandException($"{commandInfo} had a duplicate when attempting to add to internal dictionary. Please check to make sure there are no conflicting command names."); }
-                    } // Adds the finished command to the command list.
-                    void AddAliases(ICommand commandToReference, string[] aliases)
-                    {
-                        foreach (string alias in aliases)
+
+                        void AddAliases(ICommand commandToReference, string[] aliases)
                         {
-                            if (!tempCommands[module].TryGetValue(alias.AsMemory(), out _)) tempCommands[module].Add(alias.AsMemory(), commandToReference);
-                            else throw new DuplicateCommandException($"{commandInfo} had an alias that shared a name with an existing command: {alias}. Please check to make sure there are no conflicting command names.");
-                        }
-                    } // Adds aliases for the command being added to the dictionary.
-                    CommandBaseBuilder RetrieveCommandBaseBuilder()
+                            foreach (string alias in aliases)
+                            {
+                                if (!tempCommands[module].TryGetValue(alias.AsMemory(), out _)) tempCommands[module].Add(alias.AsMemory(), commandToReference);
+                                else throw new DuplicateCommandException($"{commandInfo} had an alias that shared a name with an existing command: {alias}. Please check to make sure there are no conflicting command names.");
+                            }
+                        } // Adds aliases for the command being added to the dictionary.
+
+                    } // Adds the finished command (and its aliases) to the command list.
+                    CommandBaseBuilder RetrieveCommandBaseBuilder(CommandType commandType)
                     {
                         CommandBaseBuilder thisCommandBase;
-                        //? Add to this if/else as needed.
-                        //! These are "Primary Attributes". These are required for a command to exist. Secondary Attribute settings are handled after this section.
-                        if (attribs.Command is { })
+                        switch (commandType)
                         {
-                            if (_tempModules[module].ModuleCommandBases.TryGetValue(attribs.Command.Name, out var dictCommandBase)) thisCommandBase = dictCommandBase;
-                            else
-                            {
-                                thisCommandBase = new CommandBaseBuilder(attribs.Command.Name);
-                                notifier.AddDebug($"No OnBuilding detected for Command \"{attribs.Command.Name}\" {(attribs.Step is { } ? $"(Step: {attribs.Step.StepNum}) " : "")}in Module: \"{module.FullName}\"; using default settings.");
-                            }
+                            case CommandType.Default:
+                                if (attribs.Command is { })
+                                {
+                                    if (_tempModules[module].ModuleCommandBases.TryGetValue(attribs.Command.Name, out var dictCommandBase)) thisCommandBase = dictCommandBase;
+                                    else
+                                    {
+                                        thisCommandBase = new CommandBaseBuilder(attribs.Command.Name);
+                                        notifier.AddDebug($"No OnBuilding detected for Command \"{attribs.Command.Name}\" {(attribs.Step is { } ? $"(Step: {attribs.Step.StepNum}) " : "")}in Module: \"{module.FullName}\"; using default settings.");
+                                    }
+                                }
+                                else goto default;
+                                break;
+                            case CommandType.Event:
+                                if (attribs.Event is { })
+                                {
+                                    if (_tempModules[module].ModuleCommandBases.TryGetValue(attribs.Event.EventType, out var dictCommandBase)) thisCommandBase = dictCommandBase;
+                                    else
+                                    {
+                                        thisCommandBase = new CommandBaseBuilder(attribs.Command.Name);
+                                        notifier.AddDebug($"No OnBuilding detected for Command \"{attribs.Event.EventType}\" in Module: \"{module.FullName}\"; using default settings.");
+                                    }
+                                }
+                                else goto default;
+                                break;
+                            case CommandType.Step:
+                                goto case CommandType.Default;
+                            default:
+                                throw new CommandOnBuildingException($"Error determining the Command or OnEvent Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)");
                         }
-                        else if (attribs.Event is { })
-                        {
-                            if (_tempModules[module].ModuleCommandBases.TryGetValue(attribs.Event.EventType, out var dictCommandBase)) thisCommandBase = dictCommandBase;
-                            else
-                            {
-                                thisCommandBase = new CommandBaseBuilder(attribs.Command.Name);
-                                notifier.AddDebug($"No OnBuilding detected for Command \"{attribs.Event.EventType}\" in Module: \"{module.FullName}\"; using default settings.");
-                            }
-                        }
-                        else throw new CommandOnBuildingException($"Error determining the Command or OnEvent Attribute name of a method in module: {module.FullName ?? "NULL"} while command building. (Returned null.)");
-
-
-                        //! Determining CommandType
-                        CommandType commandType = CommandType.Default;
-                        if (attribs.Step is { }) commandType = CommandType.Step;
-                        if (attribs.Event is { }) commandType = CommandType.Event;
-                        //? Add as needed, mind the order.
 
                         #region Setters. Add to this if additional functionality needs to be created later.
-                        thisCommandBase.Set_CommandType(commandType);
                         thisCommandBase.Set_Permissions(attribs.Permissions);
                         #endregion
 
@@ -590,8 +557,21 @@ namespace FluentCommands
                         }
                         else throw new CommandOnBuildingException($"{commandInfo} method had invalid signature.");
                     }
+                    string GenerateCommandInfo(CommandType commandType)
+                    {
+                        return commandType switch
+                        {
+                            CommandType.Default => $"Command \"{attribs.Command.Name}\" (method name: \"{method.Name}\") in module {module.FullName}:",
+                            CommandType.Event => $"Event \"{attribs.Event.EventType}\" (method name: \"{method.Name}\") in module {module.FullName}:",
+                            CommandType.Step => $"Command \"{attribs.Command.Name}\" (method name: \"{method.Name}\") in module {module.FullName}, Step number {attribs.Step.StepNum}:",
+                            _ => "" // Should never happen.
+                        };
+                    } // Generates the command info string based on its CommandType
                     #endregion
                 }
+
+                //: Check for help command per-module; if it doesn't exist, make one (foreach).
+
             }
         }
         #endregion
@@ -679,10 +659,6 @@ namespace FluentCommands
             //! Local functions...
             static void CheckCommandNameAmbiguity()
             {
-                //: Consider removing the LINQ modifications that are now possibly defunct: ambiguousClients, and ambiguousPrefixes. These are likely unnecessary now, but double check.
-
-
-
                 // Changes the format of the dictionary to exclude the ICommand, pairing type with command name (as string).
                 var trueDuplicates = Commands
                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Keys.Select(k => new string(k.Span.ToArray())));
@@ -722,97 +698,30 @@ namespace FluentCommands
                     .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
                     .OrderBy(g => g.Key);
 
-                var ambiguousPrefixes = moduleMatches
-                    .Where(g => g.Count(p => g.Any(v => !(v.Value.Client?.BotId == p.Value.Client?.BotId) && v.Value.Config.Prefix == p.Value.Config.Prefix)) > 0)
-                    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
-                    .OrderBy(g => g.Key);
+                bool found_ambiguousPrefixesAndClients = ambiguousPrefixesAndClients.Count() > 0;
 
-                var ambiguousClients = moduleMatches
-                    .Where(g => g.Count(p => g.Any(v => v.Value.Client?.BotId == p.Value.Client?.BotId && !(v.Value.Config.Prefix == p.Value.Config.Prefix))) > 0)
-                    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key))
-                    .OrderBy(g => g.Key);
-
-                bool toThrow, found_ambiguousPrefixesAndClients, found_ambiguousPrefixes, found_ambiguousClients;
-                found_ambiguousPrefixesAndClients = ambiguousPrefixesAndClients.Count() > 0;
-                found_ambiguousPrefixes = ambiguousPrefixes.Count() > 0;
-                found_ambiguousClients = ambiguousClients.Count() > 0;
-                toThrow = found_ambiguousPrefixesAndClients || found_ambiguousPrefixes || found_ambiguousClients;
-
-                // Will throw. The rest of this is formatting the Exceptions to display.
-                if (toThrow)
+                // Will throw. The rest of this is formatting the Exception to display.
+                if (found_ambiguousPrefixesAndClients)
                 {
-                    List<Exception> exceptions = new List<Exception>();
-                    string str_ambiguousPrefixesAndClients, str_ambiguousPrefixes, str_ambiguousClients;
-                    if (found_ambiguousPrefixesAndClients)
+                    string str_ambiguousPrefixesAndClients = "The following command(s) were ambiguous due to sharing the same command name, command prefix, and TelegramBotClient: " + Environment.NewLine;
+                    foreach (var kvp in commandDuplicates)
                     {
-                        str_ambiguousPrefixesAndClients = "The following command(s) were ambiguous due to sharing the same command name, command prefix, and TelegramBotClient: " + Environment.NewLine;
-                        foreach (var kvp in commandDuplicates)
+                        foreach (var type in kvp.Value)
                         {
-                            foreach (var type in kvp.Value)
+                            foreach(var groupKvp in ambiguousPrefixesAndClients)
                             {
-                                foreach(var groupKvp in ambiguousPrefixesAndClients)
-                                {
-                                    if (!groupKvp.Value.Contains(type)) continue;
+                                if (!groupKvp.Value.Contains(type)) continue;
 
-                                    var commandName = kvp.Key;
-                                    var module = type;
-                                    var prefix = groupKvp.Key.Prefix;
-                                    var botId = groupKvp.Key.BotId ?? 0;
+                                var commandName = kvp.Key;
+                                var module = type;
+                                var prefix = groupKvp.Key.Prefix;
+                                var botId = groupKvp.Key.BotId ?? 0;
 
-                                    str_ambiguousPrefixesAndClients += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Command Prefix: \"{prefix}\", Client BotId: \"{botId}\"" + Environment.NewLine;
-                                }
+                                str_ambiguousPrefixesAndClients += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Command Prefix: \"{prefix}\", Client BotId: \"{botId}\"" + Environment.NewLine;
                             }
                         }
-                        exceptions.Add(new DuplicateCommandException(str_ambiguousPrefixesAndClients));
                     }
-
-                    if (found_ambiguousPrefixes)
-                    {
-                        str_ambiguousPrefixes = "The following command(s) were ambiguous due to sharing the same command name and command prefix: ";
-                        foreach (var kvp in commandDuplicates)
-                        {
-                            foreach (var type in kvp.Value)
-                            {
-                                foreach (var groupKvp in ambiguousPrefixes)
-                                {
-                                    if (!groupKvp.Value.Contains(type)) continue;
-
-                                    var commandName = kvp.Key;
-                                    var module = type;
-                                    var prefix = groupKvp.Key;
-
-                                    str_ambiguousPrefixes += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Command Prefix: \"{prefix}\"" + Environment.NewLine;
-                                }
-                            }
-                        }
-                        exceptions.Add(new DuplicateCommandException(str_ambiguousPrefixes));
-                    }
-
-                    if (found_ambiguousClients)
-                    {
-                        str_ambiguousClients = "";
-                        foreach (var kvp in commandDuplicates)
-                        {
-                            foreach (var type in kvp.Value)
-                            {
-                                foreach (var groupKvp in ambiguousClients)
-                                {
-                                    if (!groupKvp.Value.Contains(type)) continue;
-
-                                    var commandName = kvp.Key;
-                                    var module = type;
-                                    var botId = groupKvp.Key;
-
-                                    str_ambiguousClients += $"Command Name: \"{commandName}\", Command Class: \"{module.FullName}\", Client BotId: \"{botId}\"" + Environment.NewLine;
-                                }
-                            }
-                        }
-                        exceptions.Add(new DuplicateCommandException(str_ambiguousClients));
-                    }
-
-                    // Guaranteed to be at least one.
-                    if (exceptions.Count() == 1) throw exceptions.First();
-                    else throw new AggregateException("Multiple duplicate command name ambiguities found when attempting to build the CommandServce. Please address the following exceptions:" + Environment.NewLine, exceptions);
+                    throw new DuplicateCommandException(str_ambiguousPrefixesAndClients);
                 }
             }
             static void AttemptStartClientsReceiving()
@@ -1376,31 +1285,31 @@ namespace FluentCommands
                     {
                         switch (cmd)
                         {
-                            case CommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
+                            case DefaultCommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
                             {
                                 if (e.TryGetCallbackQueryEventArgs(out var args)) await c.Invoke((CallbackQueryContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case CommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs> c:
+                            case DefaultCommandBase<ChosenInlineResultContext, ChosenInlineResultEventArgs> c:
                             {
                                 if (e.TryGetChosenInlineResultEventArgs(out var args)) await c.Invoke((ChosenInlineResultContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case CommandBase<InlineQueryContext, InlineQueryEventArgs> c:
+                            case DefaultCommandBase<InlineQueryContext, InlineQueryEventArgs> c:
                             {
                                 if (e.TryGetInlineQueryEventArgs(out var args)) await c.Invoke((InlineQueryContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case CommandBase<MessageContext, MessageEventArgs> c:
+                            case DefaultCommandBase<MessageContext, MessageEventArgs> c:
                             {
                                 if (e.TryGetMessageEventArgs(out var args)) await c.Invoke((MessageContext)context).ConfigureAwait(false);
                                 else goto default;
                                 break;
                             }
-                            case CommandBase<UpdateContext, UpdateEventArgs> c:
+                            case DefaultCommandBase<UpdateContext, UpdateEventArgs> c:
                             {
                                 if (e.TryGetUpdateEventArgs(out var args)) await c.Invoke((UpdateContext)context).ConfigureAwait(false);
                                 else goto default;
@@ -1417,21 +1326,7 @@ namespace FluentCommands
                     }
                     case CommandType.Step:
                     {
-                        switch (cmd)
-                        {
-                            case StepCommandBase<CallbackQueryContext, CallbackQueryEventArgs> c:
-                            {
-                                await EvaluateStep(c).ConfigureAwait(false);
-                                break;
-                            }
-                            case StepCommandBase<MessageContext, MessageEventArgs> c:
-                            {
-                                await EvaluateStep(c).ConfigureAwait(false);
-                                break;
-                            }
-                            default:
-                                throw new ArgumentException("Unable to retrieve correct EventArgs or execute command with the correct TelegramUpdateContext and command type.");
-                        }
+                        await EvaluateStep((cmd as IStepCommand)!).ConfigureAwait(false);
                         await Cache.AddOrUpdateState(state).ConfigureAwait(false);
                         break;
                     }

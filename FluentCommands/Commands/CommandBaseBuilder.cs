@@ -53,6 +53,5 @@ namespace FluentCommands.Commands
         //* This is for new features, to help separate them from the original implementation. *//
         internal void Set_CommandType(CommandType type) => CommandType = type;
         internal void Set_Permissions(PermissionsAttribute? p) => Permissions = p?.Permissions ?? Permissions.None;
-        internal void Set_Steps(IEnumerable<MethodInfo> methods) { StepInfo = new StepContainer(methods); } // Pre-filtered in the CommandService class.
     }
 }

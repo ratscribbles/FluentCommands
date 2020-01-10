@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentCommands.Interfaces;
 using FluentCommands.Logging;
 using Telegram.Bot;
+using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Args;
 
 namespace FluentCommands.Commands

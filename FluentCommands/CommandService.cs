@@ -338,7 +338,7 @@ namespace FluentCommands
                         CommandAttribute? Command,
                         OnEventAttribute? Event,
                         PermissionsAttribute? Permissions,
-                        RoomTypeAttribute? RoomType,
+                        ChatTypeAttribute? RoomType,
                         StepAttribute? Step
                     //? Add as needed...
                     )
@@ -346,7 +346,7 @@ namespace FluentCommands
                         methodAttributeCollection.FirstOrDefault(a => a is CommandAttribute) as CommandAttribute,
                         methodAttributeCollection.FirstOrDefault(a => a is OnEventAttribute) as OnEventAttribute,
                         methodAttributeCollection.FirstOrDefault(a => a is PermissionsAttribute) as PermissionsAttribute ?? module.GetCustomAttribute<PermissionsAttribute>(),
-                        methodAttributeCollection.FirstOrDefault(a => a is RoomTypeAttribute) as RoomTypeAttribute ?? module.GetCustomAttribute<RoomTypeAttribute>(),
+                        methodAttributeCollection.FirstOrDefault(a => a is ChatTypeAttribute) as ChatTypeAttribute ?? module.GetCustomAttribute<ChatTypeAttribute>(),
                         methodAttributeCollection.FirstOrDefault(a => a is StepAttribute) as StepAttribute
                     //? Add as needed...
                     );

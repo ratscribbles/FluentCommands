@@ -9,6 +9,7 @@ namespace FluentCommands.Commands
 {
     internal class StepCommandBase : CommandBase, IStepCommand
     {
+        internal override CommandType CommandType => CommandType.Step;
         internal StepContainer StepInfo { get; }
         StepContainer IStepCommand.StepInfo => StepInfo;
 

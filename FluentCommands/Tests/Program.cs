@@ -13,12 +13,12 @@ namespace FluentCommands.Tests.Integration
     {
         static async Task Main(string[] args)
         {
-            CommandService.Start(c =>
-            {
-                c.AddClient(Tokens.Token);
-                c.MaximumLogLevel(FluentLogLevel.Debug);
-                c.SwallowCriticalExceptions();
-            });
+            //CommandService.Start(c =>
+            //{
+            //    c.AddClient(Tokens.Token);
+            //    c.MaximumLogLevel(FluentLogLevel.Debug);
+            //    c.SwallowCriticalExceptions();
+            //});
 
             //:         explore the MessageType enum for onEvents
 

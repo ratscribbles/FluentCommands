@@ -19,7 +19,12 @@ namespace FluentCommands.Tests.Integration
             {
                 protected override void OnConfiguring(ModuleConfigBuilder config)
                 {
-                    config.AddClient(Tokens.Token);
+                    config
+                        .AddClient(Tokens.Token)
+                        .DeleteAllIncomingUserInputs()
+                        .DeleteCommandAfterCall()
+                        .DisableInternalCommandEvaluation()
+                        .DisableLogging();
                 }
 
                 [Command("animation")]

@@ -21,9 +21,9 @@ namespace FluentCommands.Commands
     {
         private readonly ISendableMenu? _helpMsg;
         private readonly ISendableMenu? _errorMsg;
+        internal virtual CommandType CommandType { get; }
         internal Type Module { get; }
         internal string Name { get; }
-        internal CommandType CommandType { get; }
         internal Permissions Permissions { get; } = Permissions.None;
         internal string[] Aliases { get; } = Array.Empty<string>();
         internal ISendableMenu Description
@@ -61,7 +61,6 @@ namespace FluentCommands.Commands
             _helpMsg = commandBase.HelpDescription;
             _errorMsg = commandBase.ErrorMessage;
             Button = commandBase.Button;
-            CommandType = commandBase.CommandType;
         }
     }
 }

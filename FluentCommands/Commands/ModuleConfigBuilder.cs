@@ -137,7 +137,7 @@ namespace FluentCommands.Commands
 
         internal (int AmountOfMessages, TimeSpan PerTimeSpan) In_RateLimitPerUser { get; private set; }
         /// <summary>
-        /// Sets the rate limit for command inputs on a per-user basis.
+        /// Sets the rate limit for command inputs on a per-user basis. Overrides the limit set by the <see cref="CommandServiceConfig"/> (if one is set).
         /// <para>Users will only be able to send a certain amount of commands within a specified <see cref="TimeSpan"/>. <strong>There is no limit by default.</strong></para>
         /// </summary>
         /// <param name="amountOfMessages">The amount of commands a user can send within the <see cref="TimeSpan"/> specified.</param>
@@ -176,7 +176,7 @@ namespace FluentCommands.Commands
         /// <exception cref="InvalidConfigSettingsException">Thrown when attempting to add more than one <see cref="IFluentCache"/>.</exception>
         public ModuleConfigBuilder AddCache<TCacheImplementation>() where TCacheImplementation : class, IFluentCache 
         {
-            if (In_UsingCustomCacheOverride) throw new InvalidConfigSettingsException("Attempted to add more than one cache for this module. (You can only add one Cache per CommandModule<TCommand>.)");
+            if (In_UsingCustomCacheOverride) throw new InvalidConfigSettingsException("Attempted to add more than one cache to this module. (You can only add one Cache per CommandModule<TCommand>.)");
             CommandService.AddCache<TCacheImplementation>(ModuleType); 
             In_UsingCustomCacheOverride = true;
             return this;
@@ -191,7 +191,7 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleConfigBuilder"/> to continue the building process.</returns>
         public ModuleConfigBuilder AddCache(Type implementationType)
         { 
-            if (In_UsingCustomCacheOverride) throw new InvalidConfigSettingsException("Attempted to add more than one cache for this module. (You can only add one Cache per CommandModule<TCommand>.)");
+            if (In_UsingCustomCacheOverride) throw new InvalidConfigSettingsException("Attempted to add more than one cache to this module. (You can only add one Cache per CommandModule<TCommand>.)");
             CommandService.AddCache(implementationType, ModuleType);
             In_UsingCustomCacheOverride = true; 
             return this;
@@ -206,7 +206,7 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleConfigBuilder"/> to continue the building process.</returns>
         public ModuleConfigBuilder AddClient(string token)
         { 
-            if (In_UsingBotClient) throw new InvalidConfigSettingsException("Attempted to add more than one TelegramBotClient for this module. (You can only add one TelegramBotClient per CommandModule<TCommand>.)");
+            if (In_UsingBotClient) throw new InvalidConfigSettingsException("Attempted to add more than one TelegramBotClient to this module. (You can only add one TelegramBotClient per CommandModule<TCommand>.)");
             CommandService.AddClient(token, ModuleType);
             In_UsingBotClient = true; 
             return this;
@@ -220,7 +220,7 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleConfigBuilder"/> to continue the building process.</returns>
         public ModuleConfigBuilder AddClient(TelegramBotClient client) 
         { 
-            if (In_UsingBotClient) throw new InvalidConfigSettingsException("Attempted to add more than one TelegramBotClient for this module. (You can only add one TelegramBotClient per CommandModule<TCommand>.)");
+            if (In_UsingBotClient) throw new InvalidConfigSettingsException("Attempted to add more than one TelegramBotClient to this module. (You can only add one TelegramBotClient per CommandModule<TCommand>.)");
             CommandService.AddClient(client, ModuleType);
             In_UsingBotClient = true; 
             return this;
@@ -234,7 +234,7 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleConfigBuilder"/> to continue the building process.</returns>
         public ModuleConfigBuilder AddLogger<TLoggerImplementation>() where TLoggerImplementation : class, IFluentLogger 
         { 
-            if (In_UsingCustomLoggerOverride) throw new InvalidConfigSettingsException("Attempted to add more than one logger for this module. (You can only add one logger per CommandModule<TCommand>.)");
+            if (In_UsingCustomLoggerOverride) throw new InvalidConfigSettingsException("Attempted to add more than one logger to this module. (You can only add one logger per CommandModule<TCommand>.)");
             CommandService.AddLogger<TLoggerImplementation>(ModuleType);
             In_UsingCustomLoggerOverride = true; 
             return this;
@@ -248,7 +248,7 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleConfigBuilder"/> to continue the building process.</returns>
         public ModuleConfigBuilder AddLogger(IFluentLogger implementationInstance) 
         { 
-            if (In_UsingCustomLoggerOverride) throw new InvalidConfigSettingsException("Attempted to add more than one logger for this module. (You can only add one logger per CommandModule<TCommand>.)");
+            if (In_UsingCustomLoggerOverride) throw new InvalidConfigSettingsException("Attempted to add more than one logger to this module. (You can only add one logger per CommandModule<TCommand>.)");
             CommandService.AddLogger(implementationInstance, ModuleType);
             In_UsingCustomLoggerOverride = true; 
             return this;
@@ -262,7 +262,7 @@ namespace FluentCommands.Commands
         /// <returns>Returns this <see cref="ModuleConfigBuilder"/> to continue the building process.</returns>
         public ModuleConfigBuilder AddLogger(Type implementationType) 
         {
-            if (In_UsingCustomLoggerOverride) throw new InvalidConfigSettingsException("Attempted to add more than one logger for this module. (You can only add one logger per CommandModule<TCommand>.)");
+            if (In_UsingCustomLoggerOverride) throw new InvalidConfigSettingsException("Attempted to add more than one logger to this module. (You can only add one logger per CommandModule<TCommand>.)");
             CommandService.AddLogger(implementationType, ModuleType);
             In_UsingCustomLoggerOverride = true; 
             return this;

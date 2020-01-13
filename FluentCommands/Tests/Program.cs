@@ -19,6 +19,10 @@ namespace FluentCommands.Tests.Integration
             //    c.MaximumLogLevel(FluentLogLevel.Debug);
             //    c.SwallowCriticalExceptions();
             //});
+            CommandService.Start(new CommandServiceConfigBuilder(c =>
+            {
+
+            }));
 
             //:         explore the MessageType enum for onEvents
 

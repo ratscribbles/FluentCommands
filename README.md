@@ -64,18 +64,14 @@ This is just the very beginning of what you can do with this library: stay tuned
 
 ## Special Thanks
 
-- The [C# Discord] for being an amazing help during the development process. Its community is an invaluable resource for _any_ .NET developer, bar none.
 - The [Telegram Bots Team] for creating the .NET client for Telegram.
 - [EF Core] and [DSharpPlus] for inspiration on how to approach the design for this project.
-- The creator of [Finite.Commands] for helping me with some very specific problems early on.
 
 <!-- ---- -->
 
 [Telegram]: https://www.telegram.org/
 [Telegram Bots]: https://core.telegram.org/bots
 [.NET Client for Telegram Bot API]: https://core.telegram.org/bots/api
-[C# Discord]: https://discord.gg/csharp
 [Telegram Bots Team]: https://github.com/orgs/TelegramBots/people
 [EF Core]: https://github.com/aspnet/EntityFrameworkCore
 [DSharpPlus]: https://github.com/DSharpPlus/DSharpPlus
-[Finite.Commands]: https://github.com/FiniteReality/Finite.Commands

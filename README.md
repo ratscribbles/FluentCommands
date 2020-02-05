@@ -66,6 +66,7 @@ This is just the very beginning of what you can do with this library: stay tuned
 
 - The [Telegram Bots Team] for creating the .NET client for Telegram.
 - [EF Core] and [DSharpPlus] for inspiration on how to approach the design for this project.
+- The creator of [Finite.Commands] for helping me with some very specific problems early on.
 
 <!-- ---- -->
 
@@ -75,3 +76,4 @@ This is just the very beginning of what you can do with this library: stay tuned
 [Telegram Bots Team]: https://github.com/orgs/TelegramBots/people
 [EF Core]: https://github.com/aspnet/EntityFrameworkCore
 [DSharpPlus]: https://github.com/DSharpPlus/DSharpPlus
+[Finite.Commands]: https://github.com/FiniteReality/Finite.Commands

@@ -1,3 +1,5 @@
+**this repo is of a significantly older version that will be updated within the next month or so. big changes coming soon!**
+
 # FluentCommands
 A .NET bot framework and command system for Telegram. 
 
